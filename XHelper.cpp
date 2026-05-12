@@ -433,15 +433,12 @@ XHelper::getWindowMapstate(const Window window) {
  */
 void
 XHelper::setWindowType(const Window window,
-    const bool state) {
+    const Atom windowType) {
     const Atom WINDOW_TYPE = XInternAtom(mDisplay,
         "_NET_WM_WINDOW_TYPE", false);
-    const Atom TYPE_DESIRED = XInternAtom(mDisplay, state ?
-        "_NET_WM_WINDOW_TYPE_NORMAL" :
-        "_NET_WM_WINDOW_TYPE_SPLASH", false);
 
     XChangeProperty(mDisplay, window, WINDOW_TYPE, XA_ATOM, 32,
-        PropModeReplace, (unsigned char*) &TYPE_DESIRED, 1);
+        PropModeReplace, (unsigned char*) &windowType, 1);
 }
 
 /**

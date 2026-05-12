@@ -300,11 +300,13 @@ StickyWindow::createX11Window() {
     // Set window workspace & border state before showing.
     const int WORKSPACE = mSettingsHelper->getWindowWorkspace();
     mXHelper->setWindowWorkspace(mX11Window, WORKSPACE);
-    mXHelper->setWindowType(mX11Window, false);
 
+    // Set "StickyWindow" type, show window, set config state.
+    setStickyWindowType();
     show();
-
     setWindowConfigState();
+
+    // Done!
     return mX11Window;
 }
 
@@ -329,6 +331,28 @@ StickyWindow::defineWindowOnFirstRun() {
         mSettingsHelper->getWindowWidth()) / 2);
     mSettingsHelper->setWindowYPos((SCREEN_HEIGHT -
         mSettingsHelper->getWindowHeight()) / 2);
+}
+
+/**
+ * Set "StickyWindow" type, which is normally an x11
+ * "SplashScreen". On KDE we use "Dock", as their
+ * "SplashScreen" window doesn't support InputRectangles
+ * meaning we can't click buttons.
+ */
+void
+StickyWindow::setStickyWindowType() {
+    const Atom WINDOW_TYPE_SPLASH =
+        XInternAtom(mDisplay, "_NET_WM_WINDOW_TYPE_SPLASH", false);
+    const Atom WINDOW_TYPE_DOCK =
+        XInternAtom(mDisplay, "_NET_WM_WINDOW_TYPE_DOCK", false);
+
+    const QString KWIN_WM_NAME = "KWin";
+
+    const Atom STICKY_WINDOW_TYPE =
+        mXHelper->getWindowManagerName() == KWIN_WM_NAME ?
+            WINDOW_TYPE_DOCK : WINDOW_TYPE_SPLASH;
+
+    mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
 }
 
 /**

@@ -120,7 +120,7 @@ class XHelper {
          * Sets window titlebar, border to desired visibility.
          */
         void setWindowType(const Window window,
-            const bool state);
+            const Atom windowType);
 
         /**
          * This method returns a 40-char window title string.

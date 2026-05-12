@@ -155,7 +155,8 @@ bool initWindowCompositor() {
  */
 bool initAppPngImages() {
     // Load the Pin-In image.
-    const QString PIN_IN_FILE = ICON_INSTALL_LOCATION + PIN_IN_PNG_FILENAME;
+    const QString PIN_IN_FILE = ICON_INSTALL_LOCATION + QString(APP_NAME) +
+        QString("-") + PIN_IN_PNG_FILENAME;
     if (!mPinInQImage.load(PIN_IN_FILE)) {
         cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
             "required resource image can't be found - FATAL." <<
@@ -173,12 +174,14 @@ bool initAppPngImages() {
         32, 0);
 
     // Load the Pin-Out image.
-    if (!mPinOutQImage.load(ICON_INSTALL_LOCATION + PIN_OUT_PNG_FILENAME)) {
+    const QString PIN_OUT_FILE = ICON_INSTALL_LOCATION + QString(APP_NAME) +
+        QString("-") + PIN_OUT_PNG_FILENAME;
+    if (!mPinOutQImage.load(PIN_OUT_FILE)) {
         cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
             "required resource image can't be found - FATAL." <<
             XCOLOR_NORMAL << endl;
         cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: Missing: " <<
-            PIN_OUT_PNG_FILENAME.toStdString() << "." << XCOLOR_NORMAL << endl;
+            PIN_OUT_FILE.toStdString() << "." << XCOLOR_NORMAL << endl;
         return false;
     }
     mPinOutQImage = mPinOutQImage.convertToFormat(QImage::Format_RGB32);

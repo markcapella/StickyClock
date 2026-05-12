@@ -15,7 +15,7 @@ set(ORG_NAME "skyrmion.inc")
 set(APP_AUTHOR "Mark James Capella")
 
 set(APP_VERSION "26.05.12")
-set(APP_VERSION_SUFFIX "r2")
+set(APP_VERSION_SUFFIX "r3")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)
@@ -117,10 +117,10 @@ target_link_libraries(${WIDGET_PROJECT} PRIVATE
 ##
 # Display leak report after app runs.
 #
-target_compile_options(${WIDGET_PROJECT} PUBLIC
-    -fsanitize=address -fno-omit-frame-pointer)
-target_link_options(${WIDGET_PROJECT} PUBLIC
-    -fsanitize=address)
+#target_compile_options(${WIDGET_PROJECT} PUBLIC
+#    -fsanitize=address -fno-omit-frame-pointer)
+#target_link_options(${WIDGET_PROJECT} PUBLIC
+#    -fsanitize=address)
 
 ##
 # Halt any old active instances.

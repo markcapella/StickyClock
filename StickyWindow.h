@@ -124,6 +124,14 @@ class StickyWindow {
         void defineWindowOnFirstRun();
 
         /**
+         * Set "StickyWindow" type, which is normally an x11
+         * "SplashScreen". On KDE we use "Dock", as their
+         * "SplashScreen" window doesn't support InputRectangles
+         * meaning we can't click buttons.
+         */
+        void setStickyWindowType();
+
+        /**
          * Set window to stay on bottom or float as normal
          * based on configState.
          */
