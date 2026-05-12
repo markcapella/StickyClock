@@ -15,7 +15,7 @@ set(ORG_NAME "skyrmion.inc")
 set(APP_AUTHOR "Mark James Capella")
 
 set(APP_VERSION "26.05.12")
-set(APP_VERSION_SUFFIX "r3")
+set(APP_VERSION_SUFFIX "r4")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED true)

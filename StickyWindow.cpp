@@ -346,7 +346,7 @@ StickyWindow::setStickyWindowType() {
     const Atom WINDOW_TYPE_DOCK =
         XInternAtom(mDisplay, "_NET_WM_WINDOW_TYPE_DOCK", false);
 
-    const QString KWIN_WM_NAME = "KWin";
+    const string KWIN_WM_NAME = "KWin";
 
     const Atom STICKY_WINDOW_TYPE =
         mXHelper->getWindowManagerName() == KWIN_WM_NAME ?
