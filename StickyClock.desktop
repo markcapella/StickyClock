@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=StickyClock
+
+Exec=StickyClock
+Type=Application
+
+Icon=StickyClock
+Terminal=false

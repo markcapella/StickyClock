@@ -1,0 +1,64 @@
+
+#pragma once
+
+/**
+ * Global headers, order important.
+ *
+ */
+// Standard C libraries.
+#include <chrono>
+#include <cstdint>
+#include <format>
+#include <iostream>
+#include <thread>
+#include <unistd.h>
+#include <vector>
+
+using namespace std;
+typedef chrono::steady_clock Clock;
+
+// Qt libraries.
+#include <QCoreApplication>
+#include <QSettings>
+#include <QImage>
+#include <QPoint>
+#include <QRect>
+#include <QSize>
+#include <QString>
+
+// x11 libraries.
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/Xutil.h>
+
+// x11 xft library.
+#include <X11/Xft/Xft.h>
+
+// x11 xfixes libraries.
+#include <X11/extensions/Xfixes.h>
+
+// x11 xext libraries.
+#include <X11/extensions/shape.h>
+
+// libpng library.
+#include <png.h>
+
+// libasan library.
+#include <sanitizer/lsan_interface.h>
+#include <sys/resource.h>
+
+// Application libraries.
+#include "Button.h"
+#include "PinButton.h"
+#include "QuitButton.h"
+#include "MoveButton.h"
+#include "SizeButton.h"
+
+#include "SettingsHelper.h"
+#include "DisplayHelper.h"
+#include "WinInfo.h"
+#include "XHelper.h"
+
+#include "StickyWindow.h"
+
+#include "StickyClock.h"

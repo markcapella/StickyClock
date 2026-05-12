@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# Color styling.
+TEXT_BOLD=$(tput bold)
+
+COLOR_BLACK=$(tput setaf 0)
+COLOR_RED=$(tput setaf 1)
+COLOR_GREEN=$(tput setaf 2)
+COLOR_YELLOW=$(tput setaf 3)
+COLOR_BLUE=$(tput setaf 4)
+COLOR_MAGENTA=$(tput setaf 5)
+COLOR_CYAN=$(tput setaf 6)
+COLOR_WHITE=$(tput setaf 7)
+
+ALLTEXT_NORMAL=$(tput sgr0)
+
+
+# Sanity check the request.
+APP_NAME=$1
+if [ "$APP_NAME" == "" ]; then
+    echo -e "$COLOR_RED""$TEXT_BOLD""!! Error,"\
+        "$ALLTEXT_NORMAL""No App name specified to be halted."
+    exit 1
+fi
+
+if [ "$(pgrep -x ""$APP_NAME"")" = "" ]; then
+    echo "-- No Active app instances are found."
+    exit 0
+fi
+
+echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
+    "$ALLTEXT_NORMAL""Active app instances are being shutdown."
+
+pkill -x "$APP_NAME"
+sleep 1
