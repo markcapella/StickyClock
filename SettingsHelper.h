@@ -7,8 +7,23 @@
  *
  */
 class SettingsHelper {
-
     public:
+        enum SettingsPropertyType { NONE_VALUETYPE,
+            BOOL_VALUETYPE, INT_VALUETYPE };
+
+        struct SettingsProperty {
+            string group = "";
+            string name = "";
+
+            SettingsPropertyType valueType = NONE_VALUETYPE;
+            QString initialValue = "";
+        };
+
+        static inline const vector<SettingsProperty> SETTINGS_PROPERTIES = {
+            { .group = "Configurable", .name = "showWeedClock",
+                .valueType = BOOL_VALUETYPE, .initialValue = "true" }
+        };
+
         SettingsHelper(const QString appName);
         ~SettingsHelper();
 
@@ -66,11 +81,16 @@ class SettingsHelper {
         void setCanvasWidth(const double width);
         void setCanvasHeight(const double height);
 
-    private:
-        // Members.
-        QString mSettingsApp = "";
-        bool mBorderVisible = false;
-        QSettings* mQSettings = nullptr;
+        /**
+         * Getters & setters for user configurable settings.
+         */
+        bool getShowWeedClock();
+        void setShowWeedClock(const bool value);
+
+        /**
+         * Helper to return a QSettings filename from appName.
+         */
+        QString getQSettingsFile();
 
         /**
          * Helper to return a new QSettings object for pref
@@ -79,7 +99,15 @@ class SettingsHelper {
         QSettings* getQSettings();
 
         /**
-         * Helper to return a QSettings filename from appName.
+         * Helper to explicitly write all default values
+         * to our .Ini file.
          */
-        QString getQSettingsFile();
+        void setInitialSettingsVariants();
+
+    private:
+        // Members.
+        QString mSettingsApp = "";
+
+        QSettings* mQSettings = nullptr;
+
 };

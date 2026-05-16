@@ -2,17 +2,17 @@
 #include "Global.h"
 
 /**
- * PinButton Constructor / Destructor.
+ * Simple class to represent a PinButton.
  *
- * Provides dynamic_cast<PinButton*> type cast ability.
  */
 PinButton::PinButton(double mXPos, double mYPos) :
     Button(mXPos, mYPos) { }
+
+// Provides dynamic_cast<PinButton*> type cast ability.
 PinButton::~PinButton() { }
 
 /**
  * Draws the PinButton.
- *
  */
 void
 PinButton::draw(const Window window) {
@@ -37,6 +37,10 @@ PinButton::draw(const Window window) {
     XRenderFreePicture(mDisplay, CANVAS);
 }
 
+/**
+ * Clicks the PinButton.
+ */
 void
-PinButton::click(const Window window) const {
+PinButton::click(const Window window) {
+    // Nothing.
 }

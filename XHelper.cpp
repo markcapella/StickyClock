@@ -12,7 +12,7 @@ XHelper::XHelper() {
         "_NET_WM_NAME", False);
     mAtomGetUTF8String = XInternAtom(mDisplay,
         "UTF8_STRING", False);
- }
+}
 
 /**
  * This method traps and handles X11 errors.

@@ -3,7 +3,7 @@
 
 
 /**
- * Simple class to represent an X,Y pair.
+ * Simple class to represent a SizeButton.
  */
 class SizeButton : public Button {
     public:
@@ -13,5 +13,5 @@ class SizeButton : public Button {
         }
 
         void draw(const Window window) override;
-        void click(const Window window) const override;
+        void click(const Window window) override;
 };

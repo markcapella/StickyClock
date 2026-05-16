@@ -160,6 +160,40 @@ SettingsHelper::setCanvasHeight(const double height) {
 }
 
 /**
+ * Getters & setters for user configurable settings.
+ */
+bool
+SettingsHelper::getShowWeedClock() {
+    const bool DEFAULT = false;
+    getQSettings()->beginGroup("Configurable");
+    const QVariant V = getQSettings()->
+        value("showWeedClock", DEFAULT);
+    getQSettings()->endGroup();
+
+    bool result = DEFAULT;
+    if (V.canConvert<bool>()) {
+        result = V.value<bool>();
+    }
+    return result;
+}
+
+void
+SettingsHelper::setShowWeedClock(const bool value) {
+    getQSettings()->beginGroup("Configurable");
+    getQSettings()->setValue("showWeedClock", value);
+    getQSettings()->endGroup();
+}
+
+/**
+ * Helper to return a QSettings filename from appName.
+ */
+QString
+SettingsHelper::getQSettingsFile() {
+    return getenv("HOME") + QStringLiteral("/.local/") +
+        mSettingsApp + ".ini";
+}
+
+/**
  * Helper to return a new QSettings object for pref
  * access based on our appName.
  */
@@ -173,10 +207,18 @@ SettingsHelper::getQSettings() {
 }
 
 /**
- * Helper to return a QSettings filename from appName.
+ * Helper to explicitly write all default values
+ * to our .Ini file.
  */
-QString
-SettingsHelper::getQSettingsFile() {
-    return getenv("HOME") + QStringLiteral("/.local/") +
-        mSettingsApp + ".ini";
+void
+SettingsHelper::setInitialSettingsVariants() {
+    const int INITIAL_SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
+
+    for (int i = 0; i < INITIAL_SETTINGS_SIZE; i++) {
+        const SettingsProperty property = SETTINGS_PROPERTIES[i];
+        getQSettings()->beginGroup(property.group);
+        getQSettings()->setValue(property.name, property.initialValue);
+        getQSettings()->endGroup();
+    }
+    mSettingsHelper->getQSettings()->sync();
 }

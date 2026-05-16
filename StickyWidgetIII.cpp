@@ -24,15 +24,20 @@
  */
 
 // App forward decls.
+void setAppSignalCatcher();
+void appSignalCatcher(int signal);
+
 void initAppHelpers();
 bool initWindowCompositor();
+bool initAppPngImages();
 
-bool initAppPngImages(); // No uninit.
-
+void unintPngImages();
 void uninitWindowCompositor();
 void uninitAppHelpers();
 
 int getAppInstanceCount();
+void appSignalCatcher(int signal);
+void signalIntToSTDOUT(int n);
 
 
 // App globals.
@@ -54,21 +59,23 @@ XImage* mPinInXImage = nullptr;
 QImage mPinOutQImage { };
 XImage* mPinOutXImage = nullptr;
 
+ConfigDialog* mConfigDialog = nullptr;
 
 /**
  * Main.
  */
 int main(int argc, char** argv) {
+    // Some Qt6 setup.
+    QApplication app(argc, argv);
+    // setAppSignalCatcher();
+
+    app.setWindowIcon(QIcon(ICON_INSTALL_LOCATION +
+        QString(APP_NAME) + ".png"));
     if (getAppInstanceCount() > 1) {
         cout << endl << XCOLOR_RED << "StickyClock() is already running "
             "& only allows for one to run @ a time." << endl;
         return true;
     }
-
-    // Some Qt6 setup.
-    QCoreApplication::setOrganizationName(ORG_NAME);
-    QCoreApplication::setApplicationName(APP_NAME);
-    QCoreApplication app(argc, argv);
 
     // Init Display global.
     mDisplayHelper = new DisplayHelper();
@@ -97,7 +104,9 @@ int main(int argc, char** argv) {
     }
 
     // Uninit App helpers & Font global.
+    unintPngImages();
     uninitAppHelpers();
+
     XftFontClose(mDisplay, mFont);
     mFont = nullptr;
     FcFini();
@@ -106,6 +115,19 @@ int main(int argc, char** argv) {
     delete mDisplayHelper;
     XCloseDisplay(mDisplay);
     return false;
+}
+
+/**
+ * Initialize App signal catchers.
+ */
+void setAppSignalCatcher() {
+    for (int eachSignal = 0; eachSignal <= SIGSYS/*31*/; eachSignal++) {
+        // Can't catch these two.
+        if (eachSignal == SIGKILL || eachSignal == SIGSTOP) {
+            continue;
+        }
+        signal(eachSignal, appSignalCatcher);
+    }
 }
 
 /**
@@ -118,36 +140,6 @@ void initAppHelpers() {
     // Set X Error handler (quiets non-errors).
     mXHelper = new XHelper();
     XSetErrorHandler(mXHelper->handleX11ErrorEvent);
-}
-
-/**
- * Initialize window compositor.
- */
-bool initWindowCompositor() {
-    // Ensure we have a compositor running.
-    if (!mXHelper->isACompositorRunning()) {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
-            "Compositor isn't running, widgets lose "
-            "transparency - FATAL." << XCOLOR_NORMAL << endl;
-        return false;
-    }
-
-    // Ensure the compositor has true, per-pixel, alpha
-    // blended transparency.
-    const int VISUAL_COLOR_DEPTH = 32;
-    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
-        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
-        mColormap = XCreateColormap(mDisplay,
-            RootWindow(mDisplay, DefaultScreen(mDisplay)),
-            mVisualInfoStruct.visual, AllocNone);
-    } else {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
-            "Compositor is running, but is incapable of "
-            "transparency - FATAL." << XCOLOR_NORMAL << endl;
-        return false;
-    }
-
-    return true;
 }
 
 /**
@@ -199,8 +191,45 @@ bool initAppPngImages() {
 /**
  * Initialize window compositor.
  */
+bool initWindowCompositor() {
+    // Ensure we have a compositor running.
+    if (!mXHelper->isACompositorRunning()) {
+        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
+            "Compositor isn't running, widgets lose "
+            "transparency - FATAL." << XCOLOR_NORMAL << endl;
+        return false;
+    }
+
+    // Ensure the compositor has true, per-pixel, alpha
+    // blended transparency.
+    const int VISUAL_COLOR_DEPTH = 32;
+    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
+        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
+        mColormap = XCreateColormap(mDisplay,
+            RootWindow(mDisplay, DefaultScreen(mDisplay)),
+            mVisualInfoStruct.visual, AllocNone);
+    } else {
+        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
+            "Compositor is running, but is incapable of "
+            "transparency - FATAL." << XCOLOR_NORMAL << endl;
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Initialize window compositor.
+ */
 void uninitWindowCompositor() {
     XFreeColormap(mDisplay, mColormap);
+}
+
+/**
+ * Uninitialize all Png Button Images.
+ */
+void unintPngImages() {
+    // Intentional blank.
 }
 
 /**
@@ -237,4 +266,58 @@ int getAppInstanceCount() {
     // Close file & return result.
     pclose(procsFile);
     return instanceCount;
+}
+
+/**
+ * This method runs in async-signal-safe mode & logs
+ * signal event shutdowns called from the OS.
+ */
+void appSignalCatcher(int signal) {
+    // Print message Start, stack-allocated string buffer.
+    char part1[] = "\nStickyWidgetIII: Signal Handler Shutdown by : [ ";
+    { [[maybe_unused]] ssize_t writeResult =
+        write(STDERR_FILENO, part1, sizeof(part1)); }
+
+    // Print message signalNumber.
+    signalIntToSTDOUT(signal);
+
+    // Print message End, stack-allocated string buffer.
+    char part2[] = " ].\n";
+    { [[maybe_unused]] ssize_t writeResult =
+        write(STDERR_FILENO, part2, sizeof(part2)); }
+}
+
+/**
+ * Async-signal-safe conversion of integer to string.
+ */
+void signalIntToSTDOUT(int n) {
+    // Early out if easy answer.
+    if (n == 0) {
+        { [[maybe_unused]] ssize_t writeResult =
+            write(STDERR_FILENO, "0", sizeof("0")); }
+        return;
+    }
+
+    // Note & remove sign from numbers.
+    bool isNegative = false;
+    if (n < 0) {
+        isNegative = true;
+        n = -n;
+    }
+
+    // Init enough for -2147483648, & copy numbers.
+    char temp[12]; int i = 0;
+    while (n > 0) {
+        char c[1];
+        c[0] = (n % 10) + '0';
+        { [[maybe_unused]] ssize_t writeResult =
+            write(STDERR_FILENO, c, sizeof(c)); }
+        n /= 10;
+    }
+
+    // Add minus & endl;
+    if (isNegative) {
+        { [[maybe_unused]] ssize_t writeResult =
+            write(STDERR_FILENO, "-", sizeof("-")); }
+    }
 }

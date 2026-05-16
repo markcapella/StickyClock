@@ -2,8 +2,12 @@
 #include "Global.h"
 
 /**
- * Draws the MoveButton.
+ * Simple class to represent a MoveButton.
  *
+ */
+
+/**
+ * Draws the MoveButton.
  */
 void
 MoveButton::draw(const Window window) {
@@ -37,6 +41,10 @@ MoveButton::draw(const Window window) {
     XRenderFreePicture(mDisplay, CANVAS);
 }
 
+/**
+ * Clicks the MoveButton.
+ */
 void
-MoveButton::click(const Window window) const {
+MoveButton::click(const Window window) {
+    // Nothing.
 }

@@ -3,7 +3,7 @@
 
 
 /**
- * Simple class to represent an X,Y pair.
+ * Simple class to represent an Button.
  */
 class Button {
     public:
@@ -70,7 +70,7 @@ class Button {
         }
 
         virtual void draw(const Window window) = 0;
-        virtual void click(const Window window) const = 0;
+        virtual void click(const Window window) = 0;
 
 
     private:

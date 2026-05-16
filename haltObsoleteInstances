@@ -23,13 +23,28 @@ if [ "$APP_NAME" == "" ]; then
     exit 1
 fi
 
-if [ "$(pgrep -x ""$APP_NAME"")" = "" ]; then
-    echo "-- No Active app instances are found."
-    exit 0
+# Kill any zombie StickyClockSettings ConfigDialog.
+# Like: 0x03400007  0 lubuntu StickyClockSettings
+SETTINGS_RESULT=$(wmctrl -l | egrep "$APP_NAME""Settings""$")
+SETTINGS_PROC=${SETTINGS_RESULT:0:10}
+SETTINGS_NAME=${SETTINGS_RESULT:22}
+if [ "$SETTINGS_PROC" != "" ]; then
+    echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
+        "$ALLTEXT_NORMAL""Active ConfigDialog is being shutdown."
+    xkill -id ""$SETTINGS_PROC"" 1>/dev/null 2>/dev/null
+else
+    echo "-- No Active ConfigDialog to shutdown."
 fi
 
-echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
-    "$ALLTEXT_NORMAL""Active app instances are being shutdown."
-
-pkill -x "$APP_NAME"
-sleep 1
+# Kill any zombie StickyClock.
+# Like: 0x03400007  0 lubuntu StickyClock
+SETTINGS_RESULT=$(wmctrl -l | egrep "$APP_NAME""$")
+SETTINGS_PROC=${SETTINGS_RESULT:0:10}
+SETTINGS_NAME=${SETTINGS_RESULT:22}
+if [ "$SETTINGS_PROC" != "" ]; then
+    echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
+        "$ALLTEXT_NORMAL""Active StickyClock is being shutdown."
+    xkill -id ""$SETTINGS_PROC"" 1>/dev/null 2>/dev/null
+else
+    echo "-- No Active StickyClock to shutdown."
+fi

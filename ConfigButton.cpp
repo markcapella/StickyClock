@@ -2,15 +2,15 @@
 #include "Global.h"
 
 /**
- * Simple class to represent a SizeButton.
+ * Simple class to represent a ConfigButton.
  *
  */
 
 /**
- * Draws the SizeButton.
+ * Draws the ConfigButton.
  */
 void
-SizeButton::draw(const Window window) {
+ConfigButton::draw(const Window window) {
     const XRenderPictureAttributes PIC_ATTR = {
         .poly_edge = PolyEdgeSmooth };
     const Picture CANVAS = XRenderCreatePicture(mDisplay,
@@ -19,7 +19,7 @@ SizeButton::draw(const Window window) {
 
     // All button white with indented blue outline.
     XRenderFillRectangle(mDisplay, PictOpOver, CANVAS,
-        &WHITE_RCOLOR, getX(), getY(), getWidth(), getHeight());
+        &WHITE_RCOLOR, getX(), getY(), getWidth(), getWidth());
     XRenderFillRectangle(mDisplay, PictOpOver, CANVAS,
         &BLUE_RCOLOR, getX() + 1, getY() + 1,
         getWidth() - 2, getHeight() - 2);
@@ -31,23 +31,33 @@ SizeButton::draw(const Window window) {
         &BUTTON_COLOR, getX() + 3 , getY() + 3,
         getWidth() - 6, getHeight() - 6);
 
-    // Draw 'down-right-arrow' for resize glyph over center.
-    for (int i = 5; i <= getWidth() - 5; i++) {
-        XRenderFillRectangle(mDisplay, PictOpOver, CANVAS,
-            &BLUE_RCOLOR,
-            getX() + i,
-            getY() + getHeight() - i + 1,
-            1, i - 5);
-    }
+    // Draw '■' for Config glyph over center.
+    XRenderFillRectangle(mDisplay, PictOpOver, CANVAS,
+        &BLUE_RCOLOR, getX() + 10, getY() + 10, 4, 4);
 
     // Cleanup.
     XRenderFreePicture(mDisplay, CANVAS);
 }
 
 /**
- * Clicks the SizeButton.
+ * Clicks the ConfigButton.
  */
 void
-SizeButton::click(const Window window) {
-    // Nothing.
+ConfigButton::click(const Window window) {
+    // Create Dialog jit.
+    if (!mConfigDialog) {
+        mConfigDialog = new ConfigDialog(
+            mSettingsHelper->getQSettingsFile(), NULL);
+    }
+
+    // Open or close the dialog.
+    if (!mConfigDialog->isVisible()) {
+        mConfigDialog->loadSettings();
+        mConfigDialog->show();
+        mConfigDialog->raise();
+        mConfigDialog->activateWindow();
+    } else {
+        mConfigDialog->close();
+        //mConfigDialog = nullptr;
+    }
 }

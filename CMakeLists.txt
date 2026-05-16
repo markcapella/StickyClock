@@ -14,11 +14,13 @@ set(APP_NAME "StickyClock")
 set(ORG_NAME "skyrmion.inc")
 set(APP_AUTHOR "Mark James Capella")
 
-set(APP_VERSION "26.05.12")
-set(APP_VERSION_SUFFIX "r4")
+set(APP_VERSION "26.05.16")
+set(APP_VERSION_SUFFIX "r1")
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED true)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
 cmake_minimum_required(VERSION 3.10)
 project(${APP_NAME} VERSION ${APP_VERSION} LANGUAGES CXX)
@@ -79,11 +81,15 @@ set(WIDGET_PROJECT ${APP_NAME})
 
 # All input sources.
 set(WIDGET_SOURCES
-    PinButton.cpp QuitButton.cpp
+    StickyWidgetIII.cpp
+    ConfigDialog.cpp
+    ConfigDialog.h
+    PinButton.cpp QuitButton.cpp ConfigButton.cpp
     MoveButton.cpp SizeButton.cpp
     SettingsHelper.cpp DisplayHelper.cpp
-    XHelper.cpp
-    StickyClock.cpp StickyWindow.cpp)
+    XHelper.cpp RecentsHelper.cpp
+    StickyWindow.cpp
+)
 
 # Final executable.
 add_executable(${WIDGET_PROJECT} ${WIDGET_SOURCES})

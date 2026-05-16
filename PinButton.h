@@ -3,7 +3,7 @@
 
 
 /**
- * Simple class to represent an X,Y pair.
+ * Simple class to represent a PinButton.
  */
 class PinButton : public Button {
     public:
@@ -11,5 +11,5 @@ class PinButton : public Button {
         ~PinButton() override;
 
         void draw(const Window window) override;
-        void click(const Window window) const override;
+        void click(const Window window) override;
 };

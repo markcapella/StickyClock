@@ -3,7 +3,7 @@
 
 
 /**
- * Simple class to represent an X,Y pair.
+ * Simple class to represent a QuitButton.
  */
 class QuitButton : public Button {
     public:
@@ -11,5 +11,5 @@ class QuitButton : public Button {
             Button(mXPos, mYPos) { }
 
         void draw(const Window window) override;
-        void click(const Window window) const override;
+        void click(const Window window) override;
 };

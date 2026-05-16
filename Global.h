@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <format>
 #include <iostream>
+#include <signal.h>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -18,13 +19,14 @@ using namespace std;
 typedef chrono::steady_clock Clock;
 
 // Qt libraries.
-#include <QCoreApplication>
+#include <QApplication>
 #include <QSettings>
 #include <QImage>
 #include <QPoint>
 #include <QRect>
 #include <QSize>
 #include <QString>
+#include <QLineEdit>
 
 // x11 libraries.
 #include <X11/Xlib.h>
@@ -51,6 +53,8 @@ typedef chrono::steady_clock Clock;
 #include "Button.h"
 #include "PinButton.h"
 #include "QuitButton.h"
+#include "ConfigDialog.h"
+#include "ConfigButton.h"
 #include "MoveButton.h"
 #include "SizeButton.h"
 
@@ -58,7 +62,7 @@ typedef chrono::steady_clock Clock;
 #include "DisplayHelper.h"
 #include "WinInfo.h"
 #include "XHelper.h"
+#include "RecentsHelper.h"
 
 #include "StickyWindow.h"
-
-#include "StickyClock.h"
+#include "StickyWidgetIII.h"

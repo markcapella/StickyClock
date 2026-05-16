@@ -10,7 +10,8 @@ StickyWindow::StickyWindow() {
     mDeleteMessage = XInternAtom(mDisplay, "WM_DELETE_WINDOW", False);
 
     setX11Window(createX11Window());
-    setWindowButtons();
+
+    createWindowButtons();
 }
 
 StickyWindow::~StickyWindow() {
@@ -61,7 +62,7 @@ StickyWindow::draw() {
         return;
     }
 
-    // Draw entire draw canvas transparent.
+    // Draw entire WINDOW transparent.
     Picture renderPicture = XRenderCreatePicture(
         mDisplay, mX11Window, RENDER_FORMAT, 0, nullptr);
     XRenderFillRectangle(mDisplay, PictOpSrc,
@@ -69,32 +70,34 @@ StickyWindow::draw() {
         mSettingsHelper->getWindowWidth(),
         mSettingsHelper->getWindowHeight());
 
-    Pixmap renderPixmap = XCreatePixmap(mDisplay, mX11Window, 1, 1, 32);
-    const Picture BACKGROUND_R_PICTURE = XRenderCreatePicture(
-        mDisplay, renderPixmap, RENDER_FORMAT, 0, nullptr);
-    XRenderFillRectangle(mDisplay, PictOpSrc,
-        BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
-
-    // Draw background in window.
+    // Draw canvas border gray, indented margin blue,
+    // interior white or tourquiose for weedClocktime.
     const double X_POS = mSettingsHelper->getCanvasXPos();
     const double Y_POS = mSettingsHelper->getCanvasYPos();
     const double WIDTH = mSettingsHelper->getCanvasWidth();
     const double HEIGHT = mSettingsHelper->getCanvasHeight();
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
-        &WHITE_RCOLOR, X_POS, Y_POS, WIDTH, HEIGHT);
+        &GRAY_RCOLOR, X_POS, Y_POS, WIDTH, HEIGHT);
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
         &BLUE_RCOLOR, X_POS + 2, Y_POS + 2, WIDTH - 4, HEIGHT - 4);
-    const bool IS_IT_WEEDCLOCK = getCurrentMinute() == "55" ||
-        getCurrentMinute() == "20";
+
+    Pixmap renderPixmap = XCreatePixmap(mDisplay, mX11Window, 1, 1, 32);
+    const Picture BACKGROUND_R_PICTURE = XRenderCreatePicture(
+        mDisplay, renderPixmap, RENDER_FORMAT, 0, nullptr);
+    XRenderFillRectangle(mDisplay, PictOpSrc,
+        BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
+    XRenderColor backgroundColor = isItWeedTime() ?
+        TURQUOISE_RCOLOR : WHITE_RCOLOR;
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
-        (IS_IT_WEEDCLOCK ? &TURQUOISE_RCOLOR : &WHITE_RCOLOR),
-        X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
+        &backgroundColor, X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
     XRenderFreePicture(mDisplay, BACKGROUND_R_PICTURE);
 
     // Draw Widget Text.
     const QString TEXT = QString::fromStdString(getCurrentTime());
-    const int TEXT_WIDTH = getStringPixelWidth(TEXT);
-    const int TEXT_HEIGHT = getStringPixelHeight(TEXT);
+    //const QString TEXT = QString::number(getCursorPosition().x()) +
+    //    QString(" - ") + QString::number(getCursorPosition().y());
+    const int TEXT_WIDTH = mXHelper->getStringPixelWidth(TEXT);
+    const int TEXT_HEIGHT = mXHelper->getStringPixelHeight(TEXT);
     const int TEXT_X = X_POS + (WIDTH - TEXT_WIDTH) / 2;
     const int TEXT_Y = Y_POS + (HEIGHT - TEXT_HEIGHT) / 2 +
         TEXT_HEIGHT;
@@ -156,36 +159,6 @@ StickyWindow::resize(const int xPos, const int yPos,
 }
 
 /**
- * Setter for settings button visibility state.
- */
-void
-StickyWindow::setSettingsButtonVisibility(
-    const bool visibility) {
-    if (mSettingsButton->isVisible() != visibility) {
-        mSettingsButton->setVisible(visibility);
-        draw();
-    }
-}
-
-/**
- * Switch between window border state where titlebar &
- * border displayed or not.
- */
-void
-StickyWindow::onSettingsButtonClicked() {
-    const bool CONFIG_MODE = !mSettingsHelper->getConfigMode();
-    mSettingsHelper->setConfigMode(CONFIG_MODE);
-
-    const int BUTTONS_COUNT = mButtons.size();
-    for (int i = 1; i < BUTTONS_COUNT; i++) {
-        mButtons[i]->setVisible(CONFIG_MODE);
-    }
-
-    setWindowConfigState();
-    draw();
-}
-
-/**
  * Getters & setters for cursor position.
  */
 QPoint
@@ -220,6 +193,9 @@ StickyWindow::run() {
         if (handleX11EventQueue()) {
             break;
         }
+
+        // Support ConfigDialog loop.
+        QCoreApplication::processEvents();
     }
 }
 
@@ -315,6 +291,9 @@ StickyWindow::createX11Window() {
  */
 void
 StickyWindow::defineWindowOnFirstRun() {
+    // Commit all QSettings defaults for ConfigDialog support.
+    mSettingsHelper->setInitialSettingsVariants();
+
     const int SCREEN_WIDTH = WidthOfScreen(
         DefaultScreenOfDisplay(mDisplay));
     const int SCREEN_HEIGHT = HeightOfScreen(
@@ -373,7 +352,7 @@ StickyWindow::setWindowConfigState() {
  * This method defines the Control buttons.
  */
 void
-StickyWindow::setWindowButtons() {
+StickyWindow::createWindowButtons() {
     const int BUTTONS_SIZE = mButtons.size();
     for (int i = 0; i < BUTTONS_SIZE; i++) {
         delete mButtons[i];
@@ -386,7 +365,8 @@ StickyWindow::setWindowButtons() {
 
     mQuitButton = new QuitButton(mSettingsHelper->
         getWindowWidth() - Button::BUTTON_WIDTH, 0);
-
+    mConfigButton = new ConfigButton(0, mSettingsHelper->
+        getWindowHeight() - Button::BUTTON_HEIGHT);
     mMoveButton = new MoveButton(0, 0);
 
     mSizeButton = new SizeButton(mSettingsHelper->
@@ -398,6 +378,7 @@ StickyWindow::setWindowButtons() {
 
     // All others.
     mButtons.push_back(mQuitButton);
+    mButtons.push_back(mConfigButton);
     mButtons.push_back(mMoveButton);
     mButtons.push_back(mSizeButton);
 }
@@ -415,6 +396,10 @@ StickyWindow::updateWindowButtons() {
         getWindowWidth() - Button::BUTTON_WIDTH);
     mQuitButton->setY(0);
 
+    mConfigButton->setX(0);
+    mConfigButton->setY(mSettingsHelper->getWindowHeight() -
+        Button::BUTTON_HEIGHT);
+
     mMoveButton->setX(0);
     mMoveButton->setY(0);
 
@@ -422,6 +407,142 @@ StickyWindow::updateWindowButtons() {
         getWindowWidth() - Button::BUTTON_WIDTH);
     mSizeButton->setY(mSettingsHelper->
         getWindowHeight() - Button::BUTTON_HEIGHT);
+}
+
+/**
+ * Check to see which UI Button pressed.
+ */
+Button*
+StickyWindow::whichButtonIsPressed() {
+    const int BUTTONS_COUNT = mButtons.size();
+
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        if (mButtons[i]->isPressed()) {
+            return mButtons[i];
+        }
+    }
+    return nullptr;
+}
+
+/**
+ * Unpress all UI Buttons.
+ */
+void
+StickyWindow::unPressAllButtons() {
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        mButtons[i]->setPressed(false);
+    }
+}
+
+/**
+ * Check to see which UI Button hovered.
+ */
+Button*
+StickyWindow::whichButtonIsHovered(const QPoint pos) {
+    const int BUTTONS_COUNT = mButtons.size();
+
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        if (mButtons[i]->getRect().contains(pos)) {
+            return mButtons[i];
+        }
+    }
+    return nullptr;
+}
+
+/**
+ * Setter for settings button visibility state.
+ */
+void
+StickyWindow::setSettingsButtonVisibility(
+    const bool visibility) {
+    if (mSettingsButton->isVisible() != visibility) {
+        mSettingsButton->setVisible(visibility);
+        draw();
+    }
+}
+
+/**
+ * While not in configMode, hovering a (hidden)
+ * corner button will make it visible & actionable.
+ */
+void
+StickyWindow::setHoveredButtonVisibility(const QPoint pos) {
+    if (mSettingsHelper->getConfigMode()) {
+        return;
+    }
+
+    // Corner buttons start @ 1.
+    const Button* HOVERED_BUTTON = whichButtonIsHovered(pos);
+    const int BUTTONS_COUNT = mButtons.size();
+
+    bool redrawRequired = false;
+    for (int i = 1; i < BUTTONS_COUNT; i++) {
+        // Set visible hovered.
+        if (mButtons[i]->getRect().contains(pos)) {
+            if (!mButtons[i]->isVisible()) {
+                mButtons[i]->setVisible(true);
+                redrawRequired = true;
+            }
+        } else {
+            // Clear all others.
+            if (mButtons[i]->isVisible()) {
+                mButtons[i]->setVisible(false);
+                redrawRequired = true;
+            }
+        }
+    }
+
+    if (redrawRequired) {
+        draw();
+    }
+}
+
+/**
+ * Switch between window border state where titlebar &
+ * border displayed or not.
+ */
+void
+StickyWindow::onSettingsButtonClicked() {
+    const bool CONFIG_MODE = !mSettingsHelper->getConfigMode();
+    mSettingsHelper->setConfigMode(CONFIG_MODE);
+
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 1; i < BUTTONS_COUNT; i++) {
+        mButtons[i]->setVisible(CONFIG_MODE);
+    }
+
+    setWindowConfigState();
+    draw();
+}
+
+/**
+ * Draw all visible buttons & sest underlying input shapes.
+ */
+void
+StickyWindow::drawAllButtons() {
+    // Erase PinButton during resize-draw.
+    const int BUTTON_START = !mWindowResized ? 0 : 1;
+    const int BUTTONS_END = mButtons.size();
+
+    vector<XRectangle> rects;
+    for (int i = BUTTON_START; i < BUTTONS_END; i++) {
+        if (mButtons[i]->isVisible()) {
+            mButtons[i]->draw(mX11Window);
+
+            XRectangle buttonInputRegion {
+                .x = (short) mButtons[i]->getX(),
+                .y = (short) mButtons[i]->getY(),
+                .width = (unsigned short) mButtons[i]->getWidth(),
+                .height = (unsigned short) mButtons[i]->getHeight()
+            };
+            rects.push_back(buttonInputRegion);
+        }
+    }
+
+    XShapeCombineRectangles(mDisplay, mX11Window, ShapeInput,
+        0, 0, rects.data(), rects.size(), ShapeSet, Unsorted);
+    XFlush(mDisplay);
 }
 
 /**
@@ -445,76 +566,79 @@ StickyWindow::defineWindowCanvasSize() {
 }
 
 /**
- * Unpress all UI Buttons.
+ * This method updates the windowRect once a second.
  */
 void
-StickyWindow::unPressAllButtons() {
-    const int BUTTONS_COUNT = mButtons.size();
-    for (int i = 0; i < BUTTONS_COUNT; i++) {
-        mButtons[i]->setPressed(false);
+StickyWindow::drawCanvas() {
+    const string CURRENT_SECOND = getCurrentSecond();
+
+    if (mPreviousClientUpdateSecond == "" ||
+        mPreviousClientUpdateSecond != CURRENT_SECOND) {
+        mPreviousClientUpdateSecond = CURRENT_SECOND;
+        draw();
     }
 }
 
 /**
- * Check to see which UI Button pressed.
+ * Getter for current time.
  */
-Button*
-StickyWindow::whichButtonIsPressed() {
-    const int BUTTONS_COUNT = mButtons.size();
+string
+StickyWindow::getCurrentTime() {
+    const time_t time = std::time(0);
+    const tm* now = localtime(&time);
 
-    for (int i = 0; i < BUTTONS_COUNT; i++) {
-        if (mButtons[i]->isPressed()) {
-            return mButtons[i];
-        }
-    }
-    return nullptr;
+    return mXHelper->addLeadZeroToNN(getCurrentHour()) + ":" +
+        mXHelper->addLeadZeroToNN(getCurrentMinute());
 }
 
 /**
- * Check to see which UI Button hovered.
+ * Getter for current hour.
  */
-Button*
-StickyWindow::whichButtonIsHovered(const QPoint pos) {
-    const int BUTTONS_COUNT = mButtons.size();
+string
+StickyWindow::getCurrentHour() {
+    const time_t time = std::time(0);
+    const tm* now = localtime(&time);
 
-    for (int i = 0; i < BUTTONS_COUNT; i++) {
-        if (mButtons[i]->getRect().contains(pos)) {
-            return mButtons[i];
-        }
-    }
-    return nullptr;
+    const string HOUR = to_string(now->tm_hour);
+    return mXHelper->addLeadZeroToNN(HOUR);
 }
 
 /**
- * Draw all visible buttons & sest underlying input shapes.
+ * Getter for current minute.
  */
-void
-StickyWindow::drawAllButtons() {
-    // Erase PinButton during resize-draw.
-    const int BUTTON_START = !mWindowResized ? 0 : 1;
+string
+StickyWindow::getCurrentMinute() {
+    const time_t time = std::time(0);
+    const tm* now = localtime(&time);
 
-    // All buttons except Settings Button in configMode during draw.
-    const int BUTTONS_END = !mSettingsHelper->getConfigMode() ?
-        1 : mButtons.size();
+    const string MINUTE = to_string(now->tm_min);
+    return mXHelper->addLeadZeroToNN(MINUTE);
+}
 
-    vector<XRectangle> rects;
-    for (int i = BUTTON_START; i < BUTTONS_END; i++) {
-        if (mButtons[i]->isVisible()) {
-            mButtons[i]->draw(mX11Window);
+/**
+ * Getter for current second.
+ */
+string
+StickyWindow::getCurrentSecond() {
+    const time_t time = std::time(0);
+    const tm* now = localtime(&time);
 
-            XRectangle buttonInputRegion {
-                .x = (short) mButtons[i]->getX(),
-                .y = (short) mButtons[i]->getY(),
-                .width = (unsigned short) mButtons[i]->getWidth(),
-                .height = (unsigned short) mButtons[i]->getHeight()
-            };
-            rects.push_back(buttonInputRegion);
-        }
-    }
+    const string SECOND = to_string(now->tm_sec);
+    return mXHelper->addLeadZeroToNN(SECOND);
+}
 
-    XShapeCombineRectangles(mDisplay, mX11Window, ShapeInput,
-        0, 0, rects.data(), rects.size(), ShapeSet, Unsorted);
-    XFlush(mDisplay);
+/**
+ * Determine if it's WeedClock time.
+ */
+bool
+StickyWindow::isItWeedTime() {
+    return mSettingsHelper->getShowWeedClock() && (
+        getCurrentMinute() == "55" || getCurrentMinute() == "08" ||
+        getCurrentMinute() == "38" || getCurrentMinute() == "39" ||
+        getCurrentMinute() == "40" || getCurrentMinute() == "41" ||
+        getCurrentMinute() == "42" || getCurrentMinute() == "43" ||
+        getCurrentMinute() == "44" || getCurrentMinute() == "45" ||
+        getCurrentMinute() == "46" || getCurrentMinute() == "20");
 }
 
 /**
@@ -582,6 +706,7 @@ StickyWindow::cursorWatcherThread() {
         return;
     }
 
+    // Find the cursor location.
     Window root, child;
     int rootX, rootY, winX, winY;
     unsigned int mask;
@@ -595,11 +720,13 @@ StickyWindow::cursorWatcherThread() {
         return;
     }
 
+    // Useful later.
     setCursorPosition(QPoint(rootX, rootY));
 
+    // Window is Entire window, or Canvas when pinned.
     // Set widget settings button visibility state.
-    const bool IS_WINDOW_HOVERED =
-        mXHelper->isWindowHovered(mX11Window, QPoint(rootX, rootY),
+    const bool IS_WINDOW_HOVERED = mXHelper->
+        isWindowHovered(mX11Window, QPoint(rootX, rootY),
             mSettingsHelper->getConfigMode());
     setSettingsButtonVisibility(IS_WINDOW_HOVERED);
 
@@ -614,12 +741,19 @@ StickyWindow::cursorWatcherThread() {
         }
     }
 
+    // Entire Window is always entire window.
+    // If not in config mode, hovering a non-settings button
+    // will make it visible & active.
+    const bool IS_ENTIRE_WINDOW_HOVERED = mXHelper->
+        isWindowHovered(mX11Window, QPoint(rootX, rootY), true);
+    setHoveredButtonVisibility(QPoint(winX, winY));
+
     // If not mouse clicked.
     if (!(mask & Button1Mask)) {
         // When mouse unclicked, if hovered over widget settings
         // button, trigger it's click() handler.
-        if (IS_WINDOW_HOVERED && whichButtonIsPressed()) {
-            const Button* HOVERED_BUTTON =
+        if (IS_ENTIRE_WINDOW_HOVERED && whichButtonIsPressed()) {
+            Button* HOVERED_BUTTON =
                 whichButtonIsHovered(QPoint(winX, winY));
             if (HOVERED_BUTTON) {
                 HOVERED_BUTTON->click(mX11Window);
@@ -632,7 +766,7 @@ StickyWindow::cursorWatcherThread() {
         if (mWindowResized) {
             defineWindowCanvasPosition();
             defineWindowCanvasSize();
-            setWindowButtons();
+            createWindowButtons();
             setSettingsButtonVisibility(true);
             draw();
             mWindowResized = false;
@@ -729,7 +863,7 @@ StickyWindow::cursorWatcherThread() {
         return;
     }
 
-    if (IS_WINDOW_HOVERED && !whichButtonIsPressed()) {
+    if (IS_ENTIRE_WINDOW_HOVERED && !whichButtonIsPressed()) {
         Button* HOVERED_BUTTON =
             whichButtonIsHovered(QPoint(winX, winY));
         if (HOVERED_BUTTON) {
@@ -753,105 +887,6 @@ StickyWindow::cursorWatcherThread() {
     }
 
     mClickStartValueSet = false;
-}
-
-/**
- * This method updates the windowRect once a second.
- */
-void
-StickyWindow::drawCanvas() {
-    const string CURRENT_SECOND = getCurrentSecond();
-
-    if (mPreviousClientUpdateSecond == "" ||
-        mPreviousClientUpdateSecond != CURRENT_SECOND) {
-        mPreviousClientUpdateSecond = CURRENT_SECOND;
-        draw();
-    }
-}
-
-/**
- * Getter for current time.
- */
-string
-StickyWindow::getCurrentTime() {
-    const time_t time = std::time(0);
-    const tm* now = localtime(&time);
-
-    return addLeadZeroToNN(getCurrentHour()) + ":" +
-        addLeadZeroToNN(getCurrentMinute());
-}
-
-/**
- * Getter for current hour.
- */
-string
-StickyWindow::getCurrentHour() {
-    const time_t time = std::time(0);
-    const tm* now = localtime(&time);
-
-    const string HOUR = to_string(now->tm_hour);
-    return addLeadZeroToNN(HOUR);
-}
-
-/**
- * Getter for current minute.
- */
-string
-StickyWindow::getCurrentMinute() {
-    const time_t time = std::time(0);
-    const tm* now = localtime(&time);
-
-    const string MINUTE = to_string(now->tm_min);
-    return addLeadZeroToNN(MINUTE);
-}
-
-/**
- * Getter for current second.
- */
-string
-StickyWindow::getCurrentSecond() {
-    const time_t time = std::time(0);
-    const tm* now = localtime(&time);
-
-    const string SECOND = to_string(now->tm_sec);
-    return addLeadZeroToNN(SECOND);
-}
-
-/**
-* Helper to display leading 0's for Hour & minute.
- */
-string
-StickyWindow::addLeadZeroToNN(const string NN) {
-    return NN.length() == 0 ? "00" :
-        NN.length() == 1 ? "0" + NN : NN;
-}
-
-/**
- * This method returns pixel width of a text string.
- */
-int
-StickyWindow::getStringPixelWidth(const QString textString) {
-    const string T = textString.toStdString();
-
-    XGlyphInfo textExtents;
-    XftTextExtents8(mDisplay, mFont, (const FcChar8*)
-        T.c_str(), T.length(), &textExtents);
-
-    return textExtents.width;
-}
-
-/**
- * This method returns pixel height of a text string.
- */
-int
-StickyWindow::getStringPixelHeight(const QString textString) {
-    const string T = textString.toStdString();
-
-    XGlyphInfo textExtents;
-    XftTextExtents8(mDisplay, mFont, (const FcChar8*)
-        T.c_str(), T.length(), &textExtents);
-
-    return textExtents.height;
 }
 
 /**

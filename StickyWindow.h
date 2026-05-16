@@ -13,10 +13,6 @@ class StickyWindow {
             ExposureMask | PropertyChangeMask |
             PointerMotionMask | ButtonPressMask;
 
-        static inline constexpr XftColor BLACK_FCOLOR = {
-            .pixel = 0x0, .color = { .red = 0xff, .green = 0xff,
-                .blue = 0xff, .alpha = 0xffff } };
-
         static inline constexpr chrono::milliseconds
             CURSOR_WATCHER_DELAY_MS{5};
         static inline constexpr chrono::milliseconds
@@ -54,17 +50,6 @@ class StickyWindow {
             const int width, const int height);
 
         /**
-         * Setter for settings button visibility state.
-         */
-        void setSettingsButtonVisibility(const bool visibility);
-
-        /**
-         * Switch between window border state where titlebar &
-         * border displayed or not.
-         */
-        void onSettingsButtonClicked();
-
-        /**
          * Getters & setters for cursor position.
          */
         QPoint getCursorPosition();
@@ -87,6 +72,7 @@ class StickyWindow {
 
         PinButton* mSettingsButton = nullptr;
         QuitButton* mQuitButton = nullptr;
+        ConfigButton* mConfigButton = nullptr;
         MoveButton* mMoveButton = nullptr;
         SizeButton* mSizeButton = nullptr;
         vector<Button*> mButtons;
@@ -140,12 +126,49 @@ class StickyWindow {
         /**
          * This method defines the Control buttons.
          */
-        void setWindowButtons();
+        void createWindowButtons();
 
         /**
          * This method updates the defined Control buttons.
          */
         void updateWindowButtons();
+
+        /**
+         * Check to see if any UI Buttons pressed.
+         */
+        Button* whichButtonIsPressed();
+
+        /**
+         * Unpress all UI Buttons.
+         */
+        void unPressAllButtons();
+
+        /**
+         * Check to see which UI Button hovered.
+         */
+        Button* whichButtonIsHovered(const QPoint pos);
+
+        /**
+         * Setter for settings button visibility state.
+         */
+        void setSettingsButtonVisibility(const bool visibility);
+
+        /**
+         * While not in configMode, hovering a (hidden)
+         * corner button will make it visible & actionable.
+         */
+        void setHoveredButtonVisibility(const QPoint pos);
+
+        /**
+         * Switch between window border state where titlebar &
+         * border displayed or not.
+         */
+        void onSettingsButtonClicked();
+
+        /**
+         * Draw all visible buttons.
+         */
+        void drawAllButtons();
 
         /**
          * Define Canvas position inside Window.
@@ -156,36 +179,6 @@ class StickyWindow {
          * Define Canvas size inside Window.
          */
         void defineWindowCanvasSize();
-
-        /**
-         * Unpress all UI Buttons.
-         */
-        void unPressAllButtons();
-
-        /**
-         * Check to see if any UI Buttons pressed.
-         */
-        Button* whichButtonIsPressed();
-
-        /**
-         * Check to see which UI Button hovered.
-         */
-        Button* whichButtonIsHovered(const QPoint pos);
-
-        /**
-         * Draw all visible buttons.
-         */
-        void drawAllButtons();
-
-        /**
-         * Main X11 Event handler.
-         */
-        bool handleX11EventQueue();
-
-        /**
-         * Timer callback to detect settings button clicks.
-         */
-        void cursorWatcherThread();
 
         /**
          * This method updates the clocks time string for draw().
@@ -213,19 +206,19 @@ class StickyWindow {
         string getCurrentSecond();
 
         /**
-         * Helper to display leading 0's for Hour & minute.
+         * Determine if it's WeedClock time.
          */
-        string addLeadZeroToNN(const string NN);
+        bool isItWeedTime();
 
         /**
-         * This method returns pixel width of a text string.
+         * Main X11 Event handler.
          */
-        int getStringPixelWidth(const QString textString);
+        bool handleX11EventQueue();
 
         /**
-         * This method returns pixel height of a text string.
+         * Timer callback to detect settings button clicks.
          */
-        int getStringPixelHeight(const QString textString);
+        void cursorWatcherThread();
 
         /**
          * This method saves the window workspace when changed.

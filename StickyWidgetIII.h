@@ -65,6 +65,14 @@ static inline constexpr XRenderColor TURQUOISE_RCOLOR =
 static inline constexpr const char*
     TIME_DISPLAY_FONT = "Serif-42:bold";
 
+
+static inline constexpr XftColor BLACK_FCOLOR = {
+    .pixel = 0x0, .color = { .red = 0xff, .green = 0xff,
+        .blue = 0xff, .alpha = 0xffff } };
+static inline constexpr XftColor GREEN_FCOLOR = {
+    .pixel = 0x0, .color = { .red = 0x00, .green = 0xff,
+        .blue = 0x00, .alpha = 0xffff } };
+
 // Pngs.
 static inline const QString PIN_IN_PNG_FILENAME = "pinIn.png";
 static inline const QString PIN_OUT_PNG_FILENAME = "pinOut.png";
@@ -87,3 +95,5 @@ extern XImage* mPinInXImage;
 
 extern QImage mPinOutQImage;
 extern XImage* mPinOutXImage;
+
+extern ConfigDialog* mConfigDialog;

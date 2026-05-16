@@ -2,8 +2,12 @@
 #include "Global.h"
 
 /**
- * Draws the QuitButton.
+ * Simple class to represent a QuitButton.
  *
+ */
+
+/**
+ * Draws the QuitButton.
  */
 void
 QuitButton::draw(const Window window) {
@@ -44,8 +48,11 @@ QuitButton::draw(const Window window) {
     XRenderFreePicture(mDisplay, CANVAS);
 }
 
+/**
+ * Clicks the QuitButton.
+ */
 void
-QuitButton::click(const Window window) const {
+QuitButton::click(const Window window) {
     const Atom WM_PROTOCOLS = XInternAtom(mDisplay,
         "WM_PROTOCOLS", False);
     const Atom WM_DELETE_WINDOW = XInternAtom(mDisplay,
