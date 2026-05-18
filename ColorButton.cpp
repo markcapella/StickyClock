@@ -46,7 +46,8 @@ ColorButton::updateButtonStyle() {
     const QString CSS = QString("ColorButton#%1 { "
         "margin-left: 1px; background-color: %2; "
         "border: 1px solid #555; border-radius: 4px; "
-        "width: 15px; height: 15px; }").arg(objectName()).
+        "width: 15px; height: 15px;"
+        "max-width: 15px; max-height: 15px; }").arg(objectName()).
         arg(mColor.name(QColor::HexArgb));
 
     setStyleSheet(CSS + " ColorButton { color: white; }");
