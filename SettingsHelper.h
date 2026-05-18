@@ -16,8 +16,8 @@ enum SettingsPropertyType {
 };
 
 struct SettingsProperty {
-    string group = "";
-    string name = "";
+    QString group = "";
+    QString name = "";
 
     SettingsPropertyType valueType = NONE_VALUETYPE;
     QString initialValue = "";
