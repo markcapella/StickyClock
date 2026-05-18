@@ -4,6 +4,7 @@
 
 /**
  * Simple class to represent a QuitButton.
+ *
  */
 class QuitButton : public Button {
     public:

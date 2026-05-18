@@ -4,6 +4,7 @@
 
 /**
  * Simple class to represent an Button.
+ *
  */
 class Button {
     public:

@@ -1,28 +1,38 @@
 
 #pragma once
 
+
 /**
  * SettingsHelper provides a permanant keyed values
  * store for user preferences in a file tied to appName.
  *
  */
+enum SettingsPropertyType {
+    NONE_VALUETYPE,
+    BOOL_VALUETYPE,
+    INT_VALUETYPE,
+    COLOR_VALUETYPE,
+    STRING_VALUETYPE
+};
+
+struct SettingsProperty {
+    string group = "";
+    string name = "";
+
+    SettingsPropertyType valueType = NONE_VALUETYPE;
+    QString initialValue = "";
+};
+
+const vector<SettingsProperty> SETTINGS_PROPERTIES = {
+    { .group = "Configurable", .name = "showWeedClock",
+        .valueType = BOOL_VALUETYPE, .initialValue = "true" },
+    { .group = "Configurable", .name = "weedClockColor",
+        .valueType = COLOR_VALUETYPE, .initialValue = "#00faff" }
+};
+
+
 class SettingsHelper {
     public:
-        enum SettingsPropertyType { NONE_VALUETYPE,
-            BOOL_VALUETYPE, INT_VALUETYPE };
-
-        struct SettingsProperty {
-            string group = "";
-            string name = "";
-
-            SettingsPropertyType valueType = NONE_VALUETYPE;
-            QString initialValue = "";
-        };
-
-        static inline const vector<SettingsProperty> SETTINGS_PROPERTIES = {
-            { .group = "Configurable", .name = "showWeedClock",
-                .valueType = BOOL_VALUETYPE, .initialValue = "true" }
-        };
 
         SettingsHelper(const QString appName);
         ~SettingsHelper();
@@ -82,10 +92,18 @@ class SettingsHelper {
         void setCanvasHeight(const double height);
 
         /**
-         * Getters & setters for user configurable settings.
+         * Getters & setters for user configurable setting
+         * ShowWeedClock.
          */
         bool getShowWeedClock();
         void setShowWeedClock(const bool value);
+
+        /**
+         * Getters & setters for user configurable setting
+         * weedClockColor.
+         */
+        XRenderColor getWeedClockColor();
+        void setWeedClockColor(const XRenderColor color);
 
         /**
          * Helper to return a QSettings filename from appName.
@@ -102,12 +120,21 @@ class SettingsHelper {
          * Helper to explicitly write all default values
          * to our .Ini file.
          */
-        void setInitialSettingsVariants();
+        void ensureSettingsAreConfigurable();
+
+        /**
+         * Return the value type of a Setting by key.
+         */
+        SettingsPropertyType getSettingsValueType(const QString key);
+
+        /**
+         * Return the default value of a Setting by key.
+         */
+        QString getSettingsDefaultValue(const QString key);
 
     private:
         // Members.
         QString mSettingsApp = "";
 
         QSettings* mQSettings = nullptr;
-
 };

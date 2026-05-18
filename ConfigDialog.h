@@ -9,32 +9,36 @@
 
 /**
  * Simple class to represent a ConfigDialog.
+ *
  */
 class ConfigDialog : public QDialog {
     Q_OBJECT
 
 public:
+    static inline const long CONFIG_DIALOG_MIX_WIDTH = 300;
+    static inline const long CONFIG_DIALOG_MAX_HEIGHT = 700;
+
     explicit ConfigDialog(const QString& filePath,
         QWidget* parent = nullptr);
 
-public slots:
-    /**
-     * Load all Settings from .ini file.
-     */
-    void loadSettings();
+    public slots:
+        /**
+         * Load all Settings from .ini file.
+         */
+        void loadSettings();
 
-    /**
-     * Save all Settings back to .ini file.
-     */
-    void saveSettings();
+        /**
+         * Save all Settings back to .ini file.
+         */
+        void saveSettings();
 
-private:
-    QFormLayout* mFormLayout;
-    QVBoxLayout* mMainLayout;
-    QDialogButtonBox* mOkCancelButtons;
+    private:
+        QFormLayout* mFormLayout;
+        QVBoxLayout* mMainLayout;
+        QDialogButtonBox* mOkCancelButtons;
 
-    /**
-     * Setup main layout containing QLineEdit per Setting.
-     */
-    void setupMainLayout();
+        /**
+         * Setup main layout containing QLineEdit per Setting.
+         */
+        void setupMainLayout();
 };

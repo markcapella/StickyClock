@@ -3,6 +3,8 @@ Name=StickyClock
 
 Exec=StickyClock
 Type=Application
+Categories=Qt;Utility;
 
 Icon=StickyClock
 Terminal=false
+

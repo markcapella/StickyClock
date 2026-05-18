@@ -137,6 +137,9 @@ void initAppHelpers() {
     // Init Settings helper global.
     mSettingsHelper = new SettingsHelper(APP_NAME);
 
+    // Commit all QSettings defaults for ConfigDialog support.
+    mSettingsHelper->ensureSettingsAreConfigurable();
+
     // Set X Error handler (quiets non-errors).
     mXHelper = new XHelper();
     XSetErrorHandler(mXHelper->handleX11ErrorEvent);

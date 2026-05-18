@@ -160,28 +160,51 @@ SettingsHelper::setCanvasHeight(const double height) {
 }
 
 /**
- * Getters & setters for user configurable settings.
+ * Getters & setters for user configurable setting
+ * ShowWeedClock.
  */
 bool
 SettingsHelper::getShowWeedClock() {
-    const bool DEFAULT = false;
+    const QString KEY = "showWeedClock";
     getQSettings()->beginGroup("Configurable");
-    const QVariant V = getQSettings()->
-        value("showWeedClock", DEFAULT);
+
+    const bool RESULT = getQSettings()->value(KEY,
+        getSettingsDefaultValue(KEY)).toBool();
+
     getQSettings()->endGroup();
 
-    bool result = DEFAULT;
-    if (V.canConvert<bool>()) {
-        result = V.value<bool>();
-    }
-    return result;
+    return RESULT;
 }
 
 void
 SettingsHelper::setShowWeedClock(const bool value) {
+    const QString KEY = "showWeedClock";
     getQSettings()->beginGroup("Configurable");
-    getQSettings()->setValue("showWeedClock", value);
+
+    getQSettings()->setValue(KEY, value);
+
     getQSettings()->endGroup();
+}
+
+/**
+ * Getters & setters for user configurable setting
+ * weedClockColor.
+ */
+XRenderColor
+SettingsHelper::getWeedClockColor() {
+    const QString KEY = "weedClockColor";
+    getQSettings()->beginGroup("Configurable");
+
+    const QColor COLOR = QColor(getQSettings()->value(
+        KEY, getSettingsDefaultValue(KEY)).toString());
+    getQSettings()->endGroup();
+
+    XRenderColor xColor;
+    xColor.red   = (COLOR.red() << 8) | 0xff;
+    xColor.green = (COLOR.green() << 8) | 0xff;
+    xColor.blue  = (COLOR.blue() << 8) | 0xff;
+    xColor.alpha = (COLOR.alpha() << 8) | 0xff;
+    return xColor;
 }
 
 /**
@@ -207,18 +230,67 @@ SettingsHelper::getQSettings() {
 }
 
 /**
- * Helper to explicitly write all default values
- * to our .Ini file.
+ * Each runtime start we ensure Settings keys & default values
+ * are flushed to .ini file for ConfigDialog to load & modify.
  */
 void
-SettingsHelper::setInitialSettingsVariants() {
+SettingsHelper::ensureSettingsAreConfigurable() {
     const int INITIAL_SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
 
     for (int i = 0; i < INITIAL_SETTINGS_SIZE; i++) {
         const SettingsProperty property = SETTINGS_PROPERTIES[i];
         getQSettings()->beginGroup(property.group);
-        getQSettings()->setValue(property.name, property.initialValue);
+
+        const QVariant SETTING_VARIANT =
+            getQSettings()->value(property.name);
+        if (!SETTING_VARIANT.isValid()) {
+            getQSettings()->setValue(property.name, property.initialValue);
+        }
+
         getQSettings()->endGroup();
     }
+
     mSettingsHelper->getQSettings()->sync();
+}
+
+/**
+ * Return the value type of a Setting by key.
+ */
+SettingsPropertyType
+SettingsHelper::getSettingsValueType(const QString key) {
+    SettingsPropertyType valueType;
+
+    const int SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        const SettingsProperty THIS_SETTING =
+            SETTINGS_PROPERTIES[i];
+
+        if (key == THIS_SETTING.name) {
+            valueType = THIS_SETTING.valueType;
+            break;
+        }
+    }
+
+    return valueType;
+}
+
+/**
+ * Return the default value of a Setting by key.
+ */
+QString
+SettingsHelper::getSettingsDefaultValue(const QString key) {
+    QString defaultValue = "";
+
+    const int SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        const SettingsProperty THIS_SETTING =
+            SETTINGS_PROPERTIES[i];
+
+        if (key == THIS_SETTING.name) {
+            defaultValue = THIS_SETTING.initialValue;
+            break;
+        }
+    }
+
+    return defaultValue;
 }

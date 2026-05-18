@@ -86,8 +86,9 @@ StickyWindow::draw() {
         mDisplay, renderPixmap, RENDER_FORMAT, 0, nullptr);
     XRenderFillRectangle(mDisplay, PictOpSrc,
         BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
-    XRenderColor backgroundColor = isItWeedTime() ?
-        TURQUOISE_RCOLOR : WHITE_RCOLOR;
+    XRenderColor backgroundColor =
+        isItWeedTime() && mSettingsHelper->getShowWeedClock() ?
+            mSettingsHelper->getWeedClockColor() : WHITE_RCOLOR;
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
         &backgroundColor, X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
     XRenderFreePicture(mDisplay, BACKGROUND_R_PICTURE);
@@ -291,9 +292,6 @@ StickyWindow::createX11Window() {
  */
 void
 StickyWindow::defineWindowOnFirstRun() {
-    // Commit all QSettings defaults for ConfigDialog support.
-    mSettingsHelper->setInitialSettingsVariants();
-
     const int SCREEN_WIDTH = WidthOfScreen(
         DefaultScreenOfDisplay(mDisplay));
     const int SCREEN_HEIGHT = HeightOfScreen(

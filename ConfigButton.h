@@ -4,6 +4,7 @@
 
 /**
  * Simple class to represent a Button.
+ *
  */
 class ConfigButton : public Button {
     public:

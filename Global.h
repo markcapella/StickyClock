@@ -26,7 +26,10 @@ typedef chrono::steady_clock Clock;
 #include <QRect>
 #include <QSize>
 #include <QString>
+#include <QCheckBox>
 #include <QLineEdit>
+#include <QScrollArea>
+#include <QMouseEvent>
 
 // x11 libraries.
 #include <X11/Xlib.h>
@@ -51,13 +54,15 @@ typedef chrono::steady_clock Clock;
 
 // Application libraries.
 #include "Button.h"
+#include "ColorButton.h"
+
 #include "PinButton.h"
 #include "QuitButton.h"
-#include "ConfigDialog.h"
 #include "ConfigButton.h"
 #include "MoveButton.h"
 #include "SizeButton.h"
 
+#include "ConfigDialog.h"
 #include "SettingsHelper.h"
 #include "DisplayHelper.h"
 #include "WinInfo.h"

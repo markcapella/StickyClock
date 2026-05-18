@@ -4,6 +4,7 @@
 
 /**
  * Simple class to represent a MoveButton.
+ *
  */
 class MoveButton : public Button {
     public:

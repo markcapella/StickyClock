@@ -4,6 +4,7 @@
 
 /**
  * Simple class to represent a PinButton.
+ *
  */
 class PinButton : public Button {
     public:

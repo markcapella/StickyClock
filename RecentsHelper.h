@@ -1,6 +1,7 @@
 
 #pragma once
 
+
 /**
  * RecentsHelper provides common related methods.
  *

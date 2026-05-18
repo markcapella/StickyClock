@@ -4,6 +4,7 @@
 
 /**
  * Simple class to represent a SizeButton.
+ *
  */
 class SizeButton : public Button {
     public:
