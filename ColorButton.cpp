@@ -30,7 +30,7 @@ void
 ColorButton::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         const QColor selectedColor = QColorDialog::getColor(mColor,
-            this, "Select Color", QColorDialog::ShowAlphaChannel);
+            this, "Select Color B", QColorDialog::ShowAlphaChannel);
 
         if (selectedColor.isValid()) {
             setColor(selectedColor);

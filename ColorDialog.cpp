@@ -28,7 +28,7 @@ signals:
 private slots:
     void chooseColor() {
         QColor selectedColor = QColorDialog::getColor(
-            mColor, this, tr("Select Color"));
+            mColor, this, tr("Select Color D"));
 
         if (selectedColor.isValid()) {
             mColor = selectedColor;
