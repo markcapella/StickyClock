@@ -8,7 +8,7 @@
  */
 class Button {
     public:
-        // Define settings button.
+        // Define Button.
         static inline const int BUTTON_WIDTH = 24;
         static inline const int BUTTON_HEIGHT = 24;
 

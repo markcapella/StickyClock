@@ -1,10 +1,9 @@
 
 #pragma once
 
-#include <QMouseEvent>
-#include <QPushButton>
 #include <QColor>
 #include <QColorDialog>
+#include <QPushButton>
 
 
 /**
@@ -12,23 +11,32 @@
  */
 class ColorButton : public QPushButton {
     Q_OBJECT
-    Q_PROPERTY(QColor color READ getColor WRITE setColor
-        NOTIFY colorChanged)
 
-public:
-    explicit ColorButton(QWidget* parent = nullptr);
-    
-    QColor getColor() const;
-    void setColor(const QColor& color);
+    public:
+        explicit ColorButton(QWidget* parent = nullptr);
 
-signals:
-    void colorChanged(const QColor& color);
+        /**
+         * Getter for current color.
+         */
+        QColor getButtonColor() const;
 
-protected:
-    void mousePressEvent(QMouseEvent* event) override;
+    public slots:
+        /**
+         * Open & show ColorPicker Dialog.
+         */
+        void openColorPicker();
 
-private:
-    QColor mColor;
+        /**
+         * Callback from ColorPicker.
+         */
+        void setButtonColor(const QColor& color);
 
-    void updateButtonStyle();
+    private:
+        QColor mColor;
+
+        /**
+         * Set base ColorButton to color selected in
+         * ColorPicker.
+         */
+        void updateButtonStyle();
 };

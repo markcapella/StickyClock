@@ -113,7 +113,7 @@ StickyWindow::draw() {
     XftDrawDestroy(xft_draw);
     xft_draw = nullptr;
 
-    // Define & draw settings button.
+    // Define & draw all buttons.
     drawAllButtons();
 
     // Cleanup.
@@ -126,8 +126,8 @@ StickyWindow::draw() {
  * Overriden resize() method ensures we remember window
  * position & size on restarts.
  *
- * Adjusts clickable settings button position & its Input
- * Shape Region to the new top-right location.
+ * Adjusts clickable button positions & their Input
+ * Shape Regions to the new locations.
  */
 void
 StickyWindow::resize(const int xPos, const int yPos,
@@ -326,8 +326,8 @@ StickyWindow::setStickyWindowType() {
     const string KWIN_WM_NAME = "KWin";
 
     const Atom STICKY_WINDOW_TYPE =
-        mXHelper->getWindowManagerName() == KWIN_WM_NAME ?
-            WINDOW_TYPE_DOCK : WINDOW_TYPE_SPLASH;
+        //mXHelper->getWindowManagerName() == KWIN_WM_NAME ?
+            WINDOW_TYPE_DOCK;// : WINDOW_TYPE_SPLASH;
 
     mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
 }
@@ -357,7 +357,7 @@ StickyWindow::createWindowButtons() {
     }
     mButtons.clear();
 
-    mSettingsButton = new PinButton(mSettingsHelper->
+    mPinButton = new PinButton(mSettingsHelper->
         getWindowWidth() - 2 * Button::BUTTON_WIDTH,
             Button::BUTTON_HEIGHT);
 
@@ -371,8 +371,8 @@ StickyWindow::createWindowButtons() {
         getWindowWidth() - Button::BUTTON_WIDTH, mSettingsHelper->
         getWindowHeight() - Button::BUTTON_HEIGHT);
 
-    // Settings Button First.
-    mButtons.push_back(mSettingsButton);
+    // Pin Button First.
+    mButtons.push_back(mPinButton);
 
     // All others.
     mButtons.push_back(mQuitButton);
@@ -386,9 +386,9 @@ StickyWindow::createWindowButtons() {
  */
 void
 StickyWindow::updateWindowButtons() {
-    mSettingsButton->setX(mSettingsHelper->
+    mPinButton->setX(mSettingsHelper->
         getWindowWidth() - 2 * Button::BUTTON_WIDTH);
-    mSettingsButton->setY(Button::BUTTON_HEIGHT);
+    mPinButton->setY(Button::BUTTON_HEIGHT);
 
     mQuitButton->setX(mSettingsHelper->
         getWindowWidth() - Button::BUTTON_WIDTH);
@@ -449,13 +449,13 @@ StickyWindow::whichButtonIsHovered(const QPoint pos) {
 }
 
 /**
- * Setter for settings button visibility state.
+ * Setter for PinButton visibility state.
  */
 void
-StickyWindow::setSettingsButtonVisibility(
+StickyWindow::setPinButtonVisibility(
     const bool visibility) {
-    if (mSettingsButton->isVisible() != visibility) {
-        mSettingsButton->setVisible(visibility);
+    if (mPinButton->isVisible() != visibility) {
+        mPinButton->setVisible(visibility);
         draw();
     }
 }
@@ -501,7 +501,7 @@ StickyWindow::setHoveredButtonVisibility(const QPoint pos) {
  * border displayed or not.
  */
 void
-StickyWindow::onSettingsButtonClicked() {
+StickyWindow::onPinButtonClicked() {
     const bool CONFIG_MODE = !mSettingsHelper->getConfigMode();
     mSettingsHelper->setConfigMode(CONFIG_MODE);
 
@@ -687,7 +687,7 @@ StickyWindow::handleX11EventQueue() {
 }
 
 /**
- * Timer callback to detect settings button clicks.
+ * Cursor watcher detects user actions.
  */
 void
 StickyWindow::cursorWatcherThread() {
@@ -721,14 +721,13 @@ StickyWindow::cursorWatcherThread() {
     // Useful later.
     setCursorPosition(QPoint(rootX, rootY));
 
+    // Set widget PinButton visibility state.
     // Window is Entire window, or Canvas when pinned.
-    // Set widget settings button visibility state.
-    const bool IS_WINDOW_HOVERED = mXHelper->
-        isWindowHovered(mX11Window, QPoint(rootX, rootY),
-            mSettingsHelper->getConfigMode());
-    setSettingsButtonVisibility(IS_WINDOW_HOVERED);
+    const bool IS_WINDOW_HOVERED = mXHelper->isWindowHovered(
+        mX11Window, QPoint(rootX, rootY), false);
+    setPinButtonVisibility(IS_WINDOW_HOVERED);
 
-    // Switch cursor to ours when hovering settings button.
+    // Switch cursor to ours when hovering PinButton.
     if (IS_WINDOW_HOVERED) {
         if (!mIsPointerGrabbed) {
             XGrabPointer(mDisplay, mX11Window, False,
@@ -740,7 +739,7 @@ StickyWindow::cursorWatcherThread() {
     }
 
     // Entire Window is always entire window.
-    // If not in config mode, hovering a non-settings button
+    // If not in config mode, hovering a non-PinButton
     // will make it visible & active.
     const bool IS_ENTIRE_WINDOW_HOVERED = mXHelper->
         isWindowHovered(mX11Window, QPoint(rootX, rootY), true);
@@ -765,7 +764,7 @@ StickyWindow::cursorWatcherThread() {
             defineWindowCanvasPosition();
             defineWindowCanvasSize();
             createWindowButtons();
-            setSettingsButtonVisibility(true);
+            setPinButtonVisibility(true);
             draw();
             mWindowResized = false;
         }
@@ -878,7 +877,7 @@ StickyWindow::cursorWatcherThread() {
 
             if (PinButton* T = dynamic_cast<PinButton*>
                 (HOVERED_BUTTON)) {
-                onSettingsButtonClicked();
+                onPinButtonClicked();
             }
             return;
         }

@@ -21,12 +21,12 @@ SettingsHelper::~SettingsHelper() {
 double
 SettingsHelper::getWindowMinimumWidth() {
     return getQSettings()->value("minimumWindowWidth",
-        Button::BUTTON_WIDTH * 9).toDouble();
+        Button::BUTTON_WIDTH * 3).toDouble();
 }
 double
 SettingsHelper::getWindowMinimumHeight() {
     return getQSettings()->value("minimumWindowHeight",
-        Button::BUTTON_WIDTH * 5).toDouble();
+        Button::BUTTON_HEIGHT * 3).toDouble();
 }
 
 /**
@@ -124,11 +124,13 @@ SettingsHelper::getCanvasYPos() {
 }
 double
 SettingsHelper::getCanvasWidth() {
-    return getQSettings()->value("canvasWidth", 200).toDouble();
+    return getQSettings()->value("canvasWidth",
+        getWindowMinimumWidth() + 4 * Button::BUTTON_WIDTH).toDouble();
 }
 double
 SettingsHelper::getCanvasHeight() {
-    return getQSettings()->value("canvasHeight", 75).toDouble();
+    return getQSettings()->value("canvasHeight",
+        getWindowMinimumHeight() + Button::BUTTON_HEIGHT).toDouble();
 }
 
 /**

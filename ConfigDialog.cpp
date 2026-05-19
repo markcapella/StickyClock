@@ -17,16 +17,20 @@ ConfigDialog::ConfigDialog(const QString& filePath,
 
     loadSettings();
 
-    connect(mOkCancelButtons, &QDialogButtonBox::accepted, this,
+    connect(mConfigButtonBox, &QDialogButtonBox::accepted, this,
         &ConfigDialog::saveSettings);
-    connect(mOkCancelButtons, &QDialogButtonBox::rejected, this,
+    connect(mConfigButtonBox, &QDialogButtonBox::rejected, this,
         &ConfigDialog::reject);
+
+    connect(mAboutButton, &QPushButton::clicked, this,
+        &ConfigDialog::about);
 }
 
 /**
  * Load all Settings from .ini file.
  */
-void ConfigDialog::loadSettings() {
+void
+ConfigDialog::loadSettings() {
     mSettingsHelper->getQSettings()->beginGroup("Configurable");
 
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
@@ -81,7 +85,7 @@ void ConfigDialog::loadSettings() {
             if (colorButtonWidget) {
                 const QString VALUE = mSettingsHelper->getQSettings()->
                     value(THIS_KEY, THIS_DEFAULT_VALUE).toString();
-                colorButtonWidget->setColor(QColor(VALUE));
+                colorButtonWidget->setButtonColor(QColor(VALUE));
             }
             continue;
         }
@@ -105,7 +109,8 @@ void ConfigDialog::loadSettings() {
 /**
  * Save all Settings back to .ini file.
  */
-void ConfigDialog::saveSettings() {
+void
+ConfigDialog::saveSettings() {
     mSettingsHelper->getQSettings()->beginGroup("Configurable");
 
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
@@ -158,7 +163,7 @@ void ConfigDialog::saveSettings() {
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (colorButtonWidget) {
                 const QString VALUE = colorButtonWidget->
-                    getColor().name();
+                    getButtonColor().name();
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
             }
@@ -185,13 +190,12 @@ void ConfigDialog::saveSettings() {
 /**
  * Setup main layout containing QLineEdit per Setting.
  */
-void ConfigDialog::setupMainLayout() {
+void
+ConfigDialog::setupMainLayout() {
     mMainLayout = new QVBoxLayout(this);
     mMainLayout->setSpacing(5);
 
     mFormLayout = new QFormLayout();
-    mFormLayout->setFormAlignment(
-        Qt::AlignHCenter | Qt::AlignVCenter);
 
     // Get all keys.
     mSettingsHelper->getQSettings()->beginGroup("Configurable");
@@ -232,10 +236,6 @@ void ConfigDialog::setupMainLayout() {
             ColorButton* colorButtonWidget = nullptr;
             colorButtonWidget = new ColorButton(this);
             colorButtonWidget->setObjectName(THIS_KEY);
-            connect(colorButtonWidget, &ColorButton::colorChanged,
-                [](const QColor& color) {
-                // qDebug() << "New color chosen:" << color;
-            } );
             mFormLayout->addRow(THIS_KEY, colorButtonWidget);
             continue;
         }
@@ -251,6 +251,7 @@ void ConfigDialog::setupMainLayout() {
     }
 
     QWidget* formContainer = new QWidget();
+    mFormLayout->setFormAlignment(Qt::AlignCenter);
     formContainer->setLayout(mFormLayout);
 
     QScrollArea* scrollArea = new QScrollArea();
@@ -260,11 +261,28 @@ void ConfigDialog::setupMainLayout() {
     mMainLayout->addWidget(scrollArea);
     mSettingsHelper->getQSettings()->endGroup();
 
-    // Create Ok / Cancel ButtonBox and add to mMainLayout.
-    mOkCancelButtons = new QDialogButtonBox(
+    // Create Ok / Cancel ButtonBox.
+    mConfigButtonBox = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    mMainLayout->addWidget(mOkCancelButtons);
 
+    // Create an About button.
+    mAboutButton = new QPushButton(ABOUT_STRING);
+    mConfigButtonBox->addButton(mAboutButton,
+        QDialogButtonBox::ActionRole);
+
+    // Create MessageBox for About button dialog.
+    mMessageBox = new AboutDialog(this);
+
+ 
     // Set mMainLayout as "the Layout" & done.
+    mMainLayout->addWidget(mConfigButtonBox);
     setLayout(mMainLayout);
+}
+
+/**
+ * Show this apps "About" dialog.
+ */
+void
+ConfigDialog::about() {
+    mMessageBox->show();
 }

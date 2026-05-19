@@ -4,8 +4,10 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFormLayout>
+#include <QMessageBox>
 #include <QSettings>
 #include <QVBoxLayout>
+
 
 /**
  * Simple class to represent a ConfigDialog.
@@ -14,12 +16,18 @@
 class ConfigDialog : public QDialog {
     Q_OBJECT
 
-public:
-    static inline const long CONFIG_DIALOG_MIX_WIDTH = 300;
-    static inline const long CONFIG_DIALOG_MAX_HEIGHT = 700;
+    public:
+        static inline const long CONFIG_DIALOG_MIX_WIDTH = 300;
+        static inline const long CONFIG_DIALOG_MAX_HEIGHT = 700;
 
-    explicit ConfigDialog(const QString& filePath,
-        QWidget* parent = nullptr);
+        static inline const int MESSAGE_BOX_WIDTH = 500;
+        static inline const int MESSAGE_BOX_HEIGHT = 300;
+
+        static inline const QString ABOUT_STRING = "About";
+
+        // Constructor.
+        explicit ConfigDialog(const QString& filePath,
+            QWidget* parent = nullptr);
 
     public slots:
         /**
@@ -33,12 +41,20 @@ public:
         void saveSettings();
 
     private:
-        QFormLayout* mFormLayout;
-        QVBoxLayout* mMainLayout;
-        QDialogButtonBox* mOkCancelButtons;
+        QFormLayout* mFormLayout = nullptr;
+        QVBoxLayout* mMainLayout = nullptr;
+
+        QDialogButtonBox* mConfigButtonBox = nullptr;
+        QPushButton* mAboutButton = nullptr;
+        QMessageBox* mMessageBox = nullptr;
 
         /**
          * Setup main layout containing QLineEdit per Setting.
          */
         void setupMainLayout();
+
+        /**
+         * Show this apps "About" dialog.
+         */
+        void about();
 };

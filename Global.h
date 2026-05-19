@@ -63,6 +63,7 @@ typedef chrono::steady_clock Clock;
 #include "SizeButton.h"
 
 #include "ConfigDialog.h"
+#include "AboutDialog.h"
 #include "SettingsHelper.h"
 #include "DisplayHelper.h"
 #include "WinInfo.h"

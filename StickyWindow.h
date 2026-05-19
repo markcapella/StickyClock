@@ -43,8 +43,8 @@ class StickyWindow {
          * Overriden resize() method ensures we remember window
          * position & size on restarts.
          *
-         * Adjusts clickable settings button position & its Input
-         * Shape Region to the new top-right location.
+         * Adjusts clickable button positions & their Input
+         * Shape Regions to the new locations.
          */
         void resize(const int xPos, const int yPos,
             const int width, const int height);
@@ -70,7 +70,7 @@ class StickyWindow {
         Window mX11Window = None;
         char* mWindowTitle = nullptr;
 
-        PinButton* mSettingsButton = nullptr;
+        PinButton* mPinButton = nullptr;
         QuitButton* mQuitButton = nullptr;
         ConfigButton* mConfigButton = nullptr;
         MoveButton* mMoveButton = nullptr;
@@ -149,9 +149,9 @@ class StickyWindow {
         Button* whichButtonIsHovered(const QPoint pos);
 
         /**
-         * Setter for settings button visibility state.
+         * Setter for PinButton visibility state.
          */
-        void setSettingsButtonVisibility(const bool visibility);
+        void setPinButtonVisibility(const bool visibility);
 
         /**
          * While not in configMode, hovering a (hidden)
@@ -163,7 +163,7 @@ class StickyWindow {
          * Switch between window border state where titlebar &
          * border displayed or not.
          */
-        void onSettingsButtonClicked();
+        void onPinButtonClicked();
 
         /**
          * Draw all visible buttons.
@@ -216,7 +216,7 @@ class StickyWindow {
         bool handleX11EventQueue();
 
         /**
-         * Timer callback to detect settings button clicks.
+         * Cursor watcher detects user actions.
          */
         void cursorWatcherThread();
 

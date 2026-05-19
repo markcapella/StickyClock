@@ -46,8 +46,8 @@ void
 ConfigButton::click(const Window window) {
     // Create Dialog jit.
     if (!mConfigDialog) {
-        mConfigDialog = new ConfigDialog(
-            mSettingsHelper->getQSettingsFile(), NULL);
+        mConfigDialog = new ConfigDialog(mSettingsHelper->
+            getQSettingsFile(), NULL);
     }
 
     // Open or close the dialog.
@@ -58,6 +58,5 @@ ConfigButton::click(const Window window) {
         mConfigDialog->activateWindow();
     } else {
         mConfigDialog->close();
-        //mConfigDialog = nullptr;
     }
 }

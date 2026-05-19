@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     QApplication app(argc, argv);
     // setAppSignalCatcher();
 
-    app.setWindowIcon(QIcon(ICON_INSTALL_LOCATION +
+    app.setWindowIcon(QIcon(ICON_PATH +
         QString(APP_NAME) + ".png"));
     if (getAppInstanceCount() > 1) {
         cout << endl << XCOLOR_RED << "StickyClock() is already running "
@@ -150,7 +150,7 @@ void initAppHelpers() {
  */
 bool initAppPngImages() {
     // Load the Pin-In image.
-    const QString PIN_IN_FILE = ICON_INSTALL_LOCATION + QString(APP_NAME) +
+    const QString PIN_IN_FILE = ICON_PATH + QString(APP_NAME) +
         QString("-") + PIN_IN_PNG_FILENAME;
     if (!mPinInQImage.load(PIN_IN_FILE)) {
         cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
@@ -169,7 +169,7 @@ bool initAppPngImages() {
         32, 0);
 
     // Load the Pin-Out image.
-    const QString PIN_OUT_FILE = ICON_INSTALL_LOCATION + QString(APP_NAME) +
+    const QString PIN_OUT_FILE = ICON_PATH + QString(APP_NAME) +
         QString("-") + PIN_OUT_PNG_FILENAME;
     if (!mPinOutQImage.load(PIN_OUT_FILE)) {
         cout << endl << XCOLOR_RED << "StickyWidgetIII: A "

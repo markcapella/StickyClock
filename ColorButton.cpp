@@ -10,35 +10,54 @@ ColorButton::ColorButton(QWidget* parent) :
 
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     updateButtonStyle();
+
+    connect(this, &QPushButton::clicked,
+        this, &ColorButton::openColorPicker);
 }
 
+/**
+ * Getter for current color.
+ */
 QColor
-ColorButton::getColor() const {
+ColorButton::getButtonColor() const {
     return mColor;
 }
 
+/**
+ * Open & show ColorPicker Dialog.
+ */
 void
-ColorButton::setColor(const QColor& color) {
-    if (mColor != color) {
-        mColor = color;
-        updateButtonStyle();
-        emit colorChanged(mColor);
-    }
+ColorButton::openColorPicker() {
+    QColorDialog* COLOR_PICKER = new QColorDialog(mColor, this);
+
+    COLOR_PICKER->setWindowTitle("Select Color");
+    COLOR_PICKER->setOption(QColorDialog::ShowAlphaChannel);
+    COLOR_PICKER->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(COLOR_PICKER, &QColorDialog::colorSelected, this,
+        &ColorButton::setButtonColor);
+
+    COLOR_PICKER->open(); 
 }
 
-void 
-ColorButton::mousePressEvent(QMouseEvent* event) {
-    if (event->button() == Qt::LeftButton) {
-        const QColor selectedColor = QColorDialog::getColor(mColor,
-            this, "Select Color B", QColorDialog::ShowAlphaChannel);
-
-        if (selectedColor.isValid()) {
-            setColor(selectedColor);
+/**
+ * Callback from ColorPicker.
+ */
+void
+ColorButton::setButtonColor(const QColor& color) {
+    if (color.isValid()) {
+        if (mColor != color) {
+            mColor = color;
+            updateButtonStyle();
+            // emit colorChanged(mColor);
         }
     }
-    QPushButton::mousePressEvent(event);
 }
 
+/**
+ * Set base ColorButton to color selected in
+ * ColorPicker.
+ */
 void
 ColorButton::updateButtonStyle() {
     setObjectName("ColorButton");
