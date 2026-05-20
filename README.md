@@ -3,11 +3,10 @@
 !['StickyClock'](https://github.com/markcapella/StickyClock/blob/main/screenshot.png)
     
 ## Description
-    StickyClock is the first app in the StickyWidgetIII
-    prototype series.
+    StickyClock is the first app in the StickyWidgetIII series.
     
-    StickyWidgetIII is an X-based prototype for windows that
-    acts like a KDE Plasmoid.
+    StickyWidgetIII is an X-based prototype for applications
+    that act like KDE desktop Plasmoids.
     
     Desktop widgets with various views can be stuck in place to
     the desktop below other windows and display custom views with
@@ -20,15 +19,21 @@
     & out of "Desktop Stuck" state.
     
     When stuck to the desktop, widget ignores clicks & passes
-    all mouse actions to desktop (input transparency), so it
-    doesn't get in the way.
+    all mouse actions to desktop (input transparency). (You can
+    double click Desktop Icons underneath widget views.)
     
-    While "Stuck" to the desktop, your Desktop Panel will not
-    display an item for it in your Task manager, so it doesn't
-    clutter it up.
+    StickyClock & StickyWidgets won't present an item in your
+    desktop panel, nor in your system tray. Mouse hover the
+    widget to reveal the Pin or Close button.
     
     
 ## Installation.
+    You'll need an X11 based DisplayManager & a TrueColor32 capable
+    Window Manager (Kwin, Openbox, Fluxbox, Xfwm4, Mutter/Gnome).
+    
+    Tiling managers such as Awesome may run but without pointer event
+    transparency.
+    
     
 ### Install Pre-reqs.
 

@@ -283,6 +283,17 @@ StickyWindow::createX11Window() {
     show();
     setWindowConfigState();
 
+    // Apply strict configuration to the window. Awesome WM
+    // specifically needs this.
+    XWindowChanges changes;
+    changes.x = mSettingsHelper->getWindowXPos();
+    changes.y = mSettingsHelper->getWindowYPos();
+    changes.width = mSettingsHelper->getWindowWidth();
+    changes.height = mSettingsHelper->getWindowHeight();
+    XConfigureWindow(mDisplay, mX11Window,
+        CWX | CWY | CWWidth | CWHeight, &changes);
+    XFlush(mDisplay);
+
     // Done!
     return mX11Window;
 }
@@ -318,17 +329,8 @@ StickyWindow::defineWindowOnFirstRun() {
  */
 void
 StickyWindow::setStickyWindowType() {
-    const Atom WINDOW_TYPE_SPLASH =
-        XInternAtom(mDisplay, "_NET_WM_WINDOW_TYPE_SPLASH", false);
-    const Atom WINDOW_TYPE_DOCK =
-        XInternAtom(mDisplay, "_NET_WM_WINDOW_TYPE_DOCK", false);
-
-    const string KWIN_WM_NAME = "KWin";
-
-    const Atom STICKY_WINDOW_TYPE =
-        //mXHelper->getWindowManagerName() == KWIN_WM_NAME ?
-            WINDOW_TYPE_DOCK;// : WINDOW_TYPE_SPLASH;
-
+    const Atom STICKY_WINDOW_TYPE = XInternAtom(mDisplay,
+        "_NET_WM_WINDOW_TYPE_DOCK", false);
     mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
 }
 

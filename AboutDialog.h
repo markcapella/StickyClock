@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <QDesktopServices>
 #include <QMessageBox>
 
 /**

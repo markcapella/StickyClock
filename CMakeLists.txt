@@ -14,11 +14,12 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.05.19")
-set(APP_VERSION_MINOR "01")
+set(APP_VERSION "26.05.20")
+set(APP_VERSION_MINOR "00")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
+set(SOURCE_REPO "https://github.com/markcapella/StickyClock")
 
 # Enable cmake.
 set(CMAKE_CXX_STANDARD 20)
@@ -148,6 +149,7 @@ target_compile_definitions(${WIDGET_PROJECT} PRIVATE
     APP_VERSION_MINOR="${APP_VERSION_MINOR}"
     APP_AUTHOR="${APP_AUTHOR}"
     ORG_NAME="${ORG_NAME}"
+    SOURCE_REPO="${SOURCE_REPO}"
     ICON_PATH="${CMAKE_INSTALL_PREFIX}/${ICON_PATH}/")
 
 # All Include sources.
