@@ -61,13 +61,17 @@ AboutDialog::init() {
 
     // Construct warning for Awesome Window Manager (?)
     const QString AWESOME_WM_NAME = "awesome";
-    if (mXHelper->getWindowManagerName() == AWESOME_WM_NAME) {
+    const QString THIS_WM_NAME =
+        mXHelper->getWindowManagerName().c_str();
+
+    if (THIS_WM_NAME == AWESOME_WM_NAME) {
         const QString HTML_DIV_START_AWESOME_WARNING =
             "<div style='font-size: 20px; color: blue;'>";
         const QString AWESOME_WM_WARNING = "Your Window Manager (WM) is "
-            "'Awesome'. It won't allow you to click through StickyWidgetIII "
-            " based widgets such as StickyClock.";
-        TEXT += HTML_LINE_BR + HTML_DIV_START_AWESOME_WARNING + AWESOME_WM_WARNING;
+            "'Awesome'. It won't allow you to click through "
+            "StickyWidgetIII based widgets.";
+        TEXT += HTML_LINE_BR + HTML_DIV_START_AWESOME_WARNING +
+            AWESOME_WM_WARNING;
     }
 
     // Finish the text & consume it.
