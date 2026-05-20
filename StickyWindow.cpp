@@ -329,6 +329,17 @@ StickyWindow::defineWindowOnFirstRun() {
  */
 void
 StickyWindow::setStickyWindowType() {
+    const QString THIS_WM_NAME = mXHelper->
+        getWindowManagerName().c_str();
+
+    const QString AWESOME_WM_NAME = "awesome";
+    if (THIS_WM_NAME == AWESOME_WM_NAME) {
+        const Atom STICKY_WINDOW_TYPE = XInternAtom(mDisplay,
+            "_NET_WM_WINDOW_TYPE_SPLASH", false);
+        mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
+        return;
+    }
+
     const Atom STICKY_WINDOW_TYPE = XInternAtom(mDisplay,
         "_NET_WM_WINDOW_TYPE_DOCK", false);
     mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
