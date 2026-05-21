@@ -78,21 +78,28 @@ AboutDialog::init() {
     TEXT += HTML_END;
     setText(TEXT);
 
-    // App source repo.
-    const QString HTML_LINE_7 = HTML_DIV_START_AUTHOR +
-        QString(SOURCE_REPO) + HTML_DIV_END;
-    TEXT += HTML_LINE_7;
-
     // Set Dialog Ok and Repo buttons.
     setStandardButtons(QMessageBox::Ok);
-
-    QPushButton* sourceRepo = addButton("Repo", QMessageBox::ActionRole);
-    sourceRepo->disconnect();
-
+    QPushButton* sourceRepo = addButton("Repo",
+        QMessageBox::ActionRole);
     QObject::connect(sourceRepo, &QPushButton::clicked, []() {
         QDesktopServices::openUrl(QUrl(SOURCE_REPO));
     });
 
     // Apply stylesheet & done.
     setStyleSheet(ABOUT_STYLESHEET);
+}
+
+/**
+ * Close the AboutDialog when the window is closed
+ * by clicking top-right 'X' button.
+ *
+ * Accept the close event so the system knows we handled
+ * the window destruction.
+ */
+void
+AboutDialog::closeEvent(QCloseEvent *event) {
+    reject();
+    
+    event->accept();
 }

@@ -17,6 +17,9 @@ class AboutDialog : public QMessageBox {
 
         explicit AboutDialog(QWidget* parent = nullptr);
 
+    protected:
+        void closeEvent(QCloseEvent* event) override;
+
     private:
         /**
          * Create a styled AboutDialog for this StickyWidgetIII.

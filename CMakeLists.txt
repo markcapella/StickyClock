@@ -14,8 +14,8 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.05.20")
-set(APP_VERSION_MINOR "02")
+set(APP_VERSION "26.05.21")
+set(APP_VERSION_MINOR "00")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
@@ -37,9 +37,10 @@ set(COLOR_YELLOW "${ESC}[33m")
 set(COLOR_NORMAL "${ESC}[m")
 
 # Create "Required Packages" list.
-set(PACKAGE_REQS "pkg-config qt6-base-dev libx11-dev wmctrl")
-set(PACKAGE_REQS "${PACKAGE_REQS} libxft-dev libxfixes-dev")
-set(PACKAGE_REQS "${PACKAGE_REQS} libxext-dev libpng-dev")
+set(PACKAGE_REQS "git cmake build-essential")
+set(PACKAGE_REQS "${PACKAGE_REQS} pkg-config qt6-base-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} libx11-dev wmctrl libxft-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} libxfixes-dev libxext-dev libpng-dev")
 
 # Create Pre-reqs install message 1.
 set(COULDNT_LOCATE_MSG "${COLOR_RED}")
@@ -52,64 +53,22 @@ set(INSTALL_MSG "${INSTALL_MSG}Please try |sudo apt install")
 set(INSTALL_MSG "${INSTALL_MSG} ${PACKAGE_REQS}|${COLOR_NORMAL}")
 
 # Chek all.
+find_package(Git QUIET)
+find_program(MAKE_EXECUTABLE make)
 find_package(PkgConfig QUIET)
-if (NOT ${PkgConfig_FOUND})
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 find_package(Qt6 QUIET COMPONENTS Core Widgets)
-if (NOT ${Qt6_FOUND})
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 find_package(X11 QUIET)
-if (NOT ${X11_FOUND})
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 find_program(WMCTRL_EXECUTABLE wmctrl)
-if (NOT WMCTRL_EXECUTABLE)
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 find_package(X11 QUIET COMPONENTS Xft)
-if (NOT ${X11_Xft_FOUND})
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 pkg_check_modules(XFIXES QUIET xfixes)
-if (NOT XFIXES_FOUND)
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 pkg_check_modules(XEXT QUIET xext)
-if (NOT XEXT_FOUND)
-    message(STATUS "${COULDNT_LOCATE_MSG}")
-    message(STATUS "${INSTALL_MSG}")
-    message(STATUS "")
-    message(FATAL_ERROR "FATAL.")
-endif()
-
 find_package(PNG QUIET)
-if (NOT PNG_FOUND)
+
+
+if (NOT Git_FOUND OR NOT MAKE_EXECUTABLE OR NOT ${PkgConfig_FOUND} OR
+    NOT ${Qt6_FOUND} OR NOT ${X11_FOUND} OR NOT WMCTRL_EXECUTABLE OR
+    NOT ${X11_Xft_FOUND} OR NOT XFIXES_FOUND OR NOT XEXT_FOUND OR
+    NOT PNG_FOUND)
     message(STATUS "${COULDNT_LOCATE_MSG}")
     message(STATUS "${INSTALL_MSG}")
     message(STATUS "")

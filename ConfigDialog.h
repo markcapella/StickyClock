@@ -18,10 +18,7 @@ class ConfigDialog : public QDialog {
 
     public:
         static inline const long CONFIG_DIALOG_MIX_WIDTH = 300;
-        static inline const long CONFIG_DIALOG_MAX_HEIGHT = 700;
-
-        static inline const int MESSAGE_BOX_WIDTH = 500;
-        static inline const int MESSAGE_BOX_HEIGHT = 300;
+        static inline const long CONFIG_DIALOG_MAX_HEIGHT = 800;
 
         static inline const QString ABOUT_STRING = "About";
 
@@ -46,7 +43,7 @@ class ConfigDialog : public QDialog {
 
         QDialogButtonBox* mConfigButtonBox = nullptr;
         QPushButton* mAboutButton = nullptr;
-        QMessageBox* mMessageBox = nullptr;
+        QMessageBox* mAboutDialog = nullptr;
 
         /**
          * Setup main layout containing QLineEdit per Setting.

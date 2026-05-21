@@ -192,20 +192,21 @@ ConfigDialog::saveSettings() {
  */
 void
 ConfigDialog::setupMainLayout() {
-    mMainLayout = new QVBoxLayout(this);
-    mMainLayout->setSpacing(5);
-
-    mFormLayout = new QFormLayout();
-
     // Get all keys.
     mSettingsHelper->getQSettings()->beginGroup("Configurable");
     const QStringList ALL_KEYS = mSettingsHelper->
         getQSettings()->allKeys();
 
-    // Construct QLineEdit mFormLayout from keys
-    // & add to mMainLayout.
-    for (const QString& THIS_KEY : ALL_KEYS) {
+    // Construct edit widget rows from keys & add to mFormLayout.
+    mFormLayout = new QFormLayout();
+    const int FORM_TOP_BOTTOM_SPACING = 30;
+    mFormLayout->setContentsMargins(0, FORM_TOP_BOTTOM_SPACING,
+        0, FORM_TOP_BOTTOM_SPACING);
 
+    const int FORM_LAYOUT_ROW_SPACING = 10;
+    mFormLayout->setVerticalSpacing(FORM_LAYOUT_ROW_SPACING);
+
+    for (const QString& THIS_KEY : ALL_KEYS) {
         // Get key valueType.
         const SettingsPropertyType THIS_VALUETYPE =
             mSettingsHelper->getSettingsValueType(THIS_KEY);
@@ -250,30 +251,32 @@ ConfigDialog::setupMainLayout() {
         }
     }
 
+    mSettingsHelper->getQSettings()->endGroup();
+
+    // Add the formlayout to a formcontainer.
     QWidget* formContainer = new QWidget();
     mFormLayout->setFormAlignment(Qt::AlignCenter);
     formContainer->setLayout(mFormLayout);
 
+    // Add the formcontainer to a scrollarea.
     QScrollArea* scrollArea = new QScrollArea();
     scrollArea->setWidget(formContainer);
     scrollArea->setWidgetResizable(true);
 
+    // The whole thing wraps up into vbox layout.
+    mMainLayout = new QVBoxLayout(this);
     mMainLayout->addWidget(scrollArea);
-    mSettingsHelper->getQSettings()->endGroup();
 
-    // Create Ok / Cancel ButtonBox.
-    mConfigButtonBox = new QDialogButtonBox(
-        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    // Create Ok / Cancel ButtonBoxBox with an About button.
+    mConfigButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
+        QDialogButtonBox::Cancel, this);
 
-    // Create an About button.
+    // Create AboutDialog for About button dialog.
+    mAboutDialog = new AboutDialog(this);
     mAboutButton = new QPushButton(ABOUT_STRING);
     mConfigButtonBox->addButton(mAboutButton,
         QDialogButtonBox::ActionRole);
 
-    // Create MessageBox for About button dialog.
-    mMessageBox = new AboutDialog(this);
-
- 
     // Set mMainLayout as "the Layout" & done.
     mMainLayout->addWidget(mConfigButtonBox);
     setLayout(mMainLayout);
@@ -284,5 +287,5 @@ ConfigDialog::setupMainLayout() {
  */
 void
 ConfigDialog::about() {
-    mMessageBox->show();
+    mAboutDialog->show();
 }
