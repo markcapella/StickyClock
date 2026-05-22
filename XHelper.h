@@ -46,6 +46,21 @@ class XHelper {
         bool isACompositorRunning();
 
         /**
+         * This method determines the Compositors name.
+         */
+        QString getCompositorName();
+
+        /**
+         * Check if the display supports transparent pointer events.
+         */
+        bool isTransparentToPointer();
+
+        /**
+         * Check if display supports TrueColor32 visual transparency.
+         */
+        bool isTransparentVisually();
+
+        /**
          * This method checks if the desktop is currently
          * being shown, (which hides all windows).
          */

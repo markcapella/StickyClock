@@ -141,8 +141,104 @@ XHelper::getWMNameFromRootWindow(const Window rootWindow) {
  */
 bool
 XHelper::isACompositorRunning() {
-    return XGetSelectionOwner(mDisplay, XInternAtom(
-        mDisplay, "_NET_WM_CM_S0", False)) != None;
+    // Check for the Composite Extension.
+    int dummy1, dummy2;
+    if (!XCompositeQueryExtension(mDisplay, &dummy1, &dummy2)) {
+        return false;
+    }
+
+    Atom composite_atom;
+    composite_atom = XInternAtom(mDisplay, "_NET_WM_CM_S0", True);
+    if (composite_atom != None) {
+        return true;
+    }
+    if (XGetSelectionOwner(mDisplay, composite_atom) != None) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * This method determines the Compositors name.
+ */
+QString
+XHelper::getCompositorName() {
+    const string ATOM_NAME = "_NET_WM_CM_S" +
+        to_string(DefaultScreen(mDisplay));
+    const Atom CM_SELECTION = XInternAtom(mDisplay,
+        ATOM_NAME.c_str(), False);
+
+    // 2. Find the window that owns this selection
+    const Window WINDOW_OWNER = XGetSelectionOwner(
+        mDisplay, CM_SELECTION);
+    if (WINDOW_OWNER == None) {
+        return QString("");
+    }
+
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems, bytes_after;
+    unsigned char* prop_name = nullptr;
+
+    const Atom UTF8_STRING = XInternAtom(mDisplay, "UTF8_STRING", False);
+    if (XGetWindowProperty(mDisplay, WINDOW_OWNER, mAtomGetWMName,
+        0, 1024, False, UTF8_STRING, &actual_type, &actual_format, 
+        &nitems, &bytes_after, &prop_name) == Success && prop_name) {
+        string name(reinterpret_cast<char*>(prop_name));
+        XFree(prop_name);
+        return QString(name.c_str());
+    }
+
+    // Fallback to standard WM_NAME if _NET_WM_NAME isn't set
+    char* classic_name = nullptr;
+    if (XFetchName(mDisplay, WINDOW_OWNER, &classic_name) &&
+        classic_name) {
+        string name(classic_name);
+        XFree(classic_name);
+        return QString(name.c_str());
+    }
+
+    return QString("");
+}
+
+/**
+ * Check if display supports TrueColor32 visual transparency.
+ */
+bool
+XHelper::isTransparentVisually() {
+    // Ensure we have a compositor running.
+    if (!mXHelper->isACompositorRunning()) {
+        return false;
+    }
+
+    const int VISUAL_COLOR_DEPTH = 32;
+    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
+        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Check if the display supports transparent pointer events.
+ */
+bool
+XHelper::isTransparentToPointer() {
+    // Check for the Composite Extension.
+    int dummy1, dummy2;
+    if (!XCompositeQueryExtension(mDisplay, &dummy1, &dummy2)) {
+        return false;
+    }
+
+    // Check for version >= 1.1 (required for ShapeInput).
+    int major, minor;
+    if (XShapeQueryVersion(mDisplay, &major, &minor)) {
+        return (major > 1 || (major == 1 && minor >= 1));
+    }
+
+    return false;
 }
 
 /**

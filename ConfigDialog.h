@@ -43,7 +43,7 @@ class ConfigDialog : public QDialog {
 
         QDialogButtonBox* mConfigButtonBox = nullptr;
         QPushButton* mAboutButton = nullptr;
-        QMessageBox* mAboutDialog = nullptr;
+        QDialog* mAboutDialog = nullptr;
 
         /**
          * Setup main layout containing QLineEdit per Setting.

@@ -28,11 +28,11 @@ void setAppSignalCatcher();
 void appSignalCatcher(int signal);
 
 void initAppHelpers();
-bool initWindowCompositor();
+bool initVisualTransparency();
 bool initAppPngImages();
 
 void unintPngImages();
-void uninitWindowCompositor();
+void uninitVisualTransparency();
 void uninitAppHelpers();
 
 int getAppInstanceCount();
@@ -49,7 +49,7 @@ SettingsHelper* mSettingsHelper = nullptr;
 XHelper* mXHelper = nullptr;
 
 XVisualInfo mVisualInfoStruct { };
-Colormap mColormap { };
+Colormap mColorMap { };
 
 StickyWindow* mStickyWindow = nullptr;
 
@@ -64,10 +64,11 @@ ConfigDialog* mConfigDialog = nullptr;
 /**
  * Main.
  */
-int main(int argc, char** argv) {
+int
+main(int argc, char** argv) {
     // Some Qt6 setup.
     QApplication app(argc, argv);
-    // setAppSignalCatcher();
+    setAppSignalCatcher();
 
     app.setWindowIcon(QIcon(ICON_PATH +
         QString(APP_NAME) + ".png"));
@@ -87,26 +88,30 @@ int main(int argc, char** argv) {
         return true;
     }
 
-    // Init Font global & App helpers.
-    mFont = XftFontOpenName(mDisplay, DefaultScreen(mDisplay),
-        TIME_DISPLAY_FONT);
+    // Init Font global, App & Png helpers.
+    mFont = XftFontOpenName(mDisplay,
+        DefaultScreen(mDisplay), TIME_DISPLAY_FONT);
     initAppHelpers();
     initAppPngImages();
 
-    // Init Compositor, run app, & uninit Compositor.
-    if (initWindowCompositor()) {
-        StickyWindow* mStickyWindow = new StickyWindow();
-        if (mStickyWindow->getX11Window() != None) {
-            mStickyWindow->run();
-            delete mStickyWindow;
-            uninitWindowCompositor();
-        }
+    // Init visual transparency & TrueColor 32.
+    const bool isVisuallyTransparent =
+        initVisualTransparency();
+
+    StickyWindow* mStickyWindow = new StickyWindow();
+    if (mStickyWindow->getX11Window() != None) {
+        mStickyWindow->run();
+        delete mStickyWindow;
     }
 
-    // Uninit App helpers & Font global.
+    // Uninit all.
+    if (isVisuallyTransparent) {
+        uninitVisualTransparency();
+    }
+
+    // Uninit Font global, App & Png helpers.
     unintPngImages();
     uninitAppHelpers();
-
     XftFontClose(mDisplay, mFont);
     mFont = nullptr;
     FcFini();
@@ -120,7 +125,8 @@ int main(int argc, char** argv) {
 /**
  * Initialize App signal catchers.
  */
-void setAppSignalCatcher() {
+void
+setAppSignalCatcher() {
     for (int eachSignal = 0; eachSignal <= SIGSYS/*31*/; eachSignal++) {
         // Can't catch these two.
         if (eachSignal == SIGKILL || eachSignal == SIGSTOP) {
@@ -133,7 +139,8 @@ void setAppSignalCatcher() {
 /**
  * Initialize App global helpers.
  */
-void initAppHelpers() {
+void
+initAppHelpers() {
     // Init Settings helper global.
     mSettingsHelper = new SettingsHelper(APP_NAME);
 
@@ -148,7 +155,8 @@ void initAppHelpers() {
 /**
  * Initialize all Png Button Images.
  */
-bool initAppPngImages() {
+bool
+initAppPngImages() {
     // Load the Pin-In image.
     const QString PIN_IN_FILE = ICON_PATH + QString(APP_NAME) +
         QString("-") + PIN_IN_PNG_FILENAME;
@@ -192,61 +200,60 @@ bool initAppPngImages() {
 }
 
 /**
- * Initialize window compositor.
+ * Initialize Transparency & TrueColor 32.
  */
-bool initWindowCompositor() {
+bool
+initVisualTransparency() {
     // Ensure we have a compositor running.
     if (!mXHelper->isACompositorRunning()) {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
-            "Compositor isn't running, widgets lose "
-            "transparency - FATAL." << XCOLOR_NORMAL << endl;
         return false;
     }
 
-    // Ensure the compositor has true, per-pixel, alpha
-    // blended transparency.
     const int VISUAL_COLOR_DEPTH = 32;
     if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
         VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
-        mColormap = XCreateColormap(mDisplay,
-            RootWindow(mDisplay, DefaultScreen(mDisplay)),
-            mVisualInfoStruct.visual, AllocNone);
-    } else {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
-            "Compositor is running, but is incapable of "
-            "transparency - FATAL." << XCOLOR_NORMAL << endl;
-        return false;
+        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
+            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
+                AllocNone);
+        return true;
     }
 
-    return true;
+    return false;
 }
 
 /**
- * Initialize window compositor.
+ * Uninitialize Transparency & TrueColor 32.
  */
-void uninitWindowCompositor() {
-    XFreeColormap(mDisplay, mColormap);
+void
+uninitVisualTransparency() {
+    XFreeColormap(mDisplay, mColorMap);
 }
 
 /**
  * Uninitialize all Png Button Images.
  */
-void unintPngImages() {
+void
+unintPngImages() {
     // Intentional blank.
 }
 
 /**
  * Uninitialize all, allow sanitizer perfection 💫.
  */
-void uninitAppHelpers() {
+void
+uninitAppHelpers() {
     delete mXHelper;
     delete mSettingsHelper;
 }
 
 /**
- * Helper method to determine the Display Manager (DM).
+ * Helper method to determine the apps running instance
+ * count. Currently limited to 1.
+ *
+ * TODO: Use this for Recents Context.
  */
-int getAppInstanceCount() {
+int
+getAppInstanceCount() {
     int instanceCount = 0;
 
     // Open procs file for read.
@@ -275,7 +282,8 @@ int getAppInstanceCount() {
  * This method runs in async-signal-safe mode & logs
  * signal event shutdowns called from the OS.
  */
-void appSignalCatcher(int signal) {
+void
+appSignalCatcher(int signal) {
     // Print message Start, stack-allocated string buffer.
     char part1[] = "\nStickyWidgetIII: Signal Handler Shutdown by : [ ";
     { [[maybe_unused]] ssize_t writeResult =
@@ -288,12 +296,15 @@ void appSignalCatcher(int signal) {
     char part2[] = " ].\n";
     { [[maybe_unused]] ssize_t writeResult =
         write(STDERR_FILENO, part2, sizeof(part2)); }
+
+    exit(signal);
 }
 
 /**
  * Async-signal-safe conversion of integer to string.
  */
-void signalIntToSTDOUT(int n) {
+void
+signalIntToSTDOUT(int n) {
     // Early out if easy answer.
     if (n == 0) {
         { [[maybe_unused]] ssize_t writeResult =

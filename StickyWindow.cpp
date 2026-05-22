@@ -106,7 +106,7 @@ StickyWindow::draw() {
     const char* TEXT_CHARS = TEXT_STD_STRING.c_str();
 
     XftDraw* xft_draw = XftDrawCreate(mDisplay, mX11Window,
-        mVisualInfoStruct.visual, mColormap);
+        mVisualInfoStruct.visual, mColorMap);
     XftDrawStringUtf8(xft_draw, &BLACK_FCOLOR, mFont,
         TEXT_X, TEXT_Y, (FcChar8*) TEXT_CHARS,
         strlen(TEXT_CHARS));
@@ -230,7 +230,7 @@ StickyWindow::createX11Window() {
 
     // Create window @ position & size.
     XSetWindowAttributes wAttrs;
-    wAttrs.colormap = mColormap;
+    wAttrs.colormap = mColorMap;
     wAttrs.border_pixel = 0;
     wAttrs.event_mask = OBSERVABLE_EVENTS;
 

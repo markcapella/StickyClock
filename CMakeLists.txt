@@ -14,8 +14,8 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.05.21")
-set(APP_VERSION_MINOR "00")
+set(APP_VERSION "26.05.22")
+set(APP_VERSION_MINOR "01")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
@@ -27,20 +27,32 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-cmake_minimum_required(VERSION 3.10)
-project(${APP_NAME} VERSION ${APP_VERSION} LANGUAGES CXX)
-
 # Define escape codes for error messages.
 string(ASCII 27 ESC)
 set(COLOR_RED    "${ESC}[31m")
+set(COLOR_GREEN  "${ESC}[32m")
 set(COLOR_YELLOW "${ESC}[33m")
 set(COLOR_NORMAL "${ESC}[m")
+
+cmake_minimum_required(VERSION 3.10)
+project(${APP_NAME} VERSION ${APP_VERSION} LANGUAGES CXX)
+
+# Enable ccache.
+find_program(CCACHE_PROGRAM ccache)
+if (CCACHE_PROGRAM)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${CCACHE_PROGRAM}")
+    message(STATUS "${COLOR_GREEN}ccache enabled.${COLOR_NORMAL}")
+else()
+    message(STATUS "${COLOR_YELLOW}ccache not enabled.${COLOR_NORMAL}")
+endif()
 
 # Create "Required Packages" list.
 set(PACKAGE_REQS "git cmake build-essential")
 set(PACKAGE_REQS "${PACKAGE_REQS} pkg-config qt6-base-dev")
 set(PACKAGE_REQS "${PACKAGE_REQS} libx11-dev wmctrl libxft-dev")
-set(PACKAGE_REQS "${PACKAGE_REQS} libxfixes-dev libxext-dev libpng-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} libxfixes-dev libxext-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} libxcomposite-dev libpng-dev")
 
 # Create Pre-reqs install message 1.
 set(COULDNT_LOCATE_MSG "${COLOR_RED}")
@@ -63,12 +75,12 @@ find_package(X11 QUIET COMPONENTS Xft)
 pkg_check_modules(XFIXES QUIET xfixes)
 pkg_check_modules(XEXT QUIET xext)
 find_package(PNG QUIET)
-
+pkg_check_modules(XCOMP QUIET xcomposite)
 
 if (NOT Git_FOUND OR NOT MAKE_EXECUTABLE OR NOT ${PkgConfig_FOUND} OR
     NOT ${Qt6_FOUND} OR NOT ${X11_FOUND} OR NOT WMCTRL_EXECUTABLE OR
     NOT ${X11_Xft_FOUND} OR NOT XFIXES_FOUND OR NOT XEXT_FOUND OR
-    NOT PNG_FOUND)
+    NOT PNG_FOUND OR NOT XCOMP_FOUND)
     message(STATUS "${COULDNT_LOCATE_MSG}")
     message(STATUS "${INSTALL_MSG}")
     message(STATUS "")
@@ -109,14 +121,17 @@ target_compile_definitions(${WIDGET_PROJECT} PRIVATE
     APP_AUTHOR="${APP_AUTHOR}"
     ORG_NAME="${ORG_NAME}"
     SOURCE_REPO="${SOURCE_REPO}"
-    ICON_PATH="${CMAKE_INSTALL_PREFIX}/${ICON_PATH}/")
+    ICON_PATH="${CMAKE_INSTALL_PREFIX}/${ICON_PATH}/"
+)
 
 # All Include sources.
 target_include_directories(${WIDGET_PROJECT} PRIVATE
     ${X11_INCLUDE_DIR}
     ${XFIXES_INCLUDE_DIRS}
     ${XEXT_INCLUDE_DIRS}
-    ${PNG_INCLUDE_DIRS})
+    ${PNG_INCLUDE_DIRS}
+    ${XCOMP_INCLUDE_DIRS}
+)
 
 # All linker libs.
 target_link_libraries(${WIDGET_PROJECT} PRIVATE
@@ -125,15 +140,17 @@ target_link_libraries(${WIDGET_PROJECT} PRIVATE
     X11::Xft
     ${XFIXES_LIBRARIES}
     ${XEXT_LIBRARIES}
-    ${PNG_LIBRARIES})
+    ${PNG_LIBRARIES}
+    ${XCOMP_LIBRARIES}
+)
 
 ##
 # Display leak report after app runs.
 #
-#target_compile_options(${WIDGET_PROJECT} PUBLIC
-#    -fsanitize=address -fno-omit-frame-pointer)
-#target_link_options(${WIDGET_PROJECT} PUBLIC
-#    -fsanitize=address)
+target_compile_options(${WIDGET_PROJECT} PUBLIC
+    -fsanitize=address -fno-omit-frame-pointer)
+target_link_options(${WIDGET_PROJECT} PUBLIC
+    -fsanitize=address)
 
 ##
 # Halt any old active instances.
@@ -182,7 +199,7 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${APP_NAME}.desktop"
 ##
 # Setup convenience target |make run|.
 #
-if(NOT TARGET run)
+if (NOT TARGET run)
     add_custom_target(run
         COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}"
     )
@@ -191,7 +208,7 @@ endif()
 ##
 # Setup convenience target |make uninstall|.
 #
-if(NOT TARGET uninstall)
+if (NOT TARGET uninstall)
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"

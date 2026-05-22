@@ -42,8 +42,11 @@ typedef chrono::steady_clock Clock;
 // x11 xfixes libraries.
 #include <X11/extensions/Xfixes.h>
 
-// x11 xext libraries.
+// x11 xext Shape libraries.
 #include <X11/extensions/shape.h>
+
+// x11 xext Xcomposite libraries.
+#include <X11/extensions/Xcomposite.h>
 
 // libpng library.
 #include <png.h>

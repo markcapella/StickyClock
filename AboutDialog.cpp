@@ -5,89 +5,179 @@
  * Simple class to represent an AboutDialog.
  *
  */
-AboutDialog::AboutDialog(QWidget* parent) :
-    QMessageBox(parent) {
-
-    init();
-}
-
-/**
- * Create a styled AboutDialog for this StickyWidgetIII.
- */
-void
-AboutDialog::init() {
+AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
     setWindowTitle(QString("About ") + QString(APP_NAME));
+    setMinimumWidth(600);
 
-    const QString HTML_START = "<div align='center'>";
-    const QString HTML_LINE_BR = "<br>";
-    const QString HTML_DIV_END = "</div>";
-    const QString HTML_END = "</div>";
+    // Create overall container.
+    QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setSpacing(0);
+    const int FONT_BASE_SIZE = 10;
 
-    // Begin construction.
-    QString TEXT = HTML_START + HTML_LINE_BR;
+    // App title line.
+    QLabel* appTitleLine = new QLabel(QString(APP_NAME), this);
+    appTitleLine->setAlignment(Qt::AlignCenter);
+    appTitleLine->setWordWrap(true);
+    QFont appTitleFont = appTitleLine->font();
+    appTitleFont.setPointSize(FONT_BASE_SIZE + 8);
+    appTitleFont.setBold(true);
+    appTitleFont.setItalic(true);
+    appTitleLine->setFont(appTitleFont);
+    QPalette appTitlePalette = appTitleLine->palette();
+    appTitlePalette.setColor(QPalette::WindowText, QColor("#1ed760"));
+    appTitleLine->setPalette(appTitlePalette);
+    mainLayout->addWidget(appTitleLine);
 
-    // App name.
-    const QString HTML_DIV_START_APP =
-        "<div style='font-style: italic; font-weight: bold; "
-        "font-size: 24px; color: #1ed760;'>";
-    const QString HTML_LINE_1 = HTML_DIV_START_APP +
-        QString(APP_NAME) + HTML_DIV_END;
+    // App versions line.
+    QLabel* appVersionsLine = new QLabel(QString(APP_VERSION) +
+        QString(" : ") + QString(APP_VERSION_MINOR), this);
+    appVersionsLine->setMargin(0);
+    appVersionsLine->setAlignment(Qt::AlignCenter);
+    appVersionsLine->setWordWrap(true);
+    QFont appVersionsFont = appVersionsLine->font();
+    appVersionsFont.setPointSize(FONT_BASE_SIZE + 2);
+    appVersionsLine->setFont(appVersionsFont);
+    mainLayout->addWidget(appVersionsLine);
 
-    // App version.
-    const QString HTML_DIV_START_VERSION = "<div>";
-    const QString HTML_LINE_2 = HTML_DIV_START_VERSION +
-        QString(APP_VERSION) + QString(" : ") +
-        QString(APP_VERSION_MINOR) + HTML_DIV_END;
-    TEXT += HTML_LINE_1 + HTML_LINE_2 + HTML_LINE_BR;
+    // Add blank line before Description.
+    mainLayout->addSpacing(10);
 
-    // App description.
-    const QString HTML_DIV_START_DESC =
-        "<div style='font-style: italic; font-size: 20px;'>";
-    const QString HTML_LINE_4 = HTML_DIV_START_DESC +
-        QString(APP_DESC) + HTML_DIV_END;
-    TEXT += HTML_LINE_4 + HTML_LINE_BR;
+    // App description line.
+    QLabel* appDescLine = new QLabel(QString(APP_DESC), this);
+    appDescLine->setAlignment(Qt::AlignCenter);
+    appDescLine->setWordWrap(true);
+    QFont appDescFont = appDescLine->font();
+    appDescFont.setPointSize(FONT_BASE_SIZE + 4);
+    appDescFont.setItalic(true);
+    appDescLine->setFont(appDescFont);
+    mainLayout->addWidget(appDescLine);
 
-    // App author.
-    const QString HTML_DIV_START_AUTHOR =
-        "<div style='font-size: 14px;'>";
-    const QString HTML_LINE_5 = HTML_DIV_START_AUTHOR +
-        QString(APP_AUTHOR) + HTML_DIV_END;
-    TEXT += HTML_LINE_5;
+    // Add blank line before Author.
+    mainLayout->addSpacing(20);
 
-    // App author org.
-    const QString HTML_LINE_6 = HTML_DIV_START_AUTHOR +
-        QString(ORG_NAME) + HTML_DIV_END;
-    TEXT += HTML_LINE_6 + HTML_LINE_BR;
+    // App author & org line.
+    QLabel* appAuthorLine = new QLabel(QString(APP_AUTHOR) +
+        QString("\n") + QString(ORG_NAME), this);
+    appAuthorLine->setAlignment(Qt::AlignCenter);
+    appAuthorLine->setWordWrap(true);
+    QFont appAuthorFont = appAuthorLine->font();
+    appAuthorFont.setPointSize(FONT_BASE_SIZE + 2);
+    appAuthorLine->setFont(appAuthorFont);
+    mainLayout->addWidget(appAuthorLine);
 
-    // Construct warning for Awesome Window Manager (?)
-    const QString AWESOME_WM_NAME = "awesome";
-    const QString THIS_WM_NAME =
-        mXHelper->getWindowManagerName().c_str();
+    // Prepare warnings.
+    const QString THIS_WM_NAME(mXHelper->
+        getWindowManagerName().c_str());
+    const QString COMPOSITOR_NAME(mXHelper->getCompositorName());
+    bool areThereWarningsYet = false;
 
-    if (THIS_WM_NAME == AWESOME_WM_NAME) {
-        const QString HTML_DIV_START_AWESOME_WARNING =
-            "<div style='font-size: 20px; color: blue;'>";
-        const QString AWESOME_WM_WARNING = "Your Window Manager (WM) is "
-            "'Awesome'. It won't allow you to click through "
-            "StickyWidgetIII based widgets.";
-        TEXT += HTML_LINE_BR + HTML_DIV_START_AWESOME_WARNING +
-            AWESOME_WM_WARNING;
+    // App visual transparency warning line.
+    if (!mXHelper->isTransparentVisually()) {
+        // Add blank line before first warning.
+        if (!areThereWarningsYet) {
+            mainLayout->addWidget(new QLabel(QString(""), this));
+            areThereWarningsYet = true;
+        }
+        const QString VISUAL_WM_WARNING = "NOTE: Your Window Manager "
+            "(WM) & its Compositor won't allow you to transparently see "
+            "through StickyWidgetIII based widgets.";
+        QLabel* appVTWarnLine = new QLabel(
+            QString(VISUAL_WM_WARNING), this);
+        appVTWarnLine->setAlignment(Qt::AlignCenter);
+        appVTWarnLine->setWordWrap(true);
+        QFont appVTWarnFont = appVTWarnLine->font();
+        appVTWarnFont.setPointSize(FONT_BASE_SIZE + 2);
+        appVTWarnLine->setFont(appVTWarnFont);
+        QPalette appVTWarnPalette = appVTWarnLine->palette();
+        appVTWarnPalette.setColor(QPalette::WindowText,
+            QColor("#B22222"));
+        appVTWarnLine->setPalette(appVTWarnPalette);
+        mainLayout->addWidget(appVTWarnLine);
     }
 
-    // Finish the text & consume it.
-    TEXT += HTML_END;
-    setText(TEXT);
+    // App pointer transparency warning line.
+    if (!mXHelper->isTransparentToPointer()) {
+        // Add blank line before first warning.
+        if (!areThereWarningsYet) {
+            mainLayout->addSpacing(20);
+            areThereWarningsYet = true;
+        }
+        const QString POINTER_WM_WARNING = "NOTE: Your Window Manager "
+            "(WM) won't allow you to click through StickyWidgetIII "
+            "based widgets.";
+        QLabel* appPTWarnLine = new QLabel(
+            QString(POINTER_WM_WARNING), this);
+        appPTWarnLine->setAlignment(Qt::AlignCenter);
+        appPTWarnLine->setWordWrap(true);
+        QFont appPTWarnFont = appPTWarnLine->font();
+        appPTWarnFont.setPointSize(FONT_BASE_SIZE + 2);
+        appPTWarnLine->setFont(appPTWarnFont);
+        QPalette appPTWarnPalette = appPTWarnLine->palette();
+        appPTWarnPalette.setColor(QPalette::WindowText,
+            QColor("#B22222"));
+        appPTWarnLine->setPalette(appPTWarnPalette);
+        mainLayout->addWidget(appPTWarnLine);
+    }
 
-    // Set Dialog Ok and Repo buttons.
-    setStandardButtons(QMessageBox::Ok);
-    QPushButton* sourceRepo = addButton("Repo",
-        QMessageBox::ActionRole);
-    QObject::connect(sourceRepo, &QPushButton::clicked, []() {
+    // App tiling WM warning line.
+    if (TILING_WM_NAMES.contains(THIS_WM_NAME)) {
+        // Add blank line before first warning.
+        if (!areThereWarningsYet) {
+            mainLayout->addSpacing(20);
+            areThereWarningsYet = true;
+        }
+        const QString TILING_WM_WARNING = "NOTE: Your Window "
+            "Manager is a Tiling window manager. It may prevent "
+            "you from seeing or clicking through StickyWidgetIII "
+            "based widgets.";
+        QLabel* appTilingWMLine = new QLabel(
+            QString(TILING_WM_WARNING), this);
+        appTilingWMLine->setAlignment(Qt::AlignCenter);
+        appTilingWMLine->setWordWrap(true);
+        QFont appTilingWMFont = appTilingWMLine->font();
+        appTilingWMFont.setPointSize(FONT_BASE_SIZE + 2);
+        appTilingWMLine->setFont(appTilingWMFont);
+        QPalette appTilingWMPalette = appTilingWMLine->palette();
+        appTilingWMPalette.setColor(QPalette::WindowText,
+            QColor("#B22222"));
+        appTilingWMLine->setPalette(appTilingWMPalette);
+        mainLayout->addWidget(appTilingWMLine);
+    }
+
+    // Add blank line before WM / Compositor summary.
+    mainLayout->addSpacing(20);
+
+    // App WM and Compositor summary line.
+    const QString SUMMARY_WM_WARNING = "Your Window Manager is " +
+        THIS_WM_NAME + ", Your Compositor is " +
+        (COMPOSITOR_NAME == "" ? "unknown" : COMPOSITOR_NAME) + ".";
+    QLabel* appSummaryLine = new QLabel(QString(
+        SUMMARY_WM_WARNING), this);
+    appSummaryLine->setAlignment(Qt::AlignCenter);
+    appSummaryLine->setWordWrap(true);
+    QFont appSummaryFont = appSummaryLine->font();
+    appSummaryFont.setPointSize(FONT_BASE_SIZE + 1);
+    appSummaryLine->setFont(appSummaryFont);
+    mainLayout->addWidget(appSummaryLine);
+
+    // Add blank line before Buttons Box.
+    mainLayout->addSpacing(20);
+
+    // Get Buttonbox with Ok button & button to open source Repo.
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(
+        QDialogButtonBox::Ok, this);
+    QPushButton* repoButton = new QPushButton("Repo", this);
+    buttonBox->addButton(repoButton, QDialogButtonBox::ActionRole);
+
+    // Connect Ok and Repo signals.
+    connect(buttonBox, &QDialogButtonBox::accepted, this,
+        &QDialog::accept);
+    connect(repoButton, &QPushButton::clicked, this, [this]() {
         QDesktopServices::openUrl(QUrl(SOURCE_REPO));
+        this->close();
     });
 
-    // Apply stylesheet & done.
-    setStyleSheet(ABOUT_STYLESHEET);
+    mainLayout->addWidget(buttonBox);
 }
 
 /**
@@ -98,8 +188,8 @@ AboutDialog::init() {
  * the window destruction.
  */
 void
-AboutDialog::closeEvent(QCloseEvent *event) {
+AboutDialog::closeEvent(QCloseEvent* event) {
     reject();
-    
+
     event->accept();
 }

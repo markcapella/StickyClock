@@ -86,7 +86,7 @@ extern SettingsHelper* mSettingsHelper;
 extern XHelper* mXHelper;
 
 extern XVisualInfo mVisualInfoStruct;
-extern Colormap mColormap;
+extern Colormap mColorMap;
 
 extern StickyWindow* mStickyWindow;
 
