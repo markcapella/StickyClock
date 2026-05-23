@@ -24,9 +24,6 @@
  */
 
 // App forward decls.
-void setAppSignalCatcher();
-void appSignalCatcher(int signal);
-
 void initAppHelpers();
 bool initVisualTransparency();
 bool initAppPngImages();
@@ -36,7 +33,6 @@ void uninitVisualTransparency();
 void uninitAppHelpers();
 
 int getAppInstanceCount();
-void appSignalCatcher(int signal);
 void signalIntToSTDOUT(int n);
 
 
@@ -66,18 +62,6 @@ ConfigDialog* mConfigDialog = nullptr;
  */
 int
 main(int argc, char** argv) {
-    // Some Qt6 setup.
-    QApplication app(argc, argv);
-    setAppSignalCatcher();
-
-    app.setWindowIcon(QIcon(ICON_PATH +
-        QString(APP_NAME) + ".png"));
-    if (getAppInstanceCount() > 1) {
-        cout << endl << XCOLOR_RED << "StickyClock() is already running "
-            "& only allows for one to run @ a time." << endl;
-        return true;
-    }
-
     // Init Display global.
     mDisplayHelper = new DisplayHelper();
     mDisplay = mDisplayHelper->getDisplay();
@@ -88,6 +72,34 @@ main(int argc, char** argv) {
         return true;
     }
 
+    // Set X Error handler (quiets non-errors).
+    mXHelper = new XHelper();
+    XSetErrorHandler(mXHelper->handleX11ErrorEvent);
+
+    // Enhance Qt6 bash splooge block starts.
+    if (mXHelper->getCompositorName().isEmpty()) {
+        cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: Initializing QT6 "
+            "with no compositor ... warnings follow." << XCOLOR_NORMAL << endl;
+    }
+
+    // Some Qt6 setup.
+    QApplication app(argc, argv);
+
+    // Enhance Qt6 bash splooge block finishes.
+    if (mXHelper->getCompositorName().isEmpty()) {
+        cout << XCOLOR_YELLOW << "StickyWidgetIII: Initializing QT6 with no "
+            "compositor ... warnings end." << XCOLOR_NORMAL << endl << endl;
+    }
+
+    // Set app icon.
+    app.setWindowIcon(QIcon(ICON_PATH +
+        QString(APP_NAME) + ".png"));
+    if (getAppInstanceCount() > 1) {
+        cout << endl << XCOLOR_RED << "StickyClock() is already running "
+            "& only allows for one to run @ a time." << endl;
+        return true;
+    }
+
     // Init Font global, App & Png helpers.
     mFont = XftFontOpenName(mDisplay,
         DefaultScreen(mDisplay), TIME_DISPLAY_FONT);
@@ -95,7 +107,7 @@ main(int argc, char** argv) {
     initAppPngImages();
 
     // Init visual transparency & TrueColor 32.
-    const bool isVisuallyTransparent =
+    const bool IS_VISUALLY_TRANSPARENT =
         initVisualTransparency();
 
     StickyWindow* mStickyWindow = new StickyWindow();
@@ -105,12 +117,13 @@ main(int argc, char** argv) {
     }
 
     // Uninit all.
-    if (isVisuallyTransparent) {
+    if (IS_VISUALLY_TRANSPARENT) {
         uninitVisualTransparency();
     }
 
     // Uninit Font global, App & Png helpers.
     unintPngImages();
+    delete mXHelper;
     uninitAppHelpers();
     XftFontClose(mDisplay, mFont);
     mFont = nullptr;
@@ -123,20 +136,6 @@ main(int argc, char** argv) {
 }
 
 /**
- * Initialize App signal catchers.
- */
-void
-setAppSignalCatcher() {
-    for (int eachSignal = 0; eachSignal <= SIGSYS/*31*/; eachSignal++) {
-        // Can't catch these two.
-        if (eachSignal == SIGKILL || eachSignal == SIGSTOP) {
-            continue;
-        }
-        signal(eachSignal, appSignalCatcher);
-    }
-}
-
-/**
  * Initialize App global helpers.
  */
 void
@@ -146,10 +145,6 @@ initAppHelpers() {
 
     // Commit all QSettings defaults for ConfigDialog support.
     mSettingsHelper->ensureSettingsAreConfigurable();
-
-    // Set X Error handler (quiets non-errors).
-    mXHelper = new XHelper();
-    XSetErrorHandler(mXHelper->handleX11ErrorEvent);
 }
 
 /**
@@ -242,7 +237,6 @@ unintPngImages() {
  */
 void
 uninitAppHelpers() {
-    delete mXHelper;
     delete mSettingsHelper;
 }
 
@@ -276,62 +270,4 @@ getAppInstanceCount() {
     // Close file & return result.
     pclose(procsFile);
     return instanceCount;
-}
-
-/**
- * This method runs in async-signal-safe mode & logs
- * signal event shutdowns called from the OS.
- */
-void
-appSignalCatcher(int signal) {
-    // Print message Start, stack-allocated string buffer.
-    char part1[] = "\nStickyWidgetIII: Signal Handler Shutdown by : [ ";
-    { [[maybe_unused]] ssize_t writeResult =
-        write(STDERR_FILENO, part1, sizeof(part1)); }
-
-    // Print message signalNumber.
-    signalIntToSTDOUT(signal);
-
-    // Print message End, stack-allocated string buffer.
-    char part2[] = " ].\n";
-    { [[maybe_unused]] ssize_t writeResult =
-        write(STDERR_FILENO, part2, sizeof(part2)); }
-
-    exit(signal);
-}
-
-/**
- * Async-signal-safe conversion of integer to string.
- */
-void
-signalIntToSTDOUT(int n) {
-    // Early out if easy answer.
-    if (n == 0) {
-        { [[maybe_unused]] ssize_t writeResult =
-            write(STDERR_FILENO, "0", sizeof("0")); }
-        return;
-    }
-
-    // Note & remove sign from numbers.
-    bool isNegative = false;
-    if (n < 0) {
-        isNegative = true;
-        n = -n;
-    }
-
-    // Init enough for -2147483648, & copy numbers.
-    char temp[12]; int i = 0;
-    while (n > 0) {
-        char c[1];
-        c[0] = (n % 10) + '0';
-        { [[maybe_unused]] ssize_t writeResult =
-            write(STDERR_FILENO, c, sizeof(c)); }
-        n /= 10;
-    }
-
-    // Add minus & endl;
-    if (isNegative) {
-        { [[maybe_unused]] ssize_t writeResult =
-            write(STDERR_FILENO, "-", sizeof("-")); }
-    }
 }

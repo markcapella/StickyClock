@@ -23,7 +23,7 @@ DisplayHelper::DisplayHelper() {
 
     // Check for session error.
     const char* SESSION_TYPE = getenv("XDG_SESSION_TYPE");
-    if (strcmp(SESSION_TYPE, "x11") != 0) {
+    if (SESSION_TYPE && strcmp(SESSION_TYPE, "x11") != 0) {
         cout << XCOLOR_YELLOW << "DisplayHelper: env var "
             "$XDG_SESSION_TYPE: \"" << SESSION_TYPE <<
             "\"." << XCOLOR_NORMAL << endl;
@@ -39,7 +39,7 @@ DisplayHelper::DisplayHelper() {
         cout << XCOLOR_RED << "DisplayHelper: X11 Display "
             "does not seem to be available (Are you Wayland?) "
             "FATAL." << XCOLOR_NORMAL << endl;
-      return;
+        return;
     }
 }
 

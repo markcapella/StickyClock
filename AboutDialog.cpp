@@ -127,7 +127,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
             areThereWarningsYet = true;
         }
         const QString TILING_WM_WARNING = "NOTE: Your Window "
-            "Manager is a Tiling window manager. It may prevent "
+            "Manager is a Tiling window manager. This may prevent "
             "you from seeing or clicking through StickyWidgetIII "
             "based widgets.";
         QLabel* appTilingWMLine = new QLabel(
@@ -142,6 +142,31 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
             QColor("#B22222"));
         appTilingWMLine->setPalette(appTilingWMPalette);
         mainLayout->addWidget(appTilingWMLine);
+    }
+
+
+    // App No Compositor warning line.
+    if (COMPOSITOR_NAME.isEmpty()) {
+        // Add blank line before first warning.
+        if (!areThereWarningsYet) {
+            mainLayout->addSpacing(20);
+            areThereWarningsYet = true;
+        }
+        const QString COMPOSITOR_WARNING = "NOTE: Your Compositor is "
+            "unknown. This may prevent you from seeing or clicking through "
+            "StickyWidgetIII based widgets.";
+        QLabel* compositorLine = new QLabel(
+            QString(COMPOSITOR_WARNING), this);
+        compositorLine->setAlignment(Qt::AlignCenter);
+        compositorLine->setWordWrap(true);
+        QFont compositorFont = compositorLine->font();
+        compositorFont.setPointSize(FONT_BASE_SIZE + 2);
+        compositorLine->setFont(compositorFont);
+        QPalette compositorPalette = compositorLine->palette();
+        compositorPalette.setColor(QPalette::WindowText,
+            QColor("#B22222"));
+        compositorLine->setPalette(compositorPalette);
+        mainLayout->addWidget(compositorLine);
     }
 
     // Add blank line before WM / Compositor summary.
