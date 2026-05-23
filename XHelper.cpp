@@ -6,6 +6,10 @@
  *
  */
 XHelper::XHelper() {
+    if (!mDisplay) {
+        return;
+    }
+
     mAtomDMSupportsWMCheck = XInternAtom(mDisplay,
         "_NET_SUPPORTING_WM_CHECK", False);
     mAtomGetWMName = XInternAtom(mDisplay,

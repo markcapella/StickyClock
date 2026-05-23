@@ -65,32 +65,42 @@ main(int argc, char** argv) {
     // Init Display global.
     mDisplayHelper = new DisplayHelper();
     mDisplay = mDisplayHelper->getDisplay();
-    if (mDisplay == nullptr) {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: "
-            "X11 Windows are unavailable with this Desktop - FATAL." <<
-            XCOLOR_NORMAL << endl;
-        return true;
-    }
 
     // Set X Error handler (quiets non-errors).
     mXHelper = new XHelper();
     XSetErrorHandler(mXHelper->handleX11ErrorEvent);
 
-    // Enhance Qt6 bash splooge block starts.
-    if (mXHelper->getCompositorName().isEmpty()) {
-        cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: "
+    // Start.
+    // QApplication app(argc, argv) issues warnings in stdout
+    // where no compositor is found. We enhance and further
+    // identify the issue.
+    if (mDisplay && mXHelper->getCompositorName().isEmpty()) {
+        cout << endl << XCOLOR_YELLOW << "StickyClock is "
             "Initializing QT6 with no compositor ... warnings start." <<
             XCOLOR_NORMAL << endl;
     }
 
-    // Some Qt6 setup.
+    // Qt6 Application setup.
     QApplication app(argc, argv);
 
-    // Enhance Qt6 bash splooge block finishes.
-    if (mXHelper->getCompositorName().isEmpty()) {
-        cout << XCOLOR_YELLOW << "StickyWidgetIII: "
+    // Finish.
+    // QApplication app(argc, argv) issues warnings in stdout
+    // where no compositor is found. We enhance and further
+    // identify the issue.
+    if (mDisplay && mXHelper->getCompositorName().isEmpty()) {
+        cout << XCOLOR_YELLOW << "StickyClock is "
             "Initializing QT6 with no compositor ... warnings end." <<
             XCOLOR_NORMAL << endl << endl;
+    }
+
+    // If no X Display, Qt can still display a gui error.
+    if (!mDisplay) {
+        QMessageBox::information(NULL, APP_NAME, "X11 Windows are "
+            "unavailable with this Desktop, FATAL.");
+        cout << endl << XCOLOR_RED << "StickyClock: "
+            "X11 Windows are unavailable with this Desktop, FATAL." <<
+            XCOLOR_NORMAL << endl;
+        return true;
     }
 
     // Set app icon.
