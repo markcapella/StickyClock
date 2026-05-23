@@ -86,9 +86,10 @@ StickyWindow::draw() {
         mDisplay, renderPixmap, RENDER_FORMAT, 0, nullptr);
     XRenderFillRectangle(mDisplay, PictOpSrc,
         BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
-    XRenderColor backgroundColor =
-        isItWeedTime() && mSettingsHelper->getShowWeedClock() ?
-            mSettingsHelper->getWeedClockColor() : WHITE_RCOLOR;
+    XRenderColor backgroundColor = (isItWeedTime() && mSettingsHelper->
+        getBoolSetting(SettingsHelper::SHOW_WEED_CLOCK)) ?
+            mSettingsHelper->getColorSetting(
+                SettingsHelper::WEED_CLOCK_COLOR) : WHITE_RCOLOR;
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
         &backgroundColor, X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
     XRenderFreePicture(mDisplay, BACKGROUND_R_PICTURE);
@@ -643,13 +644,12 @@ StickyWindow::getCurrentSecond() {
  */
 bool
 StickyWindow::isItWeedTime() {
-    return mSettingsHelper->getShowWeedClock() && (
-        getCurrentMinute() == "55" || getCurrentMinute() == "08" ||
+    return getCurrentMinute() == "55" || getCurrentMinute() == "08" ||
         getCurrentMinute() == "38" || getCurrentMinute() == "39" ||
         getCurrentMinute() == "40" || getCurrentMinute() == "41" ||
         getCurrentMinute() == "42" || getCurrentMinute() == "43" ||
         getCurrentMinute() == "44" || getCurrentMinute() == "45" ||
-        getCurrentMinute() == "46" || getCurrentMinute() == "20");
+        getCurrentMinute() == "46" || getCurrentMinute() == "20";
 }
 
 /**

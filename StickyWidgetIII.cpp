@@ -66,9 +66,9 @@ main(int argc, char** argv) {
     mDisplayHelper = new DisplayHelper();
     mDisplay = mDisplayHelper->getDisplay();
     if (mDisplay == nullptr) {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: X11 "
-            "Windows are unavailable with this Desktop - "
-            "FATAL." << XCOLOR_NORMAL << endl;
+        cout << endl << XCOLOR_RED << "StickyWidgetIII: "
+            "X11 Windows are unavailable with this Desktop - FATAL." <<
+            XCOLOR_NORMAL << endl;
         return true;
     }
 
@@ -78,8 +78,9 @@ main(int argc, char** argv) {
 
     // Enhance Qt6 bash splooge block starts.
     if (mXHelper->getCompositorName().isEmpty()) {
-        cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: Initializing QT6 "
-            "with no compositor ... warnings follow." << XCOLOR_NORMAL << endl;
+        cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: "
+            "Initializing QT6 with no compositor ... warnings start." <<
+            XCOLOR_NORMAL << endl;
     }
 
     // Some Qt6 setup.
@@ -87,16 +88,19 @@ main(int argc, char** argv) {
 
     // Enhance Qt6 bash splooge block finishes.
     if (mXHelper->getCompositorName().isEmpty()) {
-        cout << XCOLOR_YELLOW << "StickyWidgetIII: Initializing QT6 with no "
-            "compositor ... warnings end." << XCOLOR_NORMAL << endl << endl;
+        cout << XCOLOR_YELLOW << "StickyWidgetIII: "
+            "Initializing QT6 with no compositor ... warnings end." <<
+            XCOLOR_NORMAL << endl << endl;
     }
 
     // Set app icon.
     app.setWindowIcon(QIcon(ICON_PATH +
         QString(APP_NAME) + ".png"));
     if (getAppInstanceCount() > 1) {
-        cout << endl << XCOLOR_RED << "StickyClock() is already running "
-            "& only allows for one to run @ a time." << endl;
+        QMessageBox::information(NULL, APP_NAME, "StickyClock is "
+            "already running & only allows for one to run @ a time.");
+        cout << endl << XCOLOR_RED << "StickyClock is already "
+            "running & only allows for one to run @ a time." << endl;
         return true;
     }
 

@@ -162,43 +162,37 @@ SettingsHelper::setCanvasHeight(const double height) {
 }
 
 /**
- * Getters & setters for user configurable setting
- * ShowWeedClock.
+ * Getters & setters for user configurable bool settings.
  */
 bool
-SettingsHelper::getShowWeedClock() {
-    const QString KEY = "showWeedClock";
+SettingsHelper::getBoolSetting(const QString setting) {
+
     getQSettings()->beginGroup("Configurable");
-
-    const bool RESULT = getQSettings()->value(KEY,
-        getSettingsDefaultValue(KEY)).toBool();
-
+    const bool RESULT = getQSettings()->value(setting,
+        getSettingsDefaultValue(setting)).toBool();
     getQSettings()->endGroup();
 
     return RESULT;
 }
 
 void
-SettingsHelper::setShowWeedClock(const bool value) {
-    const QString KEY = "showWeedClock";
+SettingsHelper::setBoolSetting(const QString setting,
+    const bool value) {
+
     getQSettings()->beginGroup("Configurable");
-
-    getQSettings()->setValue(KEY, value);
-
+    getQSettings()->setValue(setting, value);
     getQSettings()->endGroup();
 }
 
 /**
- * Getters & setters for user configurable setting
- * weedClockColor.
+ * Getters & setters for user configurable XRenderColor settings.
  */
 XRenderColor
-SettingsHelper::getWeedClockColor() {
-    const QString KEY = "weedClockColor";
-    getQSettings()->beginGroup("Configurable");
+SettingsHelper::getColorSetting(const QString setting) {
 
+    getQSettings()->beginGroup("Configurable");
     const QColor COLOR = QColor(getQSettings()->value(
-        KEY, getSettingsDefaultValue(KEY)).toString());
+        setting, getSettingsDefaultValue(setting)).toString());
     getQSettings()->endGroup();
 
     XRenderColor xColor;
@@ -237,10 +231,10 @@ SettingsHelper::getQSettings() {
  */
 void
 SettingsHelper::ensureSettingsAreConfigurable() {
-    const int INITIAL_SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
+    const int INITIAL_SETTINGS_SIZE = PROPERTIES.size();
 
     for (int i = 0; i < INITIAL_SETTINGS_SIZE; i++) {
-        const SettingsProperty property = SETTINGS_PROPERTIES[i];
+        const SettingsProperty property = PROPERTIES[i];
         getQSettings()->beginGroup(property.group);
 
         const QVariant SETTING_VARIANT =
@@ -262,10 +256,10 @@ SettingsPropertyType
 SettingsHelper::getSettingsValueType(const QString key) {
     SettingsPropertyType valueType;
 
-    const int SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
+    const int SETTINGS_SIZE = PROPERTIES.size();
     for (int i = 0; i < SETTINGS_SIZE; i++) {
         const SettingsProperty THIS_SETTING =
-            SETTINGS_PROPERTIES[i];
+            PROPERTIES[i];
 
         if (key == THIS_SETTING.name) {
             valueType = THIS_SETTING.valueType;
@@ -283,10 +277,10 @@ QString
 SettingsHelper::getSettingsDefaultValue(const QString key) {
     QString defaultValue = "";
 
-    const int SETTINGS_SIZE = SETTINGS_PROPERTIES.size();
+    const int SETTINGS_SIZE = PROPERTIES.size();
     for (int i = 0; i < SETTINGS_SIZE; i++) {
         const SettingsProperty THIS_SETTING =
-            SETTINGS_PROPERTIES[i];
+            PROPERTIES[i];
 
         if (key == THIS_SETTING.name) {
             defaultValue = THIS_SETTING.initialValue;

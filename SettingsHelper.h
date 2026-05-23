@@ -15,24 +15,26 @@ enum SettingsPropertyType {
     STRING_VALUETYPE
 };
 
-struct SettingsProperty {
-    QString group = "";
-    QString name = "";
-
-    SettingsPropertyType valueType = NONE_VALUETYPE;
-    QString initialValue = "";
-};
-
-const vector<SettingsProperty> SETTINGS_PROPERTIES = {
-    { .group = "Configurable", .name = "showWeedClock",
-        .valueType = BOOL_VALUETYPE, .initialValue = "true" },
-    { .group = "Configurable", .name = "weedClockColor",
-        .valueType = COLOR_VALUETYPE, .initialValue = "#00faff" }
-};
-
 
 class SettingsHelper {
     public:
+
+        static inline const QString SHOW_WEED_CLOCK = "showWeedClock";
+        static inline const QString WEED_CLOCK_COLOR = "weedClockColor";
+
+        struct SettingsProperty {
+            QString group = "";
+            QString name = "";
+            SettingsPropertyType valueType = NONE_VALUETYPE;
+            QString initialValue = "";
+        };
+
+        static inline const vector<SettingsProperty> PROPERTIES = {
+            { .group = "Configurable", .name = SHOW_WEED_CLOCK,
+                .valueType = BOOL_VALUETYPE, .initialValue = "true" },
+            { .group = "Configurable", .name = WEED_CLOCK_COLOR,
+                .valueType = COLOR_VALUETYPE, .initialValue = "#00faff" }
+        };
 
         SettingsHelper(const QString appName);
         ~SettingsHelper();
@@ -92,18 +94,15 @@ class SettingsHelper {
         void setCanvasHeight(const double height);
 
         /**
-         * Getters & setters for user configurable setting
-         * ShowWeedClock.
+         * Getters & setters for user configurable bool settings.
          */
-        bool getShowWeedClock();
-        void setShowWeedClock(const bool value);
+        bool getBoolSetting(const QString setting);
+        void setBoolSetting(const QString setting, const bool value);
 
         /**
-         * Getters & setters for user configurable setting
-         * weedClockColor.
+         * Getters & setters for user configurable XRenderColor settings.
          */
-        XRenderColor getWeedClockColor();
-        void setWeedClockColor(const XRenderColor color);
+        XRenderColor getColorSetting(const QString setting);
 
         /**
          * Helper to return a QSettings filename from appName.
