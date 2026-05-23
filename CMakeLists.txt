@@ -15,7 +15,7 @@ set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
 set(APP_VERSION "26.05.22")
-set(APP_VERSION_MINOR "02")
+set(APP_VERSION_MINOR "03")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
@@ -36,6 +36,7 @@ set(COLOR_NORMAL "${ESC}[m")
 
 cmake_minimum_required(VERSION 3.10)
 project(${APP_NAME} VERSION ${APP_VERSION} LANGUAGES CXX)
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 
 # Enable ccache.
 find_program(CCACHE_PROGRAM ccache)
@@ -151,6 +152,17 @@ target_compile_options(${WIDGET_PROJECT} PUBLIC
     -fsanitize=address -fno-omit-frame-pointer)
 target_link_options(${WIDGET_PROJECT} PUBLIC
     -fsanitize=address)
+
+#
+set(TARGET_NAME ${WIDGET_PROJECT})
+install(CODE "
+    set(BUILD_OUTPUT \"\${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}\")
+    if (NOT EXISTS \"\${BUILD_OUTPUT}\")
+        message(STATUS \"ERROR: Local build is not complete.\")
+        message(FATAL_ERROR \"First make this package, then \"
+            \"you can install it.\")
+    endif()
+")
 
 ##
 # Halt any old active instances.
