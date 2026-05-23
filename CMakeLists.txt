@@ -15,7 +15,7 @@ set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
 set(APP_VERSION "26.05.22")
-set(APP_VERSION_MINOR "05")
+set(APP_VERSION_MINOR "06")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")

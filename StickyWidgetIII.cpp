@@ -35,6 +35,8 @@ void uninitAppHelpers();
 int getAppInstanceCount();
 void signalIntToSTDOUT(int n);
 
+bool areWeUsingQtPlatformTheming();
+
 
 // App globals.
 DisplayHelper* mDisplayHelper = nullptr;
@@ -72,11 +74,10 @@ main(int argc, char** argv) {
 
     // Start.
     // QApplication app(argc, argv) issues warnings in stdout
-    // where no compositor is found. We enhance and further
-    // identify the issue.
-    if (mDisplay && mXHelper->getCompositorName().isEmpty()) {
-        cout << endl << XCOLOR_YELLOW << "StickyClock is "
-            "Initializing QT6 with no compositor ... warnings start." <<
+    // if platform is using qt themeing.
+    if (areWeUsingQtPlatformTheming()) {
+        cout << endl << XCOLOR_YELLOW << "StickyClock sees you "
+            "using Qt Platform theming ... warnings start." <<
             XCOLOR_NORMAL << endl;
     }
 
@@ -85,11 +86,10 @@ main(int argc, char** argv) {
 
     // Finish.
     // QApplication app(argc, argv) issues warnings in stdout
-    // where no compositor is found. We enhance and further
-    // identify the issue.
-    if (mDisplay && mXHelper->getCompositorName().isEmpty()) {
-        cout << XCOLOR_YELLOW << "StickyClock is "
-            "Initializing QT6 with no compositor ... warnings end." <<
+    // if platform is using qt themeing.
+    if (areWeUsingQtPlatformTheming()) {
+        cout << XCOLOR_YELLOW << "StickyClock sees you "
+            "using Qt Platform theming ... warnings end." <<
             XCOLOR_NORMAL << endl << endl;
     }
 
@@ -284,4 +284,16 @@ getAppInstanceCount() {
     // Close file & return result.
     pclose(procsFile);
     return instanceCount;
+}
+
+// Check for platforms use of Qt platformTheming.
+bool
+areWeUsingQtPlatformTheming() {
+    const char* PLATFORMTHEME = getenv("QT_QPA_PLATFORMTHEME");
+    if (PLATFORMTHEME && (strcmp(PLATFORMTHEME, "qt5ct") == 0 ||
+        strcmp(PLATFORMTHEME, "qt6ct") == 0)) {
+        return true;
+    }
+
+    return false;
 }
