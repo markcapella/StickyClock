@@ -6,9 +6,7 @@
  * store for user preferences in a file tied to appName.
  *
  */
-SettingsHelper::SettingsHelper(const QString appName) {
-
-    mSettingsApp = appName;
+SettingsHelper::SettingsHelper() {
 }
 
 SettingsHelper::~SettingsHelper() {
@@ -209,7 +207,8 @@ SettingsHelper::getColorSetting(const QString setting) {
 QString
 SettingsHelper::getQSettingsFile() {
     return getenv("HOME") + QStringLiteral("/.local/") +
-        mSettingsApp + ".ini";
+        QString(APP_NAME) + "/" + mRecentsHelper->
+            getAppRecentsName() + QStringLiteral(".ini");
 }
 
 /**

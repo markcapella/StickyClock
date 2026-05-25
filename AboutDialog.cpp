@@ -153,8 +153,8 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
             areThereWarningsYet = true;
         }
         const QString COMPOSITOR_WARNING = "NOTE: Your Compositor is "
-            "unknown. This may prevent you from seeing or clicking through "
-            "StickyWidgetIII based widgets.";
+            "unknown. This may prevent you from seeing or clicking "
+            "through StickyWidgetIII based widgets.";
         QLabel* compositorLine = new QLabel(
             QString(COMPOSITOR_WARNING), this);
         compositorLine->setAlignment(Qt::AlignCenter);

@@ -24,40 +24,33 @@
  */
 
 // App forward decls.
-void initAppHelpers();
-bool initVisualTransparency();
-bool initAppPngImages();
-
-void unintPngImages();
-void uninitVisualTransparency();
-void uninitAppHelpers();
-
-int getAppInstanceCount();
-void signalIntToSTDOUT(int n);
+int main(int argc, char** argv);
 
 bool areWeUsingQtPlatformTheming();
 
+bool initAppPngImages();
 
-// App globals.
+void sanitizeGlobals();
+
+
+// App globals externs.
 DisplayHelper* mDisplayHelper = nullptr;
 Display* mDisplay = nullptr;
-XftFont* mFont = nullptr;
-
-SettingsHelper* mSettingsHelper = nullptr;
 XHelper* mXHelper = nullptr;
 
-XVisualInfo mVisualInfoStruct { };
-Colormap mColorMap { };
+XftFont* mFont = nullptr;
+RecentsHelper* mRecentsHelper = nullptr;
+SettingsHelper* mSettingsHelper = nullptr;
 
 StickyWindow* mStickyWindow = nullptr;
 
-QImage mPinInQImage { };
 XImage* mPinInXImage = nullptr;
-
-QImage mPinOutQImage { };
 XImage* mPinOutXImage = nullptr;
 
-ConfigDialog* mConfigDialog = nullptr;
+// App globals;
+QImage mPinInQImage { };
+QImage mPinOutQImage { };
+
 
 /**
  * Main.
@@ -72,9 +65,8 @@ main(int argc, char** argv) {
     mXHelper = new XHelper();
     XSetErrorHandler(mXHelper->handleX11ErrorEvent);
 
-    // Start.
     // QApplication app(argc, argv) issues warnings in stdout
-    // if platform is using qt themeing.
+    // if platform is using qt themeing - wrap before.
     if (areWeUsingQtPlatformTheming()) {
         cout << endl << XCOLOR_YELLOW << "StickyClock sees you "
             "using Qt Platform theming ... warnings start." <<
@@ -83,10 +75,11 @@ main(int argc, char** argv) {
 
     // Qt6 Application setup.
     QApplication app(argc, argv);
+    app.setWindowIcon(QIcon(ICON_PATH +
+        QString(APP_NAME) + ".png"));
 
-    // Finish.
     // QApplication app(argc, argv) issues warnings in stdout
-    // if platform is using qt themeing.
+    // if platform is using qt themeing - wrap after.
     if (areWeUsingQtPlatformTheming()) {
         cout << XCOLOR_YELLOW << "StickyClock sees you "
             "using Qt Platform theming ... warnings end." <<
@@ -103,26 +96,22 @@ main(int argc, char** argv) {
         return true;
     }
 
-    // Set app icon.
-    app.setWindowIcon(QIcon(ICON_PATH +
-        QString(APP_NAME) + ".png"));
-    if (getAppInstanceCount() > 1) {
-        QMessageBox::information(NULL, APP_NAME, "StickyClock is "
-            "already running & only allows for one to run @ a time.");
-        cout << endl << XCOLOR_RED << "StickyClock is already "
-            "running & only allows for one to run @ a time." << endl;
+    // Init Fonts.
+    mFont = XftFontOpenName(mDisplay, DefaultScreen(mDisplay),
+        TIME_DISPLAY_FONT);
+
+    // Init Recents helper.
+    mRecentsHelper = new RecentsHelper();
+    if (mRecentsHelper->getAppRecentsName().isEmpty()) {
+        sanitizeGlobals();
         return true;
     }
 
-    // Init Font global, App & Png helpers.
-    mFont = XftFontOpenName(mDisplay,
-        DefaultScreen(mDisplay), TIME_DISPLAY_FONT);
-    initAppHelpers();
-    initAppPngImages();
+    // Init Font global, Settings & App & Png Helpers.
+    mSettingsHelper = new SettingsHelper();
+    mSettingsHelper->ensureSettingsAreConfigurable();
 
-    // Init visual transparency & TrueColor 32.
-    const bool IS_VISUALLY_TRANSPARENT =
-        initVisualTransparency();
+    initAppPngImages();
 
     StickyWindow* mStickyWindow = new StickyWindow();
     if (mStickyWindow->getX11Window() != None) {
@@ -130,35 +119,25 @@ main(int argc, char** argv) {
         delete mStickyWindow;
     }
 
-    // Uninit all.
-    if (IS_VISUALLY_TRANSPARENT) {
-        uninitVisualTransparency();
-    }
+    delete mSettingsHelper;
+    delete mRecentsHelper;
 
-    // Uninit Font global, App & Png helpers.
-    unintPngImages();
-    delete mXHelper;
-    uninitAppHelpers();
-    XftFontClose(mDisplay, mFont);
-    mFont = nullptr;
-    FcFini();
-
-    // Uninit Display global.
-    delete mDisplayHelper;
-    XCloseDisplay(mDisplay);
+    sanitizeGlobals();
     return false;
 }
 
 /**
- * Initialize App global helpers.
+ * Check for platforms use of Qt platformTheming.
  */
-void
-initAppHelpers() {
-    // Init Settings helper global.
-    mSettingsHelper = new SettingsHelper(APP_NAME);
+bool
+areWeUsingQtPlatformTheming() {
+    const char* PLATFORMTHEME = getenv("QT_QPA_PLATFORMTHEME");
+    if (PLATFORMTHEME && (strcmp(PLATFORMTHEME, "qt5ct") == 0 ||
+        strcmp(PLATFORMTHEME, "qt6ct") == 0)) {
+        return true;
+    }
 
-    // Commit all QSettings defaults for ConfigDialog support.
-    mSettingsHelper->ensureSettingsAreConfigurable();
+    return false;
 }
 
 /**
@@ -209,91 +188,15 @@ initAppPngImages() {
 }
 
 /**
- * Initialize Transparency & TrueColor 32.
+ * This method sanitizes global members after use.
  */
-bool
-initVisualTransparency() {
-    // Ensure we have a compositor running.
-    if (!mXHelper->isACompositorRunning()) {
-        return false;
-    }
+void sanitizeGlobals() {
+    XftFontClose(mDisplay, mFont);
+    mFont = nullptr;
+    FcFini();
 
-    const int VISUAL_COLOR_DEPTH = 32;
-    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
-        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
-        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
-            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
-                AllocNone);
-        return true;
-    }
+    delete mXHelper;
 
-    return false;
-}
-
-/**
- * Uninitialize Transparency & TrueColor 32.
- */
-void
-uninitVisualTransparency() {
-    XFreeColormap(mDisplay, mColorMap);
-}
-
-/**
- * Uninitialize all Png Button Images.
- */
-void
-unintPngImages() {
-    // Intentional blank.
-}
-
-/**
- * Uninitialize all, allow sanitizer perfection 💫.
- */
-void
-uninitAppHelpers() {
-    delete mSettingsHelper;
-}
-
-/**
- * Helper method to determine the apps running instance
- * count. Currently limited to 1.
- *
- * TODO: Use this for Recents Context.
- */
-int
-getAppInstanceCount() {
-    int instanceCount = 0;
-
-    // Open procs file for read.
-    const char* CMD = "pgrep StickyClock";
-    FILE* procsFile = popen(CMD, "r");
-    if (!procsFile) {
-        return instanceCount;
-    }
-
-    // Read each record, counting app instances.
-    #define BUFFER_LENGTH 1024
-    char inFileBuffer[BUFFER_LENGTH];
-    try {
-        while (fgets(inFileBuffer, BUFFER_LENGTH,
-            procsFile) != nullptr) {
-            instanceCount++;
-        }
-    } catch (...) { }
-
-    // Close file & return result.
-    pclose(procsFile);
-    return instanceCount;
-}
-
-// Check for platforms use of Qt platformTheming.
-bool
-areWeUsingQtPlatformTheming() {
-    const char* PLATFORMTHEME = getenv("QT_QPA_PLATFORMTHEME");
-    if (PLATFORMTHEME && (strcmp(PLATFORMTHEME, "qt5ct") == 0 ||
-        strcmp(PLATFORMTHEME, "qt6ct") == 0)) {
-        return true;
-    }
-
-    return false;
+    XCloseDisplay(mDisplay);
+    delete mDisplayHelper;
 }

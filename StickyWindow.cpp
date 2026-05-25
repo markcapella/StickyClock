@@ -6,11 +6,13 @@
  *
  */
 StickyWindow::StickyWindow() {
-    mDeleteProtocols = XInternAtom(mDisplay, "WM_PROTOCOLS", False);
-    mDeleteMessage = XInternAtom(mDisplay, "WM_DELETE_WINDOW", False);
+    mDeleteMessage = XInternAtom(mDisplay,
+        "WM_DELETE_WINDOW", False);
+
+    // Init visual transparency & TrueColor 32.
+    mIsVisuallyTransparent = initVisualTransparency();
 
     setX11Window(createX11Window());
-
     createWindowButtons();
 }
 
@@ -21,11 +23,38 @@ StickyWindow::~StickyWindow() {
     }
     mButtons.clear();
 
+    // Uninit all.
+    if (mIsVisuallyTransparent) {
+        XFreeColormap(mDisplay, mColorMap);
+    }
+
     if (mX11Window != None) {
         XUnmapWindow(mDisplay, mX11Window);
         XDestroyWindow(mDisplay, mX11Window);
         mX11Window = None;
     }
+}
+
+/**
+ * Initialize Transparency & TrueColor 32.
+ */
+bool
+StickyWindow::initVisualTransparency() {
+    // Ensure we have a compositor running.
+    if (!mXHelper->isACompositorRunning()) {
+        return false;
+    }
+
+    const int VISUAL_COLOR_DEPTH = 32;
+    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
+        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
+        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
+            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
+                AllocNone);
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -255,6 +284,9 @@ StickyWindow::createX11Window() {
     XSelectInput(mDisplay, mX11Window, OBSERVABLE_EVENTS);
     XSetWMProtocols(mDisplay, mX11Window, &mDeleteMessage, 1);
 
+    // Set procID on our window, for RecentsHelper().
+    mXHelper->setWindowPID(mX11Window);
+
     // Set window Size Hints, position & minimum size.
     XSizeHints* hints = XAllocSizeHints();
     if (hints) {
@@ -270,7 +302,16 @@ StickyWindow::createX11Window() {
     }
 
     // Set the window title.
-    mWindowTitle = strdup(APP_NAME);
+    const QString FIRST_RECENTS_NAME =
+        mRecentsHelper->RECENTS_NAMES[0];
+    const QString APP_RECENT_NAME =
+        mRecentsHelper->getAppRecentsName();
+
+    QString TITLE = QString(APP_NAME);
+    if (APP_RECENT_NAME != FIRST_RECENTS_NAME) {
+        TITLE += " " + APP_RECENT_NAME;
+    }
+    mWindowTitle = strdup(TITLE.toUtf8().constData());
     XSetStandardProperties(mDisplay, mX11Window, mWindowTitle,
         mWindowTitle, None, nullptr, 0, nullptr);
     free(mWindowTitle);

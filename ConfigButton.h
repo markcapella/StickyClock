@@ -16,4 +16,6 @@ class ConfigButton : public Button {
 
     private:
         bool mConfigShown = false;
+
+        ConfigDialog* mConfigDialog = nullptr;
 };

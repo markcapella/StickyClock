@@ -8,7 +8,20 @@
 ConfigDialog::ConfigDialog(const QString& filePath,
     QWidget* parent) : QDialog(parent) {
 
-    setWindowTitle(QString(APP_NAME) + QString(" Settings"));
+    // Set the window title.
+    const QString FIRST_RECENTS_NAME =
+        mRecentsHelper->RECENTS_NAMES[0];
+    const QString APP_RECENT_NAME =
+        mRecentsHelper->getAppRecentsName();
+
+    QString TITLE = QString(APP_NAME);
+    if (APP_RECENT_NAME != FIRST_RECENTS_NAME) {
+        TITLE += " " + APP_RECENT_NAME;
+    }
+    TITLE += " Settings";
+    setWindowTitle(QString(TITLE));
+
+    // Set the window attributes.
     setWindowFlags(windowFlags() | Qt::Tool);
 
     setMinimumWidth(CONFIG_DIALOG_MIX_WIDTH);

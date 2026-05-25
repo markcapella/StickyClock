@@ -3,13 +3,15 @@
 
 /**
  * XHelper provides common X related methods.
- *
  */
 class XHelper {
 
     typedef int MapState;
 
     public:
+        /**
+         * Constructor.
+         */
         XHelper();
 
         /**
@@ -132,6 +134,16 @@ class XHelper {
         int getWindowMapstate(const Window window);
 
         /**
+         * Gets window PID.
+         */
+        pid_t getWindowPID(const Window window);
+
+        /**
+         * Sets window PID.
+         */
+        void setWindowPID(const Window window);
+
+        /**
          * Sets window titlebar, border to desired visibility.
          */
         void setWindowType(const Window window,
@@ -139,9 +151,13 @@ class XHelper {
 
         /**
          * This method returns a 40-char window title string.
-         *    Replace unprintables with SPACE.
          */
         string getWindowTitle(const Window window);
+
+        /**
+         * This method returns a 40-char window title string.
+         */
+        string getWindowTitleFromPID(const pid_t pid);
 
         /**
          * This method determines which workspace a
@@ -213,9 +229,14 @@ class XHelper {
         WinInfo* getWinInfoForWindow(const Window window);
 
         /**
-         * Helper to return Window as Hex value.
+         * Helper to return Window as Hex string.
          */
         string getWindowAsHexString(const Window window);
+
+        /**
+         * Helper to return PID as Hex string.
+         */
+        string getPIDAsHexString(const pid_t pid);
 
         /**
          * Helper to display leading 0's for Hour & minute.

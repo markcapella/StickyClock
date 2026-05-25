@@ -23,28 +23,26 @@ if [ "$APP_NAME" == "" ]; then
     exit 1
 fi
 
-# Kill any zombie StickyClockSettings ConfigDialog.
-# Like: 0x03400007  0 lubuntu StickyClockSettings
-SETTINGS_RESULT=$(wmctrl -l | egrep "$APP_NAME""Settings""$")
-SETTINGS_PROC=${SETTINGS_RESULT:0:10}
-SETTINGS_NAME=${SETTINGS_RESULT:22}
-if [ "$SETTINGS_PROC" != "" ]; then
-    echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
-        "$ALLTEXT_NORMAL""Active ConfigDialog is being shutdown."
-    xkill -id ""$SETTINGS_PROC"" 1>/dev/null 2>/dev/null
-else
-    echo "-- No Active ConfigDialog to shutdown."
-fi
+# Kill all active $APP_NAME.
+WERE_ANY_HALTED="false"
 
-# Kill any zombie StickyClock.
-# Like: 0x03400007  0 lubuntu StickyClock
-SETTINGS_RESULT=$(wmctrl -l | egrep "$APP_NAME""$")
-SETTINGS_PROC=${SETTINGS_RESULT:0:10}
-SETTINGS_NAME=${SETTINGS_RESULT:22}
-if [ "$SETTINGS_PROC" != "" ]; then
-    echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
-        "$ALLTEXT_NORMAL""Active StickyClock is being shutdown."
-    xkill -id ""$SETTINGS_PROC"" 1>/dev/null 2>/dev/null
-else
-    echo "-- No Active StickyClock to shutdown."
+OLDIFS=$IFS; IFS=$'\n';
+for PROC_INFO in $(wmctrl -l | egrep "$APP_NAME")
+do
+    # pppppppppp            nnnnnnnnnnn 
+    # 0x03400007  0 lubuntu $APP_NAME
+    PROC_ID=${PROC_INFO:0:10}
+    PROC_NAME=${PROC_INFO:22:11}
+
+    if [[ "$PROC_ID" != "" && "$PROC_NAME" == "$APP_NAME" ]]; then
+        echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
+            "$ALLTEXT_NORMAL""Active ""$APP_NAME"" is being shutdown."
+        xkill -id ""$PROC_ID"" 1>/dev/null 2>/dev/null
+        WERE_ANY_HALTED="true"
+    fi
+done
+IFS=$OLDIFS
+
+if [ "$WERE_ANY_HALTED" != "true" ]; then
+    echo "-- No Active ""$APP_NAME"" to shutdown."
 fi

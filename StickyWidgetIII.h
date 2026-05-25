@@ -80,20 +80,13 @@ static inline const QString PIN_OUT_PNG_FILENAME = "pinOut.png";
 // App globals.
 extern DisplayHelper* mDisplayHelper;
 extern Display* mDisplay;
-extern XftFont* mFont;
-
-extern SettingsHelper* mSettingsHelper;
 extern XHelper* mXHelper;
 
-extern XVisualInfo mVisualInfoStruct;
-extern Colormap mColorMap;
+extern XftFont* mFont;
+extern RecentsHelper* mRecentsHelper;
+extern SettingsHelper* mSettingsHelper;
 
 extern StickyWindow* mStickyWindow;
 
-extern QImage mPinInQImage;
 extern XImage* mPinInXImage;
-
-extern QImage mPinOutQImage;
 extern XImage* mPinOutXImage;
-
-extern ConfigDialog* mConfigDialog;

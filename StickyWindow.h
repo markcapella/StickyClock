@@ -90,8 +90,16 @@ class StickyWindow {
         QPoint mDragMoveButtonOffset { };
         bool mWindowResized = false;
 
-        Atom mDeleteProtocols { };
         Atom mDeleteMessage { };
+
+        bool mIsVisuallyTransparent = false;
+        XVisualInfo mVisualInfoStruct { };
+        Colormap mColorMap { };
+
+        /**
+         * Initialize Transparency & TrueColor 32.
+         */
+        bool initVisualTransparency();
 
         /**
          * This method sets StickyWindows internal x11 window.

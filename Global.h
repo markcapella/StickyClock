@@ -8,7 +8,10 @@
 // Standard C libraries.
 #include <chrono>
 #include <cstdint>
+#include <dirent.h>
+#include <fcntl.h>
 #include <format>
+#include <fstream>
 #include <iostream>
 #include <signal.h>
 #include <thread>
@@ -61,17 +64,18 @@ typedef chrono::steady_clock Clock;
 
 #include "PinButton.h"
 #include "QuitButton.h"
-#include "ConfigButton.h"
 #include "MoveButton.h"
 #include "SizeButton.h"
 
 #include "ConfigDialog.h"
+#include "ConfigButton.h"
+
 #include "AboutDialog.h"
-#include "SettingsHelper.h"
 #include "DisplayHelper.h"
+#include "RecentsHelper.h"
+#include "SettingsHelper.h"
 #include "WinInfo.h"
 #include "XHelper.h"
-#include "RecentsHelper.h"
 
 #include "StickyWindow.h"
 #include "StickyWidgetIII.h"

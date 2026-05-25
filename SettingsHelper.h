@@ -36,7 +36,7 @@ class SettingsHelper {
                 .valueType = COLOR_VALUETYPE, .initialValue = "#00faff" }
         };
 
-        SettingsHelper(const QString appName);
+        SettingsHelper();
         ~SettingsHelper();
 
         /**

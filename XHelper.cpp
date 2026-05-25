@@ -3,7 +3,6 @@
 
 /**
  * XHelper provides common X related methods.
- *
  */
 XHelper::XHelper() {
     if (!mDisplay) {
@@ -120,10 +119,9 @@ XHelper::getWMNameFromRootWindow(const Window rootWindow) {
     unsigned long unused;
 
     unsigned char* resultWindowPtr = nullptr;
-    if (XGetWindowProperty(mDisplay, rootWindow,
-        mAtomGetWMName, 0, 1024, False, mAtomGetUTF8String,
-        &resultType, &resultFormat, &resultCount,
-        &unused, &resultWindowPtr) == Success) {
+    if (XGetWindowProperty(mDisplay, rootWindow, mAtomGetWMName,
+        0, 1024, False, mAtomGetUTF8String, &resultType, &resultFormat,
+        &resultCount, &unused, &resultWindowPtr) == Success) {
 
         if (resultWindowPtr != nullptr) {
             if (resultType == mAtomGetUTF8String ||
@@ -216,9 +214,10 @@ XHelper::isTransparentVisually() {
         return false;
     }
 
+    XVisualInfo visualInfoStruct { };
     const int VISUAL_COLOR_DEPTH = 32;
     if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
-        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
+        VISUAL_COLOR_DEPTH, TrueColor, &visualInfoStruct)) {
         return true;
     }
 
@@ -529,6 +528,42 @@ XHelper::getWindowMapstate(const Window window) {
 }
 
 /**
+ * Gets window PID.
+ */
+pid_t
+XHelper::getWindowPID(const Window window) {
+    Atom type; int format;
+    unsigned long nItems, unusedBytes;
+    unsigned char* properties = nullptr;
+
+    // Request the property from the X server
+    const int RESULT = XGetWindowProperty(mDisplay, window,
+        XInternAtom(mDisplay, "_NET_WM_PID", True), 0, 1024, False,
+        AnyPropertyType, &type, &format, &nItems, &unusedBytes,
+        &properties);
+
+    unsigned long pid =
+        (RESULT == Success && properties != nullptr) ?
+            pid = *((unsigned long*) properties) : 0;
+
+    XFree(properties);
+    return pid;
+}
+
+/**
+ * Sets window PID.
+ */
+void
+XHelper::setWindowPID(const Window window) {
+    const pid_t PID = getpid();
+
+    XChangeProperty(mDisplay, window, XInternAtom(mDisplay,
+        "_NET_WM_PID", False), XA_CARDINAL, 32, PropModeReplace,
+        (unsigned char*) &PID, 1);
+    XFlush(mDisplay);
+}
+
+/**
  * Sets window titlebar, border to desired visibility.
  */
 void
@@ -570,6 +605,25 @@ XHelper::getWindowTitle(const Window window) {
     mTitleOfWindow[outP] = '\0';
 
     return string(mTitleOfWindow);
+}
+
+/**
+ * This method returns a 40-char window title string.
+ */
+string
+XHelper::getWindowTitleFromPID(const pid_t pid) {
+    const vector<Window> windows = mXHelper->
+        getWindowsStackedList();
+    const int WINDOWS_SIZE = windows.size();
+
+    for (int i = 0; i < WINDOWS_SIZE; i++) {
+        const pid_t PID = getWindowPID(windows[i]);
+        if (PID == pid) {
+            return getWindowTitle(windows[i]);
+        }
+    }
+
+    return "";
 }
 
 /**
@@ -950,11 +1004,19 @@ XHelper::getWinInfoForWindow(const Window window) {
 }
 
 /**
- * Helper to return Window as Hex value.
+ * Helper to return Window as Hex string.
  */
 string
 XHelper::getWindowAsHexString(const Window window) {
     return string(format("0x0{:x}", (int) window));
+}
+
+/**
+ * Helper to return PID as Hex string.
+ */
+string
+XHelper::getPIDAsHexString(const pid_t pid) {
+    return string(format("0x0{:x}", (int) pid));
 }
 
 /**
