@@ -4,7 +4,6 @@
 /**
  * SettingsHelper provides a permanant keyed values
  * store for user preferences in a file tied to appName.
- *
  */
 SettingsHelper::SettingsHelper() {
 }
@@ -40,12 +39,8 @@ SettingsHelper::setWindowMinimumHeight(const double height) {
 }
 
 /**
- * Getters for window workspace, x / y, width / height.
+ * Getters for window x / y, width / height.
  */
-long
-SettingsHelper::getWindowWorkspace() {
-    return getQSettings()->value("windowWorkspace", -1).toInt();
-}
 double
 SettingsHelper::getWindowXPos() {
     return getQSettings()->value("windowXPos", -1).toDouble();
@@ -64,12 +59,8 @@ SettingsHelper::getWindowHeight() {
 }
 
 /**
- * Setters for window workspace, x / y, width / height.
+ * Setters for window x / y, width / height.
  */
-void
-SettingsHelper::setWindowWorkspace(const long workspace) {
-    getQSettings()->setValue("windowWorkspace", (int) workspace);
-}
 void
 SettingsHelper::setWindowXPos(const double xPos) {
     if (xPos != getWindowXPos()) {
@@ -160,48 +151,6 @@ SettingsHelper::setCanvasHeight(const double height) {
 }
 
 /**
- * Getters & setters for user configurable bool settings.
- */
-bool
-SettingsHelper::getBoolSetting(const QString setting) {
-
-    getQSettings()->beginGroup("Configurable");
-    const bool RESULT = getQSettings()->value(setting,
-        getSettingsDefaultValue(setting)).toBool();
-    getQSettings()->endGroup();
-
-    return RESULT;
-}
-
-void
-SettingsHelper::setBoolSetting(const QString setting,
-    const bool value) {
-
-    getQSettings()->beginGroup("Configurable");
-    getQSettings()->setValue(setting, value);
-    getQSettings()->endGroup();
-}
-
-/**
- * Getters & setters for user configurable XRenderColor settings.
- */
-XRenderColor
-SettingsHelper::getColorSetting(const QString setting) {
-
-    getQSettings()->beginGroup("Configurable");
-    const QColor COLOR = QColor(getQSettings()->value(
-        setting, getSettingsDefaultValue(setting)).toString());
-    getQSettings()->endGroup();
-
-    XRenderColor xColor;
-    xColor.red   = (COLOR.red() << 8) | 0xff;
-    xColor.green = (COLOR.green() << 8) | 0xff;
-    xColor.blue  = (COLOR.blue() << 8) | 0xff;
-    xColor.alpha = (COLOR.alpha() << 8) | 0xff;
-    return xColor;
-}
-
-/**
  * Helper to return a QSettings filename from appName.
  */
 QString
@@ -249,24 +198,104 @@ SettingsHelper::ensureSettingsAreConfigurable() {
 }
 
 /**
+ * Getter for user configurable bool settings.
+ */
+bool
+SettingsHelper::getBoolSetting(const QString setting) {
+    getQSettings()->beginGroup(mSettingsHelper->
+        getSettingsGroup(setting));
+
+    const bool RESULT = getQSettings()->value(setting,
+        getSettingsDefaultValue(setting)).toBool();
+
+    getQSettings()->endGroup();
+
+    return RESULT;
+}
+
+/**
+ * Getter for user configurable int settings.
+ */
+int
+SettingsHelper::getIntSetting(const QString setting) {
+    getQSettings()->beginGroup(mSettingsHelper->
+        getSettingsGroup(setting));
+
+    const int RESULT = getQSettings()->value(setting,
+        getSettingsDefaultValue(setting)).toInt();
+
+    getQSettings()->endGroup();
+
+    return RESULT;
+}
+
+/**
+ * Setter for user configurable int settings.
+ */
+void
+SettingsHelper::setIntSetting(const QString setting,
+    int value) {
+    getQSettings()->beginGroup(mSettingsHelper->
+        getSettingsGroup(setting));
+
+    getQSettings()->setValue(setting, value);
+
+    getQSettings()->endGroup();
+}
+
+/**
+ * Getter for user configurable XRenderColor settings.
+ */
+XRenderColor
+SettingsHelper::getColorSetting(const QString setting) {
+    getQSettings()->beginGroup(mSettingsHelper->
+        getSettingsGroup(setting));
+
+    const QColor COLOR = QColor(getQSettings()->value(
+        setting, getSettingsDefaultValue(setting)).toString());
+
+    getQSettings()->endGroup();
+
+    XRenderColor xColor;
+    xColor.red   = (COLOR.red() << 8) | 0xff;
+    xColor.green = (COLOR.green() << 8) | 0xff;
+    xColor.blue  = (COLOR.blue() << 8) | 0xff;
+    xColor.alpha = (COLOR.alpha() << 8) | 0xff;
+    return xColor;
+}
+
+/**
+ * Return the group of a Setting by key.
+ */
+QString
+SettingsHelper::getSettingsGroup(const QString key) {
+    const int SETTINGS_SIZE = PROPERTIES.size();
+
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        const SettingsProperty THIS_SETTING = PROPERTIES[i];
+        if (key == THIS_SETTING.name) {
+            return THIS_SETTING.group;
+        }
+    }
+
+    return "";
+}
+
+/**
  * Return the value type of a Setting by key.
  */
 SettingsPropertyType
 SettingsHelper::getSettingsValueType(const QString key) {
-    SettingsPropertyType valueType;
-
     const int SETTINGS_SIZE = PROPERTIES.size();
-    for (int i = 0; i < SETTINGS_SIZE; i++) {
-        const SettingsProperty THIS_SETTING =
-            PROPERTIES[i];
 
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        const SettingsProperty THIS_SETTING = PROPERTIES[i];
         if (key == THIS_SETTING.name) {
-            valueType = THIS_SETTING.valueType;
-            break;
+            return THIS_SETTING.valueType;
         }
     }
 
-    return valueType;
+    return NONE_VALUETYPE;
 }
 
 /**
@@ -274,12 +303,12 @@ SettingsHelper::getSettingsValueType(const QString key) {
  */
 QString
 SettingsHelper::getSettingsDefaultValue(const QString key) {
+    const int SETTINGS_SIZE = PROPERTIES.size();
+
     QString defaultValue = "";
 
-    const int SETTINGS_SIZE = PROPERTIES.size();
     for (int i = 0; i < SETTINGS_SIZE; i++) {
-        const SettingsProperty THIS_SETTING =
-            PROPERTIES[i];
+        const SettingsProperty THIS_SETTING = PROPERTIES[i];
 
         if (key == THIS_SETTING.name) {
             defaultValue = THIS_SETTING.initialValue;
@@ -288,4 +317,28 @@ SettingsHelper::getSettingsDefaultValue(const QString key) {
     }
 
     return defaultValue;
+}
+
+/**
+ * Get a Minimum int value to load a UI widget.
+ */
+int
+SettingsHelper::getSettingsIntRangeMinimum(const QString key) {
+    if (key == CFP_PREFERRED_DESKTOP) {
+       return -1;
+    }
+
+    return std::numeric_limits<unsigned int>::min();
+}
+
+/**
+ * Get a Maximum int value to load a UI widget.
+ */
+int
+SettingsHelper::getSettingsIntRangeMaximum(const QString key) {
+    if (key == CFP_PREFERRED_DESKTOP) {
+        return mXHelper->getMaximumDesktops() - 1;
+    }
+
+    return std::numeric_limits<unsigned int>::max();
 }

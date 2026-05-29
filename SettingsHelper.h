@@ -1,26 +1,30 @@
 
 #pragma once
 
-
 /**
  * SettingsHelper provides a permanant keyed values
  * store for user preferences in a file tied to appName.
- *
  */
 enum SettingsPropertyType {
     NONE_VALUETYPE,
-    BOOL_VALUETYPE,
+    STRING_VALUETYPE,
     INT_VALUETYPE,
+    BOOL_VALUETYPE,
     COLOR_VALUETYPE,
-    STRING_VALUETYPE
+    PREFERRED_DESKTOP_VALUETYPE
 };
-
 
 class SettingsHelper {
     public:
+        typedef QString ConfigSettingName;
 
-        static inline const QString SHOW_WEED_CLOCK = "showWeedClock";
-        static inline const QString WEED_CLOCK_COLOR = "weedClockColor";
+        static inline const ConfigSettingName CFP_PREFERRED_DESKTOP =
+            "preferred_Desktop";
+        static inline const ConfigSettingName CFG_SHOW_WEED_CLOCK =
+            "showWeed_Clock";
+        static inline const ConfigSettingName CFG_WEED_CLOCK_COLOR =
+            "weedClock_Color";
+
 
         struct SettingsProperty {
             QString group = "";
@@ -30,9 +34,12 @@ class SettingsHelper {
         };
 
         static inline const vector<SettingsProperty> PROPERTIES = {
-            { .group = "Configurable", .name = SHOW_WEED_CLOCK,
+            { .group = "Configurable", .name = CFP_PREFERRED_DESKTOP,
+                .valueType = PREFERRED_DESKTOP_VALUETYPE, .initialValue = "-1" },
+
+            { .group = "Configurable", .name = CFG_SHOW_WEED_CLOCK,
                 .valueType = BOOL_VALUETYPE, .initialValue = "true" },
-            { .group = "Configurable", .name = WEED_CLOCK_COLOR,
+            { .group = "Configurable", .name = CFG_WEED_CLOCK_COLOR,
                 .valueType = COLOR_VALUETYPE, .initialValue = "#00faff" }
         };
 
@@ -52,20 +59,16 @@ class SettingsHelper {
         void setWindowMinimumHeight(const double height);
 
         /**
-         * Getters for window workspace, x & y, w & h.
+         * Getters for window x & y, w & h.
          */
-        long getWindowWorkspace();
-
         double getWindowXPos();
         double getWindowYPos();
         double getWindowWidth();
         double getWindowHeight();
 
         /**
-         * Setters for window workspace, x & y, w & h.
+         * Setters for window x & y, w & h.
          */
-        void setWindowWorkspace(const long workspace);
-
         void setWindowXPos(const double xPos);
         void setWindowYPos(const double yPos);
         void setWindowWidth(const double width);
@@ -94,17 +97,6 @@ class SettingsHelper {
         void setCanvasHeight(const double height);
 
         /**
-         * Getters & setters for user configurable bool settings.
-         */
-        bool getBoolSetting(const QString setting);
-        void setBoolSetting(const QString setting, const bool value);
-
-        /**
-         * Getters & setters for user configurable XRenderColor settings.
-         */
-        XRenderColor getColorSetting(const QString setting);
-
-        /**
          * Helper to return a QSettings filename from appName.
          */
         QString getQSettingsFile();
@@ -116,10 +108,35 @@ class SettingsHelper {
         QSettings* getQSettings();
 
         /**
-         * Helper to explicitly write all default values
-         * to our .Ini file.
+         * Getters & setters for user configurable bool settings.
+         */
+        bool getBoolSetting(const QString setting);
+
+        /**
+         * Getter for user configurable int settings.
+         */
+        int getIntSetting(const QString setting);
+
+        /**
+         * Setter for user configurable int settings.
+         */
+        void setIntSetting(const QString setting, int value);
+
+        /**
+         * Getters & setters for user configurable XRenderColor settings.
+         */
+        XRenderColor getColorSetting(const QString setting);
+
+        /**
+         * Each runtime start we ensure Settings keys & default values
+         * are flushed to .ini file for ConfigDialog to load & modify.
          */
         void ensureSettingsAreConfigurable();
+
+        /**
+         * Return the group of a Setting by key.
+         */
+        QString getSettingsGroup(const QString key);
 
         /**
          * Return the value type of a Setting by key.
@@ -130,6 +147,16 @@ class SettingsHelper {
          * Return the default value of a Setting by key.
          */
         QString getSettingsDefaultValue(const QString key);
+
+        /**
+         * Get a Minimum int value to load a UI widget.
+         */
+        int getSettingsIntRangeMinimum(const QString key);
+
+        /**
+         * Get a Maximum int value to load a UI widget.
+         */
+        int getSettingsIntRangeMaximum(const QString key);
 
     private:
         // Members.

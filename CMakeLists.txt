@@ -14,7 +14,7 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.05.24")
+set(APP_VERSION "26.05.28")
 set(APP_VERSION_MINOR "01")
 
 set(APP_AUTHOR "Mark James Capella")
@@ -100,6 +100,7 @@ set(WIDGET_SOURCES
     QuitButton.cpp
     MoveButton.cpp
     SizeButton.cpp
+
     ConfigButton.cpp
     AboutDialog.cpp
     ConfigDialog.cpp
@@ -152,10 +153,10 @@ target_link_libraries(${WIDGET_PROJECT} PRIVATE
 ##
 # Display leak report after app runs.
 #
-target_compile_options(${WIDGET_PROJECT} PUBLIC
-    -fsanitize=address -fno-omit-frame-pointer)
-target_link_options(${WIDGET_PROJECT} PUBLIC
-    -fsanitize=address)
+#target_compile_options(${WIDGET_PROJECT} PUBLIC
+#    -fsanitize=address -fno-omit-frame-pointer)
+#target_link_options(${WIDGET_PROJECT} PUBLIC
+#    -fsanitize=address)
 
 #
 set(TARGET_NAME ${WIDGET_PROJECT})

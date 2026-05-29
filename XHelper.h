@@ -71,9 +71,18 @@ class XHelper {
         /**
          * This method returns the number of the current workspace,
          * where the OS allows multiple / virtual workspaces.
-         * result == -1 is all windows are visible.
+         *
+         * Result == -1 means one big workspace is visible (Viewport).
          */
-        long getVisibleWorkspace();
+        long getVisibleDesktop();
+
+        /**
+         * This method returns the maximum number of allowable
+         * workspaces, where the OS allows multiple / virtual workspaces.
+         *
+         * Result == -1 means one big workspace is visible (Viewport).
+         */
+        long getMaximumDesktops();
 
         /**
          * Method returns a a list of active X11 windows
@@ -163,12 +172,12 @@ class XHelper {
          * This method determines which workspace a
          * window is visible on. result == -1 means all.
          */
-        long getWindowWorkspace(const Window window);
+        long getWindowDesktop(const Window window);
 
         /**
          * This method sets the workspace value for a window.
          */
-        void setWindowWorkspace(const Window window,
+        void setWindowDesktop(const Window window,
             const long workspace);
 
         /**

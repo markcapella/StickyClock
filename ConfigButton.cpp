@@ -33,7 +33,7 @@ ConfigButton::draw(const Window window) {
 
     // Draw '■' for Config glyph over center.
     XRenderFillRectangle(mDisplay, PictOpOver, CANVAS,
-        &BLUE_RCOLOR, getX() + 10, getY() + 10, 4, 4);
+        &BLUE_RCOLOR, getX() + 9, getY() + 9, 6, 6);
 
     // Cleanup.
     XRenderFreePicture(mDisplay, CANVAS);
@@ -50,13 +50,17 @@ ConfigButton::click(const Window window) {
             getQSettingsFile(), NULL);
     }
 
-    // Open or close the dialog.
-    if (!mConfigDialog->isVisible()) {
-        mConfigDialog->loadSettings();
-        mConfigDialog->show();
-        mConfigDialog->raise();
-        mConfigDialog->activateWindow();
-    } else {
+    // Maybe close the dialog.
+    if (mConfigDialog->isVisible()) {
         mConfigDialog->close();
+        return;
     }
+
+    // Build the UI form layout & open it.
+    mConfigDialog->setWindow(window);
+    mConfigDialog->loadConfigFormSettings();
+
+    mConfigDialog->show();
+    mConfigDialog->raise();
+    mConfigDialog->activateWindow();
 }

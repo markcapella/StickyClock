@@ -8,10 +8,10 @@
 #include <QSettings>
 #include <QVBoxLayout>
 
+#include <X11/Xutil.h>
 
 /**
  * Simple class to represent a ConfigDialog.
- *
  */
 class ConfigDialog : public QDialog {
     Q_OBJECT
@@ -26,18 +26,24 @@ class ConfigDialog : public QDialog {
         explicit ConfigDialog(const QString& filePath,
             QWidget* parent = nullptr);
 
-    public slots:
+    // public slots:
         /**
-         * Load all Settings from .ini file.
+         * Load UI form with values from .Ini.
          */
-        void loadSettings();
+        void loadConfigFormSettings();
 
-        /**
-         * Save all Settings back to .ini file.
-         */
-        void saveSettings();
+        Window getWindow() const { return mWindow; }
+        void setWindow(const Window window) {
+            mWindow = window; }
+
+    /**
+     * Override eventFilter for QSlider hover action.
+     */
+    protected:
+        bool eventFilter(QObject* obj, QEvent* event) override;
 
     private:
+        Window mWindow = None;
         QFormLayout* mFormLayout = nullptr;
         QVBoxLayout* mMainLayout = nullptr;
 
@@ -46,9 +52,14 @@ class ConfigDialog : public QDialog {
         QDialog* mAboutDialog = nullptr;
 
         /**
-         * Setup main layout containing QLineEdit per Setting.
+         * Callback to Save UI form values to .Ini.
          */
-        void setupMainLayout();
+        void saveConfigFormSettings();
+
+        /**
+         * Build the UI form layout.
+         */
+        void buildConfigForm();
 
         /**
          * Show this apps "About" dialog.

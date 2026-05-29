@@ -19,17 +19,16 @@ RecentsHelper::getAppRecentsName() {
 
     int mRecentsFD = lockRecentsProcessInfo();
     if (mRecentsFD == -1) {
+        cout << endl << XCOLOR_RED << "StickyClock is "
+            "unable to start due to control file contention. Please "
+            "try again later." << endl;
         QMessageBox::information(NULL, APP_NAME, "\nStickyClock is "
             "unable to start due to control file contention. Please "
             "try again later.");
-        cout << endl << XCOLOR_RED << "SStickyClock is "
-            "unable to start due to control file contention. Please "
-            "try again later." << endl;
         return "";
     }
 
     mRecentsName = getRecentsName();
-
     unlockRecentsProcessInfo(mRecentsFD);
 
     if (mRecentsName.isEmpty()) {
@@ -49,12 +48,20 @@ RecentsHelper::getAppRecentsName() {
 }
 
 /**
+ * Helper to return the path of this apps lock file.
+ */
+QString
+RecentsHelper::getAppLockPathName() {
+    return getenv("HOME") + QStringLiteral("/.local/") +
+        QString(APP_NAME) + QStringLiteral("/");
+}
+
+/**
  * Helper to return the name of this apps lock file.
  */
 QString
 RecentsHelper::getAppLockFileName() {
-    return getenv("HOME") + QStringLiteral("/.local/") +
-        QString(APP_NAME) + QStringLiteral("/lockFile");
+    return getAppLockPathName() + QStringLiteral("lockFile");
 }
 
 /**
@@ -63,29 +70,43 @@ RecentsHelper::getAppLockFileName() {
  */
 int
 RecentsHelper::lockRecentsProcessInfo() {
+    // Create .local folder path if not exist.
+    QFileInfo fileInfo(getAppLockPathName());
+    QDir dir = fileInfo.dir();
+    if (!dir.exists()) {
+        if (!dir.mkpath(".")) {
+            cout << endl << XCOLOR_RED << "StickyClock cannot create "
+            "local folder: " <<  dir.path().toStdString() << "." << endl;
+            return -1;
+        }
+    }
+
+    // Create lock file if not exist.
     const QString RECENTS_FILE = getAppLockFileName();
     char* recentsFile = strdup(RECENTS_FILE.toUtf8().constData());
 
-    int fd = open(recentsFile, O_RDWR);
-    if (fd == -1) {
+    // Open lock file
+    int fdLocked = open(recentsFile, O_CREAT | O_RDWR, 0644);
+    if (fdLocked == -1) {
         free(recentsFile);
-        cout << "FAIL " << RECENTS_FILE.toStdString() << "." << endl;
+        cout << endl << "FAIL " << RECENTS_FILE.toStdString() <<
+            "." << endl;
         return -1;
     }
+
+    bool locked = false;
+    chrono::steady_clock::time_point startTime =
+        chrono::steady_clock::now();
 
     mRecentsLock.l_type = F_WRLCK;
     mRecentsLock.l_whence = SEEK_SET;
     mRecentsLock.l_start = 0;
     mRecentsLock.l_len = 0;
 
-    bool locked = false;
-    chrono::steady_clock::time_point startTime =
-        chrono::steady_clock::now();
-
     const int WAIT_TIME = 5;
     while (chrono::steady_clock::now() - startTime <
         chrono::seconds(WAIT_TIME)) {
-        if (fcntl(fd, F_SETLK, &mRecentsLock) == 0) {
+        if (fcntl(fdLocked, F_SETLK, &mRecentsLock) == 0) {
             locked = true;
             break;
         }
@@ -93,13 +114,13 @@ RecentsHelper::lockRecentsProcessInfo() {
     }
     free(recentsFile);
 
-    // Pass back the fd if its locked & ours.
+    // Pass back the fdLocked if its locked & ours.
     if (locked) {
-        return fd;
+        return fdLocked;
     }
 
     // Close it, can't use it.
-    close(fd);
+    close(fdLocked);
     return -1;
 }
 

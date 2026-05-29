@@ -65,6 +65,11 @@ class StickyWindow {
          */
         Window getX11Window();
 
+        /**
+         * Ensure window opens on valid remembered desktop.
+         */
+        void rangeCheckPreferredDesktop(const Window window);
+
     private:
         // Members.
         Window mX11Window = None;

@@ -34,6 +34,11 @@ class RecentsHelper {
         struct flock mRecentsLock;
 
         /**
+         * Helper to return the path of this apps lock file.
+         */
+        QString getAppLockPathName();
+
+        /**
          * Helper to return the name of this apps lock file.
          */
         QString getAppLockFileName();

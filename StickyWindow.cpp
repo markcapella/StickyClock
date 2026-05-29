@@ -3,7 +3,6 @@
 
 /**
  * StickyWindow class wraps an x11 Window object.
- *
  */
 StickyWindow::StickyWindow() {
     mDeleteMessage = XInternAtom(mDisplay,
@@ -71,7 +70,14 @@ StickyWindow::show() {
  */
 void
 StickyWindow::hide() {
-    XUnmapWindow(mDisplay, mX11Window);
+    // If hiding on wrong desktop, don't.
+    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
+    const int PREFERRED_DESKTOP = mSettingsHelper->
+        getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
+    if (VISIBLE_DESKTOP == -1 || PREFERRED_DESKTOP == -1 ||
+        (VISIBLE_DESKTOP == PREFERRED_DESKTOP)) {
+        return;
+    }
 }
 
 /**
@@ -81,8 +87,8 @@ StickyWindow::hide() {
 void
 StickyWindow::draw() {
     // Create a 1x1 pixmap to act as a solid color source.
-    const XRenderPictFormat* RENDER_FORMAT =
-        XRenderFindVisualFormat(mDisplay, mVisualInfoStruct.visual);
+    const XRenderPictFormat* RENDER_FORMAT = XRenderFindVisualFormat(
+        mDisplay, mVisualInfoStruct.visual);
     if (!RENDER_FORMAT) {
         cout << endl << XCOLOR_YELLOW << "StickyWindow: Unable "
             "to draw() StickyClock lacking Visual Format." <<
@@ -98,6 +104,15 @@ StickyWindow::draw() {
         renderPicture, &TRANSPARENT_RCOLOR, 0, 0,
         mSettingsHelper->getWindowWidth(),
         mSettingsHelper->getWindowHeight());
+
+    // If drawing on wrong desktop, don't.
+    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
+    const int PREFERRED_DESKTOP = mSettingsHelper->
+        getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
+    if (VISIBLE_DESKTOP != -1 && PREFERRED_DESKTOP != -1 &&
+        (VISIBLE_DESKTOP != PREFERRED_DESKTOP)) {
+        return;
+    }
 
     // Draw canvas border gray, indented margin blue,
     // interior white or tourquiose for weedClocktime.
@@ -116,9 +131,9 @@ StickyWindow::draw() {
     XRenderFillRectangle(mDisplay, PictOpSrc,
         BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
     XRenderColor backgroundColor = (isItWeedTime() && mSettingsHelper->
-        getBoolSetting(SettingsHelper::SHOW_WEED_CLOCK)) ?
+        getBoolSetting(SettingsHelper::CFG_SHOW_WEED_CLOCK)) ?
             mSettingsHelper->getColorSetting(
-                SettingsHelper::WEED_CLOCK_COLOR) : WHITE_RCOLOR;
+                SettingsHelper::CFG_WEED_CLOCK_COLOR) : WHITE_RCOLOR;
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
         &backgroundColor, X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
     XRenderFreePicture(mDisplay, BACKGROUND_R_PICTURE);
@@ -147,9 +162,11 @@ StickyWindow::draw() {
     drawAllButtons();
 
     // Cleanup.
-    XRenderFreePicture(mDisplay, renderPicture);
     XFreePixmap(mDisplay, renderPixmap);
+    XRenderFreePicture(mDisplay, renderPicture);
     XFlush(mDisplay);
+
+    //cout << "StickyWindow::draw() Finishes" << endl;
 }
 
 /**
@@ -162,10 +179,6 @@ StickyWindow::draw() {
 void
 StickyWindow::resize(const int xPos, const int yPos,
     const int width, const int height) {
-
-    // Save the workspace, pos & size for later positioning.
-    const int WORKSPACE = mXHelper->getWindowWorkspace(mX11Window);
-    mSettingsHelper->setWindowWorkspace(WORKSPACE);
 
     mSettingsHelper->setWindowXPos(xPos);
     mSettingsHelper->setWindowYPos(yPos);
@@ -239,6 +252,63 @@ StickyWindow::getX11Window() {
 }
 
 /**
+ * Ensure window opens on valid remembered desktop.
+ */
+void
+StickyWindow::rangeCheckPreferredDesktop(const Window window) {
+    cout << "rangeCheckPreferredDesktop() Starts." << endl;
+
+    // Always visible on all workspaces.
+    mXHelper->setWindowDesktop(window, -1);
+
+    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
+    const int WINDOW_DESKTOP = mXHelper->getWindowDesktop(window);
+    const int PREFERRED_DESKTOP = mSettingsHelper->
+        getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
+    const int MAX_OS_DESKTOPS = mXHelper->getMaximumDesktops();
+
+    cout << "rangeCheckPreferredDesktop() Starts VISIBLE_DESKTOP: " <<
+        (VISIBLE_DESKTOP == -1 ? "All" : QString("Desktop " +
+        QString::number(VISIBLE_DESKTOP + 1)).toStdString()) <<
+        "." << endl;
+    cout << "rangeCheckPreferredDesktop() Starts WINDOW_DESKTOP: " <<
+        (WINDOW_DESKTOP == -1 ? "All" : QString("Desktop " +
+        QString::number(WINDOW_DESKTOP + 1)).toStdString()) <<
+        "." << endl;
+    cout << "rangeCheckPreferredDesktop() Preffered Desktop " <<
+        (PREFERRED_DESKTOP == -1 ? "All" : QString("Desktop " +
+        QString::number(PREFERRED_DESKTOP + 1)).toStdString()) <<
+        "." << endl;
+    cout << "rangeCheckPreferredDesktop() Maximum OS Desktops is " <<
+        MAX_OS_DESKTOPS << "." << endl;
+
+    if (PREFERRED_DESKTOP == -1) {
+        cout << "rangeCheckPreferredDesktop() Finishes, All desktops are "
+            "preferred visible. No max check required." << endl;
+        return;
+    }
+
+    const int BOUNDED_PREFERRED_DESKTOP = PREFERRED_DESKTOP + 1;
+    if (BOUNDED_PREFERRED_DESKTOP <= MAX_OS_DESKTOPS) {
+        cout << "rangeCheckPreferredDesktop() Finishes, Specific "
+            "preferred visible desktop still exists." << endl;
+        return;
+    }
+
+    cout << "rangeCheckPreferredDesktop() Change to the maximum "
+        "desktop number means our preferred desktop no " << endl;
+    cout << "rangeCheckPreferredDesktop()    longer exists as an "
+        "option. Ressetting to 'All' desktops." << endl;
+    mSettingsHelper->setIntSetting(
+        SettingsHelper::CFP_PREFERRED_DESKTOP, -1);
+    cout << "rangeCheckPreferredDesktop() Preferred desktop "
+        "is now bounded to : " << mSettingsHelper->getIntSetting(
+        SettingsHelper::CFP_PREFERRED_DESKTOP) << "." << endl;
+
+    cout << "rangeCheckPreferredDesktop() Finishes." << endl;
+}
+
+/**
  * Private method sets StickyWindows internal x11 window.
  */
 void 
@@ -281,7 +351,10 @@ StickyWindow::createX11Window() {
     }
 
     // Filter events we care to see in event loop.
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay),
+        PropertyChangeMask);
     XSelectInput(mDisplay, mX11Window, OBSERVABLE_EVENTS);
+
     XSetWMProtocols(mDisplay, mX11Window, &mDeleteMessage, 1);
 
     // Set procID on our window, for RecentsHelper().
@@ -316,9 +389,8 @@ StickyWindow::createX11Window() {
         mWindowTitle, None, nullptr, 0, nullptr);
     free(mWindowTitle);
 
-    // Set window workspace & border state before showing.
-    const int WORKSPACE = mSettingsHelper->getWindowWorkspace();
-    mXHelper->setWindowWorkspace(mX11Window, WORKSPACE);
+    // Ensure window opens on valid remembered desktop.
+    rangeCheckPreferredDesktop(mX11Window);
 
     // Set "StickyWindow" type, show window, set config state.
     setStickyWindowType();
@@ -702,9 +774,17 @@ StickyWindow::handleX11EventQueue() {
 
     while (XPending(mDisplay)) {
         XNextEvent(mDisplay, &event);
-
         //const XAnyEvent* EVENT = (XAnyEvent*) &event;
         //mXHelper->debugXAnyEvent(EVENT);
+
+        // Detect Root windows MAXIMUM DESKTOPS parm change.
+        if (event.xproperty.window == DefaultRootWindow(mDisplay)) {
+            if (event.type == PropertyNotify && event.xproperty.atom ==
+                XInternAtom(mDisplay, "_NET_NUMBER_OF_DESKTOPS", False)) {
+                rangeCheckPreferredDesktop(getX11Window());
+            }
+            continue;
+        }
 
         // Type = 33; ClientMsg Close event.
         if (event.type == ClientMessage) {
@@ -714,15 +794,27 @@ StickyWindow::handleX11EventQueue() {
             continue;
         }
 
-        // Type = 28; Workspace property change.
+        // Type = 28; Window property change.
         if (event.type == PropertyNotify) {
             onPropertyNotify(event.xproperty);
             continue;
         }
 
-        // Type = 12; Expose.
+        // Type = Expose.
         if (event.type == Expose) {
             draw();
+            continue;
+        }
+
+        // Type = UnmapNotify.
+        if (event.type == UnmapNotify) {
+            hide();
+            continue;
+        }
+
+        // Type = MapNotify.
+        if (event.type == MapNotify) {
+            show();
             continue;
         }
 
@@ -941,18 +1033,20 @@ StickyWindow::cursorWatcherThread() {
 }
 
 /**
- * This method saves the window workspace when changed.
+ * This method observes property changes to window.
+ * Useful for debug.
  */
 void
 StickyWindow::onPropertyNotify(const XPropertyEvent& event) {
-    char* atomName = XGetAtomName(event.display, event.atom);
-    if (string(atomName) != "_NET_WM_DESKTOP") {
+/*
+    if (event.display && event.atom) {
+        char* atomName = XGetAtomName(event.display, event.atom);
+        if (atomName && string(atomName) == "_NET_WM_DESKTOP") {
+            // Foo;
+            XFree(atomName);
+            return;
+        }
         XFree(atomName);
-        return;
     }
-    XFree(atomName);
-
-    // If user changes workspace of window via gui panel.
-    mSettingsHelper->setWindowWorkspace(mXHelper->
-        getWindowWorkspace(mX11Window));
+*/
 }

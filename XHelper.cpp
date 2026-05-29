@@ -271,11 +271,12 @@ XHelper::isDesktopShowing() {
 
 /**
  * This method returns the number of the current workspace,
- * where the OS allows multiple / virtual workspaces.
- * result == -1 is all windows are visible.
+ * Where the OS allows multiple / virtual workspaces.
+ *
+ * Result == -1 is one big workspace is visible (Viewport).
  */
 long
-XHelper::getVisibleWorkspace() {
+XHelper::getVisibleDesktop() {
     Atom type; int format;
     unsigned long nItems, unusedBytes;
     unsigned char* properties = nullptr;
@@ -307,6 +308,33 @@ XHelper::getVisibleWorkspace() {
     XFree(properties);
 
     return -1;
+}
+
+/**
+ * This method returns the maximum number of allowable
+ * workspaces, where the OS allows multiple / virtual workspaces.
+ *
+ * Result == -1 means one big workspace is visible (Viewport).
+ */
+long
+XHelper::getMaximumDesktops() {
+    long result = 1;
+
+    Atom type; int format;
+    unsigned long nItems, unusedBytes;
+    unsigned char* properties = nullptr;
+
+    const int RESULT = XGetWindowProperty(mDisplay, DefaultRootWindow(
+        mDisplay), XInternAtom(mDisplay, "_NET_NUMBER_OF_DESKTOPS",
+        False), 0L, 1L, False, XA_CARDINAL, &type, &format, &nItems,
+        &unusedBytes, &properties);
+    if (RESULT == Success && properties != nullptr &&
+        type == XA_CARDINAL && nItems > 0) {
+        result = static_cast<int>(*(long*) properties);
+    }
+
+    XFree(properties);
+    return result;
 }
 
 /**
@@ -631,7 +659,7 @@ XHelper::getWindowTitleFromPID(const pid_t pid) {
  * window is visible on. result == -1 means all.
  */
 long
-XHelper::getWindowWorkspace(const Window window) {
+XHelper::getWindowDesktop(const Window window) {
     Atom type; int format;
     unsigned long nItems, unusedBytes;
     unsigned char* properties = nullptr;
@@ -669,12 +697,13 @@ XHelper::getWindowWorkspace(const Window window) {
  * This method sets the workspace value for a window.
  */
 void
-XHelper::setWindowWorkspace(const Window window,
+XHelper::setWindowDesktop(const Window window,
     const long workspace) {
     if (workspace == -1) {
         XChangeProperty(mDisplay, window, XInternAtom(mDisplay,
             "_NET_WM_DESKTOP", false), XA_ATOM, 32,
             PropModeReplace, NULL, 0);
+        XFlush(mDisplay);
         return;
     }
 
@@ -829,7 +858,7 @@ bool
 XHelper::isWindowHovered(const Window window, const QPoint pos,
     const bool checkEntireWindow) {
     // Get info for the request.
-    const long VISIBLE_WS = getVisibleWorkspace();
+    const long VISIBLE_WS = getVisibleDesktop();
     WinInfo* winInfo = getWinInfoForWindow(window);
 
     // Get candidate windows.
@@ -992,7 +1021,7 @@ XHelper::getWinInfoForWindow(const Window window) {
     );
 
     // Set all other WinInfo fields.
-    winInfo->onWorkspace = getWindowWorkspace(winInfo->window);
+    winInfo->onWorkspace = getWindowDesktop(winInfo->window);
     winInfo->mapState = getWindowMapstate(winInfo->window);
 
     winInfo->isSticky = (winInfo->onWorkspace == -1) ?

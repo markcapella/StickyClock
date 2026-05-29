@@ -33,6 +33,11 @@ typedef chrono::steady_clock Clock;
 #include <QLineEdit>
 #include <QScrollArea>
 #include <QMouseEvent>
+#include <QFileInfo>
+#include <QDir>
+#include <QToolTip>
+#include <QStyleOptionFrame>
+#include <QPointer>
 
 // x11 libraries.
 #include <X11/Xlib.h>
