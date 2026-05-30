@@ -11,7 +11,7 @@ enum SettingsPropertyType {
     INT_VALUETYPE,
     BOOL_VALUETYPE,
     COLOR_VALUETYPE,
-    PREFERRED_DESKTOP_VALUETYPE
+    SLIDER_VALUETYPE
 };
 
 class SettingsHelper {
@@ -20,6 +20,8 @@ class SettingsHelper {
 
         static inline const ConfigSettingName CFP_PREFERRED_DESKTOP =
             "preferred_Desktop";
+        static inline const ConfigSettingName CFP_PREFERRED_ONTOP =
+            "preferred_onTop";
         static inline const ConfigSettingName CFG_SHOW_WEED_CLOCK =
             "showWeed_Clock";
         static inline const ConfigSettingName CFG_WEED_CLOCK_COLOR =
@@ -35,12 +37,17 @@ class SettingsHelper {
 
         static inline const vector<SettingsProperty> PROPERTIES = {
             { .group = "Configurable", .name = CFP_PREFERRED_DESKTOP,
-                .valueType = PREFERRED_DESKTOP_VALUETYPE, .initialValue = "-1" },
-
+                .valueType = SLIDER_VALUETYPE, .initialValue = "-1"
+            },
+            { .group = "Configurable", .name = CFP_PREFERRED_ONTOP,
+                .valueType = BOOL_VALUETYPE, .initialValue = "false"
+            },
             { .group = "Configurable", .name = CFG_SHOW_WEED_CLOCK,
-                .valueType = BOOL_VALUETYPE, .initialValue = "true" },
+                .valueType = BOOL_VALUETYPE, .initialValue = "true"
+            },
             { .group = "Configurable", .name = CFG_WEED_CLOCK_COLOR,
-                .valueType = COLOR_VALUETYPE, .initialValue = "#00faff" }
+                .valueType = COLOR_VALUETYPE, .initialValue = "#00faff"
+            }
         };
 
         SettingsHelper();

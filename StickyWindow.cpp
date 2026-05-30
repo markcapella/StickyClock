@@ -140,8 +140,6 @@ StickyWindow::draw() {
 
     // Draw Widget Text.
     const QString TEXT = QString::fromStdString(getCurrentTime());
-    //const QString TEXT = QString::number(getCursorPosition().x()) +
-    //    QString(" - ") + QString::number(getCursorPosition().y());
     const int TEXT_WIDTH = mXHelper->getStringPixelWidth(TEXT);
     const int TEXT_HEIGHT = mXHelper->getStringPixelHeight(TEXT);
     const int TEXT_X = X_POS + (WIDTH - TEXT_WIDTH) / 2;
@@ -203,19 +201,6 @@ StickyWindow::resize(const int xPos, const int yPos,
 }
 
 /**
- * Getters & setters for cursor position.
- */
-QPoint
-StickyWindow::getCursorPosition() {
-    return mCursorPosition;
-}
-
-void
-StickyWindow::setCursorPosition(const QPoint position) {
-    mCursorPosition = position;
-}
-
-/**
  * Main X11 event cycle Handler.
  */
 void
@@ -238,6 +223,9 @@ StickyWindow::run() {
             break;
         }
 
+        // Update App canvas.
+        drawCanvas();
+
         // Support ConfigDialog loop.
         QCoreApplication::processEvents();
     }
@@ -256,56 +244,19 @@ StickyWindow::getX11Window() {
  */
 void
 StickyWindow::rangeCheckPreferredDesktop(const Window window) {
-    cout << "rangeCheckPreferredDesktop() Starts." << endl;
-
-    // Always visible on all workspaces.
-    mXHelper->setWindowDesktop(window, -1);
-
-    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
-    const int WINDOW_DESKTOP = mXHelper->getWindowDesktop(window);
     const int PREFERRED_DESKTOP = mSettingsHelper->
         getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
-    const int MAX_OS_DESKTOPS = mXHelper->getMaximumDesktops();
-
-    cout << "rangeCheckPreferredDesktop() Starts VISIBLE_DESKTOP: " <<
-        (VISIBLE_DESKTOP == -1 ? "All" : QString("Desktop " +
-        QString::number(VISIBLE_DESKTOP + 1)).toStdString()) <<
-        "." << endl;
-    cout << "rangeCheckPreferredDesktop() Starts WINDOW_DESKTOP: " <<
-        (WINDOW_DESKTOP == -1 ? "All" : QString("Desktop " +
-        QString::number(WINDOW_DESKTOP + 1)).toStdString()) <<
-        "." << endl;
-    cout << "rangeCheckPreferredDesktop() Preffered Desktop " <<
-        (PREFERRED_DESKTOP == -1 ? "All" : QString("Desktop " +
-        QString::number(PREFERRED_DESKTOP + 1)).toStdString()) <<
-        "." << endl;
-    cout << "rangeCheckPreferredDesktop() Maximum OS Desktops is " <<
-        MAX_OS_DESKTOPS << "." << endl;
-
     if (PREFERRED_DESKTOP == -1) {
-        cout << "rangeCheckPreferredDesktop() Finishes, All desktops are "
-            "preferred visible. No max check required." << endl;
         return;
     }
 
     const int BOUNDED_PREFERRED_DESKTOP = PREFERRED_DESKTOP + 1;
-    if (BOUNDED_PREFERRED_DESKTOP <= MAX_OS_DESKTOPS) {
-        cout << "rangeCheckPreferredDesktop() Finishes, Specific "
-            "preferred visible desktop still exists." << endl;
-        return;
+    const int MAX_OS_DESKTOPS = mXHelper->getMaximumDesktops();
+
+    if (BOUNDED_PREFERRED_DESKTOP > MAX_OS_DESKTOPS) {
+        mSettingsHelper->setIntSetting(
+            SettingsHelper::CFP_PREFERRED_DESKTOP, -1);
     }
-
-    cout << "rangeCheckPreferredDesktop() Change to the maximum "
-        "desktop number means our preferred desktop no " << endl;
-    cout << "rangeCheckPreferredDesktop()    longer exists as an "
-        "option. Ressetting to 'All' desktops." << endl;
-    mSettingsHelper->setIntSetting(
-        SettingsHelper::CFP_PREFERRED_DESKTOP, -1);
-    cout << "rangeCheckPreferredDesktop() Preferred desktop "
-        "is now bounded to : " << mSettingsHelper->getIntSetting(
-        SettingsHelper::CFP_PREFERRED_DESKTOP) << "." << endl;
-
-    cout << "rangeCheckPreferredDesktop() Finishes." << endl;
 }
 
 /**
@@ -389,13 +340,16 @@ StickyWindow::createX11Window() {
         mWindowTitle, None, nullptr, 0, nullptr);
     free(mWindowTitle);
 
+    // Ensure we're placed on all desktops.
+    mXHelper->setWindowDesktop(mX11Window, -1);
+
     // Ensure window opens on valid remembered desktop.
     rangeCheckPreferredDesktop(mX11Window);
 
     // Set "StickyWindow" type, show window, set config state.
     setStickyWindowType();
     show();
-    setWindowConfigState();
+    setWindowStickPosition();
 
     // Apply strict configuration to the window. Awesome WM
     // specifically needs this.
@@ -464,13 +418,12 @@ StickyWindow::setStickyWindowType() {
  * based on configState.
  */
 void
-StickyWindow::setWindowConfigState() {
-    // Set window below all while "stuck" (borderless).
-    if (mSettingsHelper->getConfigMode()) {
-        mXHelper->makeWindowFloat(mX11Window);
-    } else {
-        mXHelper->makeWindowStayOnBottom(mX11Window);
-    }
+StickyWindow::setWindowStickPosition() {
+    const bool PREFER_ONTOP = mSettingsHelper->getBoolSetting(
+        SettingsHelper::CFP_PREFERRED_ONTOP);
+
+    mXHelper->makeWindowStayOnTop(mX11Window, PREFER_ONTOP);
+    mXHelper->makeWindowStayOnBottom(mX11Window, !PREFER_ONTOP);
 }
 
 /**
@@ -597,11 +550,11 @@ StickyWindow::setHoveredButtonVisibility(const QPoint pos) {
         return;
     }
 
-    // Corner buttons start @ 1.
     const Button* HOVERED_BUTTON = whichButtonIsHovered(pos);
     const int BUTTONS_COUNT = mButtons.size();
-
     bool redrawRequired = false;
+
+    // Corner buttons start @ 1.
     for (int i = 1; i < BUTTONS_COUNT; i++) {
         // Set visible hovered.
         if (mButtons[i]->getRect().contains(pos)) {
@@ -637,7 +590,7 @@ StickyWindow::onPinButtonClicked() {
         mButtons[i]->setVisible(CONFIG_MODE);
     }
 
-    setWindowConfigState();
+    setWindowStickPosition();
     draw();
 }
 
@@ -774,61 +727,95 @@ StickyWindow::handleX11EventQueue() {
 
     while (XPending(mDisplay)) {
         XNextEvent(mDisplay, &event);
-        //const XAnyEvent* EVENT = (XAnyEvent*) &event;
-        //mXHelper->debugXAnyEvent(EVENT);
+        switch (event.type) {
 
-        // Detect Root windows MAXIMUM DESKTOPS parm change.
-        if (event.xproperty.window == DefaultRootWindow(mDisplay)) {
-            if (event.type == PropertyNotify && event.xproperty.atom ==
-                XInternAtom(mDisplay, "_NET_NUMBER_OF_DESKTOPS", False)) {
-                rangeCheckPreferredDesktop(getX11Window());
-            }
-            continue;
-        }
+            // Detect root window or desktop property changes.
+            case PropertyNotify:
+                if (event.xproperty.window == DefaultRootWindow(mDisplay)) {
+                    // MAXIMUM DESKTOPS parm change ?
+                    if (event.xproperty.atom == XInternAtom(mDisplay,
+                        "_NET_NUMBER_OF_DESKTOPS", False)) {
+                        rangeCheckPreferredDesktop(getX11Window());
+                    }
+                    break;
+                }
 
-        // Type = 33; ClientMsg Close event.
-        if (event.type == ClientMessage) {
-            if (event.xclient.data.l[0] == mDeleteMessage) {
-                return true;
-            }
-            continue;
-        }
+                // Else, our window property change.
+                onPropertyNotify(event.xproperty);
+                break;
 
-        // Type = 28; Window property change.
-        if (event.type == PropertyNotify) {
-            onPropertyNotify(event.xproperty);
-            continue;
-        }
+            // Type = 33; ClientMsg Close event.
+            case ClientMessage:
+                if (event.xclient.data.l[0] == mDeleteMessage) {
+                    return true;
+                }
+                break;
 
-        // Type = Expose.
-        if (event.type == Expose) {
-            draw();
-            continue;
-        }
+            // Type = Expose.
+            case Expose:
+                draw();
+                break;
 
-        // Type = UnmapNotify.
-        if (event.type == UnmapNotify) {
-            hide();
-            continue;
-        }
+            // Type = UnmapNotify.
+            case UnmapNotify:
+                hide();
+                break;
 
-        // Type = MapNotify.
-        if (event.type == MapNotify) {
-            show();
-            continue;
-        }
+            // Type = MapNotify.
+            case MapNotify:
+                show();
+                break;
 
-        // Type = 22; ConfigureNotify.
-        if (event.type == ConfigureNotify) {
-            int posX; int posY; Window unused;
-            XTranslateCoordinates(mDisplay, event.xconfigure.window,
-                RootWindow(mDisplay, DefaultScreen(mDisplay)),
-                0, 0, &posX, &posY, &unused);
-            resize(posX, posY, event.xconfigure.width,
-                event.xconfigure.height);
-            continue;
+            // Type = 22; ConfigureNotify.
+            case ConfigureNotify:
+                int posX; int posY; Window unused;
+                XTranslateCoordinates(mDisplay, event.xconfigure.window,
+                    RootWindow(mDisplay, DefaultScreen(mDisplay)),
+                    0, 0, &posX, &posY, &unused);
+                resize(posX, posY, event.xconfigure.width,
+                    event.xconfigure.height);
+                break;
+
+            case EnterNotify:
+                // cout << "Mouse Entered Window!\n";
+                break;
+
+            case LeaveNotify:
+                // cout << "Mouse Left Window!\n";
+                break;
+
+            case MotionNotify:
+                // This acts as a mouse hover/move event
+                // cout << "Mouse Hover at: X=" << event.xmotion.x <<
+                //     ", Y=" << event.xmotion.y << "\n";
+                break;
+
+            case ButtonPress:
+                // Find the cursor location.
+                Window root, child;
+                unsigned int mask;
+                if (XQueryPointer(mDisplay, mX11Window, &root,
+                    &child, &mRootClickPositionX, &mRootClickPositionY,
+                    &mWinClickPositionX, &mWinClickPositionY, &mask)) {
+                    mIsMouseClicked = true;
+                    XGrabPointer(mDisplay, mX11Window, False,
+                        ButtonPressMask | ButtonReleaseMask |
+                        PointerMotionMask, GrabModeAsync,
+                        GrabModeAsync, None, None, CurrentTime);
+                    break;
+                }
+                break;
+
+            case ButtonRelease:
+                XUngrabPointer(mDisplay, CurrentTime);
+                mIsMouseClicked = false;
+                break;
+
+            default:
+                break;
         }
     }
+
     return false;
 }
 
@@ -837,16 +824,9 @@ StickyWindow::handleX11EventQueue() {
  */
 void
 StickyWindow::cursorWatcherThread() {
-    // Update clock time.
-    drawCanvas();
-
     // If can't find cursor location, exit.
     if (!mXHelper->isWindowInStackedList(mX11Window)) {
         unPressAllButtons();
-        if (mIsPointerGrabbed) {
-            XUngrabPointer(mDisplay, CurrentTime);
-            mIsPointerGrabbed = false;
-        }
         return;
     }
 
@@ -857,60 +837,32 @@ StickyWindow::cursorWatcherThread() {
     if (!XQueryPointer(mDisplay, mX11Window, &root,
         &child, &rootX, &rootY, &winX, &winY, &mask)) {
         unPressAllButtons();
-        if (mIsPointerGrabbed) {
-            XUngrabPointer(mDisplay, CurrentTime);
-            mIsPointerGrabbed = false;
-        }
         return;
     }
-
-    // Useful later.
-    setCursorPosition(QPoint(rootX, rootY));
 
     // Set widget PinButton visibility state.
     // Window is Entire window, or Canvas when pinned.
     const bool IS_WINDOW_HOVERED = mXHelper->isWindowHovered(
         mX11Window, QPoint(rootX, rootY), false);
     setPinButtonVisibility(IS_WINDOW_HOVERED);
-
-    // Switch cursor to ours when hovering PinButton.
-    if (IS_WINDOW_HOVERED) {
-        if (!mIsPointerGrabbed) {
-            XGrabPointer(mDisplay, mX11Window, False,
-                ButtonPressMask | ButtonReleaseMask |
-                PointerMotionMask, GrabModeAsync, GrabModeAsync,
-                None, None, CurrentTime);
-            mIsPointerGrabbed = true;
-        }
-    }
-
-    // Entire Window is always entire window.
-    // If not in config mode, hovering a non-PinButton
-    // will make it visible & active.
-    const bool IS_ENTIRE_WINDOW_HOVERED = mXHelper->
-        isWindowHovered(mX11Window, QPoint(rootX, rootY), true);
     setHoveredButtonVisibility(QPoint(winX, winY));
 
     // If not mouse clicked.
-    if (!(mask & Button1Mask)) {
+    if (!mIsMouseClicked) {
         // When mouse unclicked, if hovered over widget settings
         // button, trigger it's click() handler.
-        if (IS_ENTIRE_WINDOW_HOVERED && whichButtonIsPressed()) {
+        if (whichButtonIsPressed()) {
             Button* HOVERED_BUTTON =
                 whichButtonIsHovered(QPoint(winX, winY));
             if (HOVERED_BUTTON) {
                 HOVERED_BUTTON->click(mX11Window);
             }
         }
-        if (mIsPointerGrabbed) {
-            XUngrabPointer(mDisplay, CurrentTime);
-            mIsPointerGrabbed = false;
-        }
         if (mWindowResized) {
             defineWindowCanvasPosition();
             defineWindowCanvasSize();
             createWindowButtons();
-            setPinButtonVisibility(true);
+            //setPinButtonVisibility(true);
             draw();
             mWindowResized = false;
         }
@@ -1006,7 +958,7 @@ StickyWindow::cursorWatcherThread() {
         return;
     }
 
-    if (IS_ENTIRE_WINDOW_HOVERED && !whichButtonIsPressed()) {
+    if (!whichButtonIsPressed()) {
         Button* HOVERED_BUTTON =
             whichButtonIsHovered(QPoint(winX, winY));
         if (HOVERED_BUTTON) {

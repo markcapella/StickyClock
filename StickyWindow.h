@@ -9,9 +9,10 @@ class StickyWindow {
 
     public:
         static inline const long OBSERVABLE_EVENTS =
-            ConfigureNotify | StructureNotifyMask |
-            ExposureMask | PropertyChangeMask |
-            PointerMotionMask | ButtonPressMask;
+            ConfigureNotify | StructureNotifyMask | PropertyChangeMask |
+            EnterWindowMask | LeaveWindowMask |
+            PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
+            ExposureMask;
 
         static inline constexpr chrono::milliseconds
             CURSOR_WATCHER_DELAY_MS{5};
@@ -50,12 +51,6 @@ class StickyWindow {
             const int width, const int height);
 
         /**
-         * Getters & setters for cursor position.
-         */
-        QPoint getCursorPosition();
-        void setCursorPosition(const QPoint position);
-
-        /**
          * Main X11 event cycle Handler.
          */
         void run();
@@ -82,6 +77,12 @@ class StickyWindow {
         SizeButton* mSizeButton = nullptr;
         vector<Button*> mButtons;
 
+        bool mIsMouseClicked = false;
+        int mRootClickPositionX = -1;
+        int mRootClickPositionY = -1;
+        int mWinClickPositionX = -1;
+        int mWinClickPositionY = -1;
+
         string mPreviousClientUpdateSecond = "";
         QPoint mCursorPosition { };
 
@@ -90,7 +91,6 @@ class StickyWindow {
 
         Clock::time_point mClickEnd { };
 
-        bool mIsPointerGrabbed = false;
         QPoint mDragResizeButtonOffset { };
         QPoint mDragMoveButtonOffset { };
         bool mWindowResized = false;
@@ -134,7 +134,7 @@ class StickyWindow {
          * Set window to stay on bottom or float as normal
          * based on configState.
          */
-        void setWindowConfigState();
+        void setWindowStickPosition();
 
         /**
          * This method defines the Control buttons.

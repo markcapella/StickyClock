@@ -117,7 +117,7 @@ ConfigDialog::loadConfigFormSettings() {
         }
 
         // Get QSlider for preferredDesktop.
-        if (THIS_VALUETYPE == PREFERRED_DESKTOP_VALUETYPE) {
+        if (THIS_VALUETYPE == SLIDER_VALUETYPE) {
             QSlider* sliderEditWidget = nullptr;
             sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
@@ -196,6 +196,10 @@ ConfigDialog::saveConfigFormSettings() {
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
                 mSettingsHelper->getQSettings()->endGroup();
+                if (THIS_KEY == SettingsHelper::CFP_PREFERRED_ONTOP) {
+                    mXHelper->makeWindowStayOnTop(getWindow(), VALUE);
+                    mXHelper->makeWindowStayOnBottom(getWindow(), !VALUE);
+                }
             }
             continue;
         }
@@ -217,7 +221,7 @@ ConfigDialog::saveConfigFormSettings() {
         }
 
         // Get QSlider for preferredDesktop.
-        if (THIS_VALUETYPE == PREFERRED_DESKTOP_VALUETYPE) {
+        if (THIS_VALUETYPE == SLIDER_VALUETYPE) {
             QSlider* sliderEditWidget = nullptr;
             sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
@@ -225,15 +229,14 @@ ConfigDialog::saveConfigFormSettings() {
                 // Further update some realtime.
                 mSettingsHelper->setIntSetting(SettingsHelper::
                     CFP_PREFERRED_DESKTOP, sliderEditWidget->value());
+                // Ensure setting against invalidation by OS.
+                if (THIS_KEY == SettingsHelper::CFP_PREFERRED_DESKTOP) {
+                    mStickyWindow->rangeCheckPreferredDesktop(getWindow());
+                }
             }
             continue;
         }
     }
-
-    // Ensure user setting against simultaneous workspace
-    // invalidation by user dropping OS Desktop maximum and
-    // our prefferedDesktop no longer exists as an option.
-    mStickyWindow->rangeCheckPreferredDesktop(getWindow());
 
     // And done.
     accept();
@@ -306,7 +309,7 @@ ConfigDialog::buildConfigForm() {
         }
 
         // Get QSlider for preferredDesktop.
-        if (THIS_VALUETYPE == PREFERRED_DESKTOP_VALUETYPE) {
+        if (THIS_VALUETYPE == SLIDER_VALUETYPE) {
             QSlider* sliderEditWidget = nullptr;
             sliderEditWidget = new QSlider(Qt::Horizontal, this);
             sliderEditWidget->setObjectName(THIS_KEY);

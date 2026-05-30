@@ -216,15 +216,18 @@ class XHelper {
             const QPoint pos, const bool checkEntireWindow);
 
         /**
+         * Place window in stack order to be on top
+         * of all other windows.
+         */
+        void makeWindowStayOnTop(const Window window,
+            const bool onOrOff);
+
+        /**
          * Place window in stack order to be immediately
          * above desktop, yet below all other windows.
          */
-        void makeWindowStayOnBottom(const Window window);
-
-        /**
-         * Allow window to float, don't "stay on bottom".
-         */
-        void makeWindowFloat(const Window window);
+        void makeWindowStayOnBottom(const Window window,
+            const bool onOrOff);
 
         /**
          * Private initializer to create raw list of

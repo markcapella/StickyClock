@@ -943,30 +943,36 @@ XHelper::isWindowHovered(const Window window, const QPoint pos,
 }
 
 /**
- * Place window in stack order to be immediately
- * above desktop, yet below all other windows.
+ * Place window in stack order to be on top
+ * of all other windows.
  */
 void
-XHelper::makeWindowStayOnBottom(const Window window) {
+XHelper::makeWindowStayOnTop(const Window window,
+    const bool onOrOff) {
+
     const Atom NET_WM_STATE = XInternAtom(mDisplay,
         "_NET_WM_STATE", False);
-    const Atom NET_WM_STATE_BELOW = XInternAtom(mDisplay,
-        "_NET_WM_STATE_BELOW", False);
+    const Atom NET_WM_STATE_ABOVE = XInternAtom(mDisplay,
+        "_NET_WM_STATE_ABOVE", False);
 
     XEvent EVENT = { .xclient = { .type = ClientMessage,
         .window = window, .message_type = NET_WM_STATE,
-        .format = 32, .data = { .l = {
-            1, (long) NET_WM_STATE_BELOW, 0, 0, 0 } } } };
+        .format = 32, .data = { .l = { onOrOff ? 1 : 0,
+            (long) NET_WM_STATE_ABOVE, 0, 1, 0 } } } };
+
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
         SubstructureRedirectMask | SubstructureNotifyMask, &EVENT);
     XFlush(mDisplay);
 }
 
 /**
- * Allow window to float, don't "stay on bottom".
+ * Place window in stack order to be immediately
+ * above desktop, yet below all other windows.
  */
 void
-XHelper::makeWindowFloat(const Window window) {
+XHelper::makeWindowStayOnBottom(const Window window,
+    const bool onOrOff) {
+
     const Atom NET_WM_STATE = XInternAtom(mDisplay,
         "_NET_WM_STATE", False);
     const Atom NET_WM_STATE_BELOW = XInternAtom(mDisplay,
@@ -974,8 +980,9 @@ XHelper::makeWindowFloat(const Window window) {
 
     XEvent EVENT = { .xclient = { .type = ClientMessage,
         .window = window, .message_type = NET_WM_STATE,
-        .format = 32, .data = { .l = {
-            0, (long) NET_WM_STATE_BELOW, 0, 0, 0 } } } };
+        .format = 32, .data = { .l = { onOrOff ? 1 : 0,
+            (long) NET_WM_STATE_BELOW, 0, 1, 0 } } } };
+
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
         SubstructureRedirectMask | SubstructureNotifyMask, &EVENT);
     XFlush(mDisplay);
