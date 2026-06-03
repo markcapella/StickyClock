@@ -8,14 +8,30 @@ StickyWindow::StickyWindow() {
     mDeleteMessage = XInternAtom(mDisplay,
         "WM_DELETE_WINDOW", False);
 
-    // Init visual transparency & TrueColor 32.
+    // Init visual transparency & TrueColor 32,
+    // create & set base x11 window.
     mIsVisuallyTransparent = initVisualTransparency();
-
     setX11Window(createX11Window());
-    createWindowButtons();
+    createAllWindowButtons();
+
+    // Create autohide timer for control buttons,
+    // then set control buttons visibility,
+    mControlsTimer = make_unique<QTimer>();
+    mControlsTimer->setSingleShot(true);
+    QObject::connect(mControlsTimer.get(), &QTimer::timeout,
+        [this] () {
+        setConfigModeOff();
+    });
+
+    setControlButtonsVisibility();
 }
 
+/**
+ * StickyWindow destructor, cleanup Window object.
+ */
 StickyWindow::~StickyWindow() {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
+
     const int BUTTONS_SIZE = mButtons.size();
     for (int i = 0; i < BUTTONS_SIZE; i++) {
         delete mButtons[i];
@@ -35,28 +51,6 @@ StickyWindow::~StickyWindow() {
 }
 
 /**
- * Initialize Transparency & TrueColor 32.
- */
-bool
-StickyWindow::initVisualTransparency() {
-    // Ensure we have a compositor running.
-    if (!mXHelper->isACompositorRunning()) {
-        return false;
-    }
-
-    const int VISUAL_COLOR_DEPTH = 32;
-    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
-        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
-        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
-            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
-                AllocNone);
-        return true;
-    }
-
-    return false;
-}
-
-/**
  * Overriden show() method ensures we stay on bottom
  * when window is "stuck", window border state != visible.
  */
@@ -66,52 +60,45 @@ StickyWindow::show() {
 }
 
 /**
- * Overriden hide() method.
- */
-void
-StickyWindow::hide() {
-    // If hiding on wrong desktop, don't.
-    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
-    const int PREFERRED_DESKTOP = mSettingsHelper->
-        getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
-    if (VISIBLE_DESKTOP == -1 || PREFERRED_DESKTOP == -1 ||
-        (VISIBLE_DESKTOP == PREFERRED_DESKTOP)) {
-        return;
-    }
-}
-
-/**
  * Overriden draw() method ensures we have a transparent
  * window with PinButton visible on mouse hover.
  */
 void
 StickyWindow::draw() {
     // Create a 1x1 pixmap to act as a solid color source.
-    const XRenderPictFormat* RENDER_FORMAT = XRenderFindVisualFormat(
-        mDisplay, mVisualInfoStruct.visual);
+    const XRenderPictFormat* RENDER_FORMAT =
+        XRenderFindVisualFormat(mDisplay, mVisualInfoStruct.visual);
     if (!RENDER_FORMAT) {
         cout << endl << XCOLOR_YELLOW << "StickyWindow: Unable "
             "to draw() StickyClock lacking Visual Format." <<
             XCOLOR_NORMAL << endl;
-        cout << "draw() Finishes - Error" << endl;
         return;
     }
 
-    // Draw entire WINDOW transparent.
+    // Define & draw all buttons.
     Picture renderPicture = XRenderCreatePicture(
         mDisplay, mX11Window, RENDER_FORMAT, 0, nullptr);
-    XRenderFillRectangle(mDisplay, PictOpSrc,
-        renderPicture, &TRANSPARENT_RCOLOR, 0, 0,
-        mSettingsHelper->getWindowWidth(),
-        mSettingsHelper->getWindowHeight());
 
     // If drawing on wrong desktop, don't.
     const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
     const int PREFERRED_DESKTOP = mSettingsHelper->
-        getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
+        getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
     if (VISIBLE_DESKTOP != -1 && PREFERRED_DESKTOP != -1 &&
         (VISIBLE_DESKTOP != PREFERRED_DESKTOP)) {
+        XRenderFillRectangle(mDisplay, PictOpSrc, renderPicture,
+            &TRANSPARENT_RCOLOR, 0, 0, mSettingsHelper->
+            getWindowWidth(), mSettingsHelper->getWindowHeight());
+        XRenderFreePicture(mDisplay, renderPicture);
+        XFlush(mDisplay);
         return;
+    }
+
+    // Erase entire window before draw while
+    // resizing to avoid screen artifacts.
+    if (mIsSizingWindow) {
+        XRenderFillRectangle(mDisplay, PictOpSrc, renderPicture,
+            &TRANSPARENT_RCOLOR, 0, 0, mSettingsHelper->
+            getWindowWidth(), mSettingsHelper->getWindowHeight());
     }
 
     // Draw canvas border gray, indented margin blue,
@@ -131,9 +118,9 @@ StickyWindow::draw() {
     XRenderFillRectangle(mDisplay, PictOpSrc,
         BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
     XRenderColor backgroundColor = (isItWeedTime() && mSettingsHelper->
-        getBoolSetting(SettingsHelper::CFG_SHOW_WEED_CLOCK)) ?
+        getBoolSetting(SettingsHelper::SHOW_WEED_CLOCK)) ?
             mSettingsHelper->getColorSetting(
-                SettingsHelper::CFG_WEED_CLOCK_COLOR) : WHITE_RCOLOR;
+                SettingsHelper::WEED_CLOCK_COLOR) : WHITE_RCOLOR;
     XRenderFillRectangle(mDisplay, PictOpOver, renderPicture,
         &backgroundColor, X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
     XRenderFreePicture(mDisplay, BACKGROUND_R_PICTURE);
@@ -156,15 +143,29 @@ StickyWindow::draw() {
     XftDrawDestroy(xft_draw);
     xft_draw = nullptr;
 
-    // Define & draw all buttons.
-    drawAllButtons();
+    // Draw Control buttons & pin button.
+    drawAllWindowButtons(renderPicture);
 
     // Cleanup.
     XFreePixmap(mDisplay, renderPixmap);
     XRenderFreePicture(mDisplay, renderPicture);
     XFlush(mDisplay);
+}
 
-    //cout << "StickyWindow::draw() Finishes" << endl;
+/**
+ * Overriden hide() method.
+ */
+void
+StickyWindow::hide() {
+    // If hiding on wrong desktop, don't.
+    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
+    const int PREFERRED_DESKTOP = mSettingsHelper->
+        getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
+
+    if (VISIBLE_DESKTOP == -1 || PREFERRED_DESKTOP == -1 ||
+        (VISIBLE_DESKTOP == PREFERRED_DESKTOP)) {
+        return;
+    }
 }
 
 /**
@@ -205,26 +206,17 @@ StickyWindow::resize(const int xPos, const int yPos,
  */
 void
 StickyWindow::run() {
-    // Set timer and start loop.
-    Clock::time_point mCursorWatcherStart = Clock::now();
     while (true) {
-        // Check if time to trigger cursorWatcher.
-        Clock::time_point mCursorWatcherEnd = Clock::now();
-        const chrono::milliseconds DURATION =
-            chrono::duration_cast<chrono::milliseconds>
-                (mCursorWatcherEnd - mCursorWatcherStart);
-        if (DURATION > CURSOR_WATCHER_DELAY_MS) {
-            cursorWatcherThread();
-            mCursorWatcherStart = Clock::now();
-        }
-
-        // Time to process xEvents. Close requested?
+        // Process xEvents, close when requested.
         if (handleX11EventQueue()) {
             break;
         }
 
-        // Update App canvas.
-        drawCanvas();
+        // Support Move & Resize.
+        cursorWatcherThread();
+
+        // Draw App canvas.
+        drawWindowCanvas();
 
         // Support ConfigDialog loop.
         QCoreApplication::processEvents();
@@ -245,7 +237,7 @@ StickyWindow::getX11Window() {
 void
 StickyWindow::rangeCheckPreferredDesktop(const Window window) {
     const int PREFERRED_DESKTOP = mSettingsHelper->
-        getIntSetting(SettingsHelper::CFP_PREFERRED_DESKTOP);
+        getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
     if (PREFERRED_DESKTOP == -1) {
         return;
     }
@@ -255,8 +247,30 @@ StickyWindow::rangeCheckPreferredDesktop(const Window window) {
 
     if (BOUNDED_PREFERRED_DESKTOP > MAX_OS_DESKTOPS) {
         mSettingsHelper->setIntSetting(
-            SettingsHelper::CFP_PREFERRED_DESKTOP, -1);
+            SettingsHelper::PREFERRED_DESKTOP, -1);
     }
+}
+
+/**
+ * Initialize Transparency & TrueColor 32.
+ */
+bool
+StickyWindow::initVisualTransparency() {
+    // Ensure we have a compositor running.
+    if (!mXHelper->isACompositorRunning()) {
+        return false;
+    }
+
+    const int VISUAL_COLOR_DEPTH = 32;
+    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
+        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
+        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
+            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
+                AllocNone);
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -272,9 +286,12 @@ StickyWindow::setX11Window(const Window window) {
  */
 Window
 StickyWindow::createX11Window() {
-    // If Widget first time run, center position.
-    if (mSettingsHelper->getWindowXPos() == -1 &&
-        mSettingsHelper->getWindowYPos() == -1) {
+    // Determine if Widget first time run.
+    const bool INITIAL_RUN = QPoint(mSettingsHelper->getWindowXPos(),
+        mSettingsHelper->getWindowYPos()) == INVALID_POINT;
+
+    // Initial setup for Widget first time run.
+    if (INITIAL_RUN) {
         defineWindowOnFirstRun();
         defineWindowCanvasPosition();
     }
@@ -283,30 +300,20 @@ StickyWindow::createX11Window() {
     XSetWindowAttributes wAttrs;
     wAttrs.colormap = mColorMap;
     wAttrs.border_pixel = 0;
-    wAttrs.event_mask = OBSERVABLE_EVENTS;
 
     mX11Window = XCreateWindow(mDisplay, RootWindow(mDisplay,
-        mVisualInfoStruct.screen),
-        mSettingsHelper->getWindowXPos(), mSettingsHelper->getWindowYPos(),
-        mSettingsHelper->getWindowWidth(), mSettingsHelper->getWindowHeight(),
-        1, mVisualInfoStruct.depth, InputOutput,
-        mVisualInfoStruct.visual, CWColormap | CWEventMask |
-        CWBorderPixel, &wAttrs);
+        mVisualInfoStruct.screen), mSettingsHelper->getWindowXPos(),
+        mSettingsHelper->getWindowYPos(), mSettingsHelper->
+        getWindowWidth(), mSettingsHelper->getWindowHeight(), 1,
+        mVisualInfoStruct.depth, InputOutput, mVisualInfoStruct.visual,
+        CWColormap | CWEventMask | CWBorderPixel, &wAttrs);
 
     if (mX11Window == None) {
         cout << endl << XCOLOR_RED << "StickyWindow: X11 failed "
             "to create a StickyClock window - Fatal." <<
             XCOLOR_NORMAL << endl << endl;
-        cout << "createX11Window() Finishes - error." << endl << endl;
         return mX11Window;
     }
-
-    // Filter events we care to see in event loop.
-    XSelectInput(mDisplay, DefaultRootWindow(mDisplay),
-        PropertyChangeMask);
-    XSelectInput(mDisplay, mX11Window, OBSERVABLE_EVENTS);
-
-    XSetWMProtocols(mDisplay, mX11Window, &mDeleteMessage, 1);
 
     // Set procID on our window, for RecentsHelper().
     mXHelper->setWindowPID(mX11Window);
@@ -349,7 +356,14 @@ StickyWindow::createX11Window() {
     // Set "StickyWindow" type, show window, set config state.
     setStickyWindowType();
     show();
-    setWindowStickPosition();
+
+    // On first time run, ensure window appears ontop
+    // like a splash screen. Else, ensure stick state.
+    if (INITIAL_RUN) {
+        XRaiseWindow(mDisplay, mX11Window);
+    } else {
+        setWindowStickPosition();
+    }
 
     // Apply strict configuration to the window. Awesome WM
     // specifically needs this.
@@ -390,10 +404,10 @@ StickyWindow::defineWindowOnFirstRun() {
 }
 
 /**
- * Set "StickyWindow" type, which is normally an x11
- * "SplashScreen". On KDE we use "Dock", as their
- * "SplashScreen" window doesn't support InputRectangles
- * meaning we can't click buttons.
+ * Set window type, which is normally "SplashScreen".
+ *
+ * TODO: ?? On KDE we use "Dock", as their "SplashScreen" window
+ * doesn't support InputRectangles meaning we can't click buttons.
  */
 void
 StickyWindow::setStickyWindowType() {
@@ -420,22 +434,36 @@ StickyWindow::setStickyWindowType() {
 void
 StickyWindow::setWindowStickPosition() {
     const bool PREFER_ONTOP = mSettingsHelper->getBoolSetting(
-        SettingsHelper::CFP_PREFERRED_ONTOP);
+        SettingsHelper::PREFERRED_ONTOP);
 
     mXHelper->makeWindowStayOnTop(mX11Window, PREFER_ONTOP);
     mXHelper->makeWindowStayOnBottom(mX11Window, !PREFER_ONTOP);
 }
 
 /**
+ * Callback method for Autohide controls timer.
+ */
+void
+StickyWindow::setConfigModeOff() {
+    // If visibility already off, we're done.
+    if (!mSettingsHelper->getBoolSetting(
+        SettingsHelper::CONFIG_MODE)) {
+        return;
+    }
+
+    // Set visibility off, & done.
+    mSettingsHelper->setBoolSetting(
+        SettingsHelper::CONFIG_MODE, false);
+
+    setControlButtonsVisibility();
+}
+
+/**
  * This method defines the Control buttons.
  */
 void
-StickyWindow::createWindowButtons() {
-    const int BUTTONS_SIZE = mButtons.size();
-    for (int i = 0; i < BUTTONS_SIZE; i++) {
-        delete mButtons[i];
-    }
-    mButtons.clear();
+StickyWindow::createAllWindowButtons() {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
     mPinButton = new PinButton(mSettingsHelper->
         getWindowWidth() - 2 * Button::BUTTON_WIDTH,
@@ -465,7 +493,7 @@ StickyWindow::createWindowButtons() {
  * This method updates the defined Control buttons.
  */
 void
-StickyWindow::updateWindowButtons() {
+StickyWindow::updateAllWindowButtons() {
     mPinButton->setX(mSettingsHelper->
         getWindowWidth() - 2 * Button::BUTTON_WIDTH);
     mPinButton->setY(Button::BUTTON_HEIGHT);
@@ -488,51 +516,70 @@ StickyWindow::updateWindowButtons() {
 }
 
 /**
- * Check to see which UI Button pressed.
- */
-Button*
-StickyWindow::whichButtonIsPressed() {
-    const int BUTTONS_COUNT = mButtons.size();
-
-    for (int i = 0; i < BUTTONS_COUNT; i++) {
-        if (mButtons[i]->isPressed()) {
-            return mButtons[i];
-        }
-    }
-    return nullptr;
-}
-
-/**
- * Unpress all UI Buttons.
+ * Draw all visible buttons & set underlying input shapes.
  */
 void
-StickyWindow::unPressAllButtons() {
-    const int BUTTONS_COUNT = mButtons.size();
-    for (int i = 0; i < BUTTONS_COUNT; i++) {
-        mButtons[i]->setPressed(false);
+StickyWindow::drawAllWindowButtons(const Picture renderPicture) {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
+
+    vector<XRectangle> rects;
+    const int BUTTONS_END = mButtons.size();
+    for (int i = 0; i < BUTTONS_END; i++) {
+        if (mButtons[i]->isVisible()) {
+            mButtons[i]->draw(mX11Window);
+
+            XRectangle buttonInputRegion {
+                .x = (short) mButtons[i]->getX(),
+                .y = (short) mButtons[i]->getY(),
+                .width = (unsigned short) mButtons[i]->getWidth(),
+                .height = (unsigned short) mButtons[i]->getHeight()
+            };
+            rects.push_back(buttonInputRegion);
+        } else {
+            mButtons[i]->erase(mX11Window, renderPicture);
+        }
     }
+    XShapeCombineRectangles(mDisplay, mX11Window, ShapeInput,
+        0, 0, rects.data(), rects.size(), ShapeSet, Unsorted);
+
+    XFlush(mDisplay);
 }
 
 /**
- * Check to see which UI Button hovered.
+ * Set visibility state of the four corner control buttons.
  */
-Button*
-StickyWindow::whichButtonIsHovered(const QPoint pos) {
-    const int BUTTONS_COUNT = mButtons.size();
+void
+StickyWindow::setControlButtonsVisibility() {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
-    for (int i = 0; i < BUTTONS_COUNT; i++) {
-        if (mButtons[i]->getRect().contains(pos)) {
-            return mButtons[i];
-        }
+    const bool CONFIG_MODE = mSettingsHelper->getBoolSetting(
+        SettingsHelper::CONFIG_MODE);
+
+    // Pin button = 0, controls start @ 1;
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 1; i < BUTTONS_COUNT; i++) {
+        mButtons[i]->setVisible(CONFIG_MODE);
     }
-    return nullptr;
+
+    // If not Config mode, stop autohide timer & done.
+    if (!CONFIG_MODE) {
+        mControlsTimer->stop();
+        return;
+    }
+
+    // If using autohide Config buttons, start timer.
+    if (mSettingsHelper->getBoolSetting(SettingsHelper::
+        AUTOHIDE_CONTROLS)) {
+        mControlsTimer->start(mSettingsHelper->getIntSetting(
+            SettingsHelper::AUTOHIDE_DELAY) * 1000);
+    }
 }
 
 /**
  * Setter for PinButton visibility state.
  */
 void
-StickyWindow::setPinButtonVisibility(
+StickyWindow::setHoveredPinButtonVisibility(
     const bool visibility) {
     if (mPinButton->isVisible() != visibility) {
         mPinButton->setVisible(visibility);
@@ -545,27 +592,28 @@ StickyWindow::setPinButtonVisibility(
  * corner button will make it visible & actionable.
  */
 void
-StickyWindow::setHoveredButtonVisibility(const QPoint pos) {
-    if (mSettingsHelper->getConfigMode()) {
-        return;
-    }
+StickyWindow::setHoveredControlButtonVisibility(
+    const QPoint position) {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
-    const Button* HOVERED_BUTTON = whichButtonIsHovered(pos);
-    const int BUTTONS_COUNT = mButtons.size();
+    // Pin button = 0, controls start @ 1;
+    const bool CONFIG_MODE = mSettingsHelper->getBoolSetting(
+        SettingsHelper::CONFIG_MODE);
+
     bool redrawRequired = false;
 
-    // Corner buttons start @ 1.
+    const int BUTTONS_COUNT = mButtons.size();
     for (int i = 1; i < BUTTONS_COUNT; i++) {
         // Set visible hovered.
-        if (mButtons[i]->getRect().contains(pos)) {
+        if (mButtons[i]->getRect().contains(position)) {
             if (!mButtons[i]->isVisible()) {
                 mButtons[i]->setVisible(true);
                 redrawRequired = true;
             }
         } else {
             // Clear all others.
-            if (mButtons[i]->isVisible()) {
-                mButtons[i]->setVisible(false);
+            if (mButtons[i]->isVisible() != CONFIG_MODE) {
+                mButtons[i]->setVisible(CONFIG_MODE);
                 redrawRequired = true;
             }
         }
@@ -577,50 +625,105 @@ StickyWindow::setHoveredButtonVisibility(const QPoint pos) {
 }
 
 /**
- * Switch between window border state where titlebar &
- * border displayed or not.
+ * Press hovered button, & return it's position.
  */
-void
-StickyWindow::onPinButtonClicked() {
-    const bool CONFIG_MODE = !mSettingsHelper->getConfigMode();
-    mSettingsHelper->setConfigMode(CONFIG_MODE);
+QPoint
+StickyWindow::pressHoveredButton(const QPoint position) {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
     const int BUTTONS_COUNT = mButtons.size();
-    for (int i = 1; i < BUTTONS_COUNT; i++) {
-        mButtons[i]->setVisible(CONFIG_MODE);
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        if (mButtons[i]->getRect().contains(position)) {
+            mButtons[i]->setPressed(true);
+            return QPoint(mButtons[i]->getX(),
+                mButtons[i]->getY());
+        }
     }
-
-    setWindowStickPosition();
-    draw();
+    return INVALID_POINT;
 }
 
 /**
- * Draw all visible buttons & sest underlying input shapes.
+ * Return draggable status of pressed button.
  */
-void
-StickyWindow::drawAllButtons() {
-    // Erase PinButton during resize-draw.
-    const int BUTTON_START = !mWindowResized ? 0 : 1;
-    const int BUTTONS_END = mButtons.size();
+bool
+StickyWindow::isPressedButtonDraggable() {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
-    vector<XRectangle> rects;
-    for (int i = BUTTON_START; i < BUTTONS_END; i++) {
-        if (mButtons[i]->isVisible()) {
-            mButtons[i]->draw(mX11Window);
-
-            XRectangle buttonInputRegion {
-                .x = (short) mButtons[i]->getX(),
-                .y = (short) mButtons[i]->getY(),
-                .width = (unsigned short) mButtons[i]->getWidth(),
-                .height = (unsigned short) mButtons[i]->getHeight()
-            };
-            rects.push_back(buttonInputRegion);
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        if (mButtons[i]->isPressed()) {
+            return mButtons[i]->isDraggable();
         }
     }
 
-    XShapeCombineRectangles(mDisplay, mX11Window, ShapeInput,
-        0, 0, rects.data(), rects.size(), ShapeSet, Unsorted);
-    XFlush(mDisplay);
+    return false;
+}
+
+/**
+ * Return sizeable status of pressed button.
+ */
+bool
+StickyWindow::isPressedButtonSizable() {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
+
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        if (mButtons[i]->isPressed()) {
+            return mButtons[i]->isSizeable();
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Click previously pressed, hovered button.
+ */
+void
+StickyWindow::clickPressedHoveredButton(const QPoint position) {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
+
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        if (mButtons[i]->getRect().contains(position)) {
+            if (mButtons[i]->isPressed()) {
+                if (i == 0) {
+                    clickPressedPinButton();
+                    return;
+                }
+                mButtons[i]->click(mX11Window);
+                return;
+            }
+        }
+    }
+}
+
+/**
+ * If Pin button clicked, toggle config mode.
+ */
+void
+StickyWindow::clickPressedPinButton() {
+    // Toggle current to new mode.
+    const bool NEW_CONFIG_MODE = mSettingsHelper->getBoolSetting(
+        SettingsHelper::CONFIG_MODE) ? false : true;
+    mSettingsHelper->setBoolSetting(
+        SettingsHelper::CONFIG_MODE, NEW_CONFIG_MODE);
+
+    // Set visibility, draw & done.
+    setControlButtonsVisibility();
+}
+
+/**
+ * Unpress all UI Buttons.
+ */
+void
+StickyWindow::unPressAllWindowButtons() {
+    lock_guard<recursive_mutex> lock(mButtonsMutLock);
+
+    const int BUTTONS_COUNT = mButtons.size();
+    for (int i = 0; i < BUTTONS_COUNT; i++) {
+        mButtons[i]->setPressed(false);
+    }
 }
 
 /**
@@ -647,7 +750,7 @@ StickyWindow::defineWindowCanvasSize() {
  * This method updates the windowRect once a second.
  */
 void
-StickyWindow::drawCanvas() {
+StickyWindow::drawWindowCanvas() {
     const string CURRENT_SECOND = getCurrentSecond();
 
     if (mPreviousClientUpdateSecond == "" ||
@@ -723,15 +826,52 @@ StickyWindow::isItWeedTime() {
  */
 bool
 StickyWindow::handleX11EventQueue() {
-    XEvent event;
+    // ConfigureNotify.
+    Window resizedWindow = None;
+    int resizedPosX = -1;
+    int resizedPosY = -1;
 
+    // ButtonPress, ButtonRelease.
+    unsigned int clickStatus = 0;
+
+    Window root = None;
+    int rootClickPositionX = -1;
+    int rootClickPositionY = -1;
+
+    Window window = None;
+    int windowClickPositionX = -1;
+    int windowClickPositionY = -1;
+
+    // ButtonPress.
+    QPoint clickedButtonPosition;
+
+    // Filter events we care to see in event loop.
+    const long OBSERVABLE_EVENTS = ConfigureNotify |
+        StructureNotifyMask | PropertyChangeMask |
+        ButtonPressMask | ButtonReleaseMask | ExposureMask;
+    XSelectInput(mDisplay, mX11Window, OBSERVABLE_EVENTS);
+
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay),
+        PropertyChangeMask);
+    XSetWMProtocols(mDisplay, mX11Window, &mDeleteMessage, 1);
+
+    // Event loop, until window close.
+    XEvent event;
     while (XPending(mDisplay)) {
         XNextEvent(mDisplay, &event);
         switch (event.type) {
 
+            // ClientMsg says window close.
+            case ClientMessage:
+                if (event.xclient.data.l[0] == mDeleteMessage) {
+                    return true;
+                }
+                break;
+
             // Detect root window or desktop property changes.
             case PropertyNotify:
-                if (event.xproperty.window == DefaultRootWindow(mDisplay)) {
+                if (event.xproperty.window ==
+                    DefaultRootWindow(mDisplay)) {
                     // MAXIMUM DESKTOPS parm change ?
                     if (event.xproperty.atom == XInternAtom(mDisplay,
                         "_NET_NUMBER_OF_DESKTOPS", False)) {
@@ -739,16 +879,8 @@ StickyWindow::handleX11EventQueue() {
                     }
                     break;
                 }
-
                 // Else, our window property change.
                 onPropertyNotify(event.xproperty);
-                break;
-
-            // Type = 33; ClientMsg Close event.
-            case ClientMessage:
-                if (event.xclient.data.l[0] == mDeleteMessage) {
-                    return true;
-                }
                 break;
 
             // Type = Expose.
@@ -768,54 +900,82 @@ StickyWindow::handleX11EventQueue() {
 
             // Type = 22; ConfigureNotify.
             case ConfigureNotify:
-                int posX; int posY; Window unused;
                 XTranslateCoordinates(mDisplay, event.xconfigure.window,
                     RootWindow(mDisplay, DefaultScreen(mDisplay)),
-                    0, 0, &posX, &posY, &unused);
-                resize(posX, posY, event.xconfigure.width,
+                    0, 0, &resizedPosX, &resizedPosY, &resizedWindow);
+                resize(resizedPosX, resizedPosY, event.xconfigure.width,
                     event.xconfigure.height);
                 break;
 
-            case EnterNotify:
-                // cout << "Mouse Entered Window!\n";
-                break;
-
-            case LeaveNotify:
-                // cout << "Mouse Left Window!\n";
-                break;
-
-            case MotionNotify:
-                // This acts as a mouse hover/move event
-                // cout << "Mouse Hover at: X=" << event.xmotion.x <<
-                //     ", Y=" << event.xmotion.y << "\n";
-                break;
-
             case ButtonPress:
-                // Find the cursor location.
-                Window root, child;
-                unsigned int mask;
-                if (XQueryPointer(mDisplay, mX11Window, &root,
-                    &child, &mRootClickPositionX, &mRootClickPositionY,
-                    &mWinClickPositionX, &mWinClickPositionY, &mask)) {
-                    mIsMouseClicked = true;
-                    XGrabPointer(mDisplay, mX11Window, False,
-                        ButtonPressMask | ButtonReleaseMask |
-                        PointerMotionMask, GrabModeAsync,
-                        GrabModeAsync, None, None, CurrentTime);
+                // Find the cursor down location.
+                if (!XQueryPointer(mDisplay, mX11Window, &root,
+                    &window, &rootClickPositionX, &rootClickPositionY,
+                    &windowClickPositionX, &windowClickPositionY,
+                    &clickStatus)) {
                     break;
                 }
+
+                // Do pressed highlighting for pinbutton & controls.
+                clickedButtonPosition = pressHoveredButton(
+                    QPoint(windowClickPositionX, windowClickPositionY));
+                if (clickedButtonPosition == INVALID_POINT) {
+                    break;
+                }
+
+                // Grab the cursor on entry.
+                mIsMouseClicked = true;
+
+                XGrabPointer(mDisplay, mX11Window, False,
+                    ButtonPressMask | ButtonReleaseMask |
+                    PointerMotionMask, GrabModeAsync,
+                    GrabModeAsync, None, None, CurrentTime);
+
+                // Set cursor offset position within button @ start
+                // of move ... (Top left) corner distance.
+                mDragMoveButtonOffset = QPoint(
+                    windowClickPositionX - clickedButtonPosition.x(),
+                    windowClickPositionY - clickedButtonPosition.y());
+
+                // Set cursor offset position within button @ start
+                // of resizing ... (Bottom right) corner distance.
+                mDragResizeButtonOffset = QPoint(
+                    windowClickPositionX - clickedButtonPosition.x() -
+                        Button::BUTTON_WIDTH,
+                    windowClickPositionY - clickedButtonPosition.y() -
+                        Button::BUTTON_HEIGHT);
                 break;
 
             case ButtonRelease:
+                // Release the cursor on exit.
                 XUngrabPointer(mDisplay, CurrentTime);
-                mIsMouseClicked = false;
-                break;
 
-            default:
+                // Find the cursor up location.
+                if (!XQueryPointer(mDisplay, mX11Window, &root,
+                    &window, &rootClickPositionX, &rootClickPositionY,
+                    &windowClickPositionX, &windowClickPositionY,
+                    &clickStatus)) {
+                    break;
+                }
+
+                // If still hovering a control, release a click.
+                clickPressedHoveredButton(QPoint(windowClickPositionX,
+                    windowClickPositionY));
+
+                if (mIsSizingWindow) {
+                    defineWindowCanvasPosition();
+                    defineWindowCanvasSize();
+                    updateAllWindowButtons();
+                    setHoveredPinButtonVisibility(true);
+                    draw();
+                    mIsSizingWindow = false;
+                }
+
+                unPressAllWindowButtons();
+                mIsMouseClicked = false;
                 break;
         }
     }
-
     return false;
 }
 
@@ -824,164 +984,114 @@ StickyWindow::handleX11EventQueue() {
  */
 void
 StickyWindow::cursorWatcherThread() {
-    // If can't find cursor location, exit.
-    if (!mXHelper->isWindowInStackedList(mX11Window)) {
-        unPressAllButtons();
-        return;
-    }
-
     // Find the cursor location.
-    Window root, child;
+    Window root, window;
     int rootX, rootY, winX, winY;
-    unsigned int mask;
-    if (!XQueryPointer(mDisplay, mX11Window, &root,
-        &child, &rootX, &rootY, &winX, &winY, &mask)) {
-        unPressAllButtons();
+    unsigned int clickStatus;
+
+    if (!XQueryPointer(mDisplay, mX11Window, &root, &window,
+        &rootX, &rootY, &winX, &winY, &clickStatus)) {
+        cout << XCOLOR_YELLOW << "StickyClock: Failed to query "
+            "Cursor location." << XCOLOR_NORMAL << endl;
         return;
     }
 
-    // Set widget PinButton visibility state.
-    // Window is Entire window, or Canvas when pinned.
+    // Set PinButton visibility if hovered.
     const bool IS_WINDOW_HOVERED = mXHelper->isWindowHovered(
         mX11Window, QPoint(rootX, rootY), false);
-    setPinButtonVisibility(IS_WINDOW_HOVERED);
-    setHoveredButtonVisibility(QPoint(winX, winY));
+    setHoveredPinButtonVisibility(IS_WINDOW_HOVERED);
 
-    // If not mouse clicked.
+    // Set all other controls visibility if hovered.
+    setHoveredControlButtonVisibility(QPoint(winX, winY));
+
+    // If not mouse clicked, we're done.
     if (!mIsMouseClicked) {
-        // When mouse unclicked, if hovered over widget settings
-        // button, trigger it's click() handler.
-        if (whichButtonIsPressed()) {
-            Button* HOVERED_BUTTON =
-                whichButtonIsHovered(QPoint(winX, winY));
-            if (HOVERED_BUTTON) {
-                HOVERED_BUTTON->click(mX11Window);
-            }
-        }
-        if (mWindowResized) {
-            defineWindowCanvasPosition();
-            defineWindowCanvasSize();
-            createWindowButtons();
-            //setPinButtonVisibility(true);
-            draw();
-            mWindowResized = false;
-        }
-        unPressAllButtons();
         return;
     }
 
-    // If we're waiting to be unclicked.
-    const Button* PRESSED_BUTTON = whichButtonIsPressed();
-    if (PRESSED_BUTTON) {
-        if (PRESSED_BUTTON->isDraggable()) {
-            const QPoint CURRENT_POSITION = QPoint(rootX, rootY);
+    ////
+    // Are we Moving the window?
+    if (isPressedButtonDraggable()) {
+        const QPoint CURRENT_POSITION = QPoint(rootX, rootY);
 
-            mSettingsHelper->setWindowXPos(CURRENT_POSITION.x() -
-                mDragMoveButtonOffset.x());
-            mSettingsHelper->setWindowYPos(CURRENT_POSITION.y() -
-                mDragMoveButtonOffset.y());
+        mSettingsHelper->setWindowXPos(CURRENT_POSITION.x() -
+            mDragMoveButtonOffset.x());
+        mSettingsHelper->setWindowYPos(CURRENT_POSITION.y() -
+            mDragMoveButtonOffset.y());
 
-            XMoveWindow(mDisplay, mX11Window, mSettingsHelper->
-                getWindowXPos(), mSettingsHelper->getWindowYPos());
-            return;
-        }
-
-        if (PRESSED_BUTTON->isSizeable()) {
-            const int SCREEN_WIDTH = WidthOfScreen(
-                DefaultScreenOfDisplay(mDisplay));
-            const int SCREEN_HEIGHT = HeightOfScreen(
-                DefaultScreenOfDisplay(mDisplay));
-
-            const QRect ORIGINAL_WINDOW = QRect(
-                QPoint(mSettingsHelper->getWindowXPos(),
-                    mSettingsHelper->getWindowYPos()),
-                QSize(mSettingsHelper->getWindowWidth(),
-                    mSettingsHelper->getWindowHeight())
-            );
-
-            const QPoint ORIGINAL_POSITION = ORIGINAL_WINDOW.topLeft();
-            const QPoint CURRENT_POSITION = QPoint(rootX, rootY);
-            const QPoint DIFF_POSITION = CURRENT_POSITION -
-                ORIGINAL_POSITION;
-
-            // Ensure window minimum size.
-            QSize NEW_WINDOW_SIZE(
-                DIFF_POSITION.x() - mDragResizeButtonOffset.x(),
-                DIFF_POSITION.y() - mDragResizeButtonOffset.y()
-            );
-            if (NEW_WINDOW_SIZE.width() <
-                    mSettingsHelper-> getWindowMinimumWidth()) {
-                NEW_WINDOW_SIZE.setWidth(
-                    mSettingsHelper-> getWindowMinimumWidth());
-            }
-            if (NEW_WINDOW_SIZE.height() <
-                    mSettingsHelper->getWindowMinimumHeight()) {
-                NEW_WINDOW_SIZE.setHeight(
-                    mSettingsHelper->getWindowMinimumHeight());
-            };
-
-            // Disallow drag off right or bottom of screen.
-            const int NEW_WINDOW_RIGHT_POS =
-                mSettingsHelper->getWindowXPos() +
-                    NEW_WINDOW_SIZE.width();
-            if (NEW_WINDOW_RIGHT_POS > SCREEN_WIDTH) {
-                NEW_WINDOW_SIZE.setWidth(
-                    SCREEN_WIDTH - mSettingsHelper->getWindowXPos());
-            }
-            const int NEW_WINDOW_BOTTOM_POS =
-                mSettingsHelper->getWindowYPos() +
-                    NEW_WINDOW_SIZE.height();
-            if (NEW_WINDOW_BOTTOM_POS > SCREEN_HEIGHT) {
-                NEW_WINDOW_SIZE.setHeight(
-                    SCREEN_HEIGHT - mSettingsHelper->getWindowYPos());
-            }
-
-            // Perform the move.
-            mSettingsHelper->setWindowWidth(NEW_WINDOW_SIZE.width());
-            mSettingsHelper->setWindowHeight(NEW_WINDOW_SIZE.height());
-
-            XResizeWindow(mDisplay, mX11Window,
-                mSettingsHelper->getWindowWidth(),
-                mSettingsHelper->getWindowHeight());
-
-            // mDragResizeButtonOffset = CURRENT_POSITION;
-            defineWindowCanvasPosition();
-            defineWindowCanvasSize();
-            updateWindowButtons();
-
-            mWindowResized = true;
-            draw();
-            return;
-        }
-
-        // Else, done.
+        XMoveWindow(mDisplay, mX11Window, mSettingsHelper->
+            getWindowXPos(), mSettingsHelper->getWindowYPos());
         return;
     }
 
-    if (!whichButtonIsPressed()) {
-        Button* HOVERED_BUTTON =
-            whichButtonIsHovered(QPoint(winX, winY));
-        if (HOVERED_BUTTON) {
-            mDragMoveButtonOffset = QPoint(
-                winX - HOVERED_BUTTON->getX(),
-                winY - HOVERED_BUTTON->getY());
-            mDragResizeButtonOffset = QPoint(
-                winX - HOVERED_BUTTON->getX() - Button::BUTTON_WIDTH,
-                winY - HOVERED_BUTTON->getY() - Button::BUTTON_HEIGHT);
-
-            HOVERED_BUTTON->setPressed(true);
-            mClickStart = Clock::now();
-            mClickStartValueSet = true;
-
-            if (PinButton* T = dynamic_cast<PinButton*>
-                (HOVERED_BUTTON)) {
-                onPinButtonClicked();
-            }
-            return;
-        }
+    // If not Drag-sizing, we're done.
+    if (!isPressedButtonSizable()) {
+        return;
     }
 
-    mClickStartValueSet = false;
+    ////
+    // We're sizing the window.
+    mIsSizingWindow = true;
+
+    // Don't allow sizing below window minimum.
+    const QRect ORIGINAL_WINDOW = QRect(QPoint(mSettingsHelper->
+        getWindowXPos(), mSettingsHelper->getWindowYPos()),
+        QSize(mSettingsHelper->getWindowWidth(), mSettingsHelper->
+        getWindowHeight())
+    );
+    const QPoint ORIGINAL_POSITION = ORIGINAL_WINDOW.topLeft();
+    const QPoint CURRENT_POSITION = QPoint(rootX, rootY);
+    const QPoint DIFF_POSITION = CURRENT_POSITION - ORIGINAL_POSITION;
+
+    // Get new window size, enforcing minimum and screen edge.
+    QSize newWindowSize = QSize(DIFF_POSITION.x() -
+        mDragResizeButtonOffset.x(), DIFF_POSITION.y() -
+        mDragResizeButtonOffset.y());
+
+    // Enforce window minimum size.
+    if (newWindowSize.width() <
+        mSettingsHelper-> getWindowMinimumWidth()) {
+        newWindowSize.setWidth(mSettingsHelper->
+            getWindowMinimumWidth());
+    }
+    if (newWindowSize.height() <
+        mSettingsHelper->getWindowMinimumHeight()) {
+        newWindowSize.setHeight(mSettingsHelper->
+            getWindowMinimumHeight());
+    };
+
+    // Enforce window edges.
+    const int SCREEN_WIDTH = WidthOfScreen(DefaultScreenOfDisplay(
+        mDisplay));
+    const int NEW_WINDOW_RIGHT_POS = mSettingsHelper->getWindowXPos() +
+        newWindowSize.width();
+    if (NEW_WINDOW_RIGHT_POS > SCREEN_WIDTH) {
+        newWindowSize.setWidth(SCREEN_WIDTH - mSettingsHelper->
+            getWindowXPos());
+    }
+    const int SCREEN_HEIGHT = HeightOfScreen(DefaultScreenOfDisplay(
+        mDisplay));
+    const int NEW_WINDOW_BOTTOM_POS = mSettingsHelper->getWindowYPos() +
+        newWindowSize.height();
+    if (NEW_WINDOW_BOTTOM_POS > SCREEN_HEIGHT) {
+        newWindowSize.setHeight(SCREEN_HEIGHT - mSettingsHelper->
+            getWindowYPos());
+    }
+
+    // All is good, resize the window with new size.
+    mSettingsHelper->setWindowWidth(newWindowSize.width());
+    mSettingsHelper->setWindowHeight(newWindowSize.height());
+
+    XResizeWindow(mDisplay, mX11Window, mSettingsHelper->
+        getWindowWidth(), mSettingsHelper->getWindowHeight());
+
+    // Resize canvas.
+    defineWindowCanvasPosition();
+    defineWindowCanvasSize();
+    updateAllWindowButtons();
+
+    // Re-draw all & done.
+    draw();
 }
 
 /**

@@ -40,6 +40,15 @@ ConfigButton::draw(const Window window) {
 }
 
 /**
+ * Erase the Button.
+ */
+void
+ConfigButton::erase(const Window window, const Picture renderPicture) {
+    XRenderFillRectangle(mDisplay, PictOpSrc, renderPicture,
+        &TRANSPARENT_RCOLOR, getX(), getY(), getWidth(), getHeight());
+}
+
+/**
  * Clicks the ConfigButton.
  */
 void

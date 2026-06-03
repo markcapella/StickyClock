@@ -19,7 +19,7 @@ ConfigDialog::ConfigDialog(const QString& filePath,
     setWindowTitle(QString(TITLE));
 
     // Set the window attributes.
-    setWindowFlags(windowFlags() | Qt::Tool);
+    setWindowFlags(Qt::Dialog | Qt::Tool);
     setMinimumWidth(CONFIG_DIALOG_MIX_WIDTH);
     setMaximumHeight(CONFIG_DIALOG_MAX_HEIGHT);
 
@@ -61,7 +61,7 @@ ConfigDialog::loadConfigFormSettings() {
             stringEditWidget = qobject_cast<QLineEdit*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (stringEditWidget) {
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 const QString VALUE = mSettingsHelper->getQSettings()->
                     value(THIS_KEY, THIS_DEFAULT_VALUE).toString();
                 mSettingsHelper->getQSettings()->endGroup();
@@ -76,7 +76,7 @@ ConfigDialog::loadConfigFormSettings() {
             lineEditWidget = qobject_cast<QLineEdit*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (lineEditWidget) {
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 const int VALUE = mSettingsHelper->getQSettings()->
                     value(THIS_KEY, THIS_DEFAULT_VALUE).toInt();
                 mSettingsHelper->getQSettings()->endGroup();
@@ -91,7 +91,7 @@ ConfigDialog::loadConfigFormSettings() {
             checkboxWidget = qobject_cast<QCheckBox*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (checkboxWidget) {
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 const QString VALUE = mSettingsHelper->getQSettings()->
                     value(THIS_KEY, THIS_DEFAULT_VALUE).toString();
                 mSettingsHelper->getQSettings()->endGroup();
@@ -107,7 +107,7 @@ ConfigDialog::loadConfigFormSettings() {
             colorButtonWidget = qobject_cast<ColorButton*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (colorButtonWidget) {
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 const QString VALUE = mSettingsHelper->getQSettings()->
                     value(THIS_KEY, THIS_DEFAULT_VALUE).toString();
                 mSettingsHelper->getQSettings()->endGroup();
@@ -126,9 +126,9 @@ ConfigDialog::loadConfigFormSettings() {
                     getSettingsIntRangeMinimum(THIS_KEY));
                 sliderEditWidget->setMaximum(mSettingsHelper->
                     getSettingsIntRangeMaximum(THIS_KEY));
-                const int VALUE = mSettingsHelper->getIntSetting(
-                    SettingsHelper::CFP_PREFERRED_DESKTOP);
-                sliderEditWidget->setSliderPosition(VALUE);
+                    const int VALUE = mSettingsHelper->getIntSetting(
+                        THIS_KEY);
+                    sliderEditWidget->setSliderPosition(VALUE);
             }
             continue;
         }
@@ -162,7 +162,7 @@ ConfigDialog::saveConfigFormSettings() {
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (stringEditWidget) {
                 const QString VALUE = stringEditWidget->text();
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
                 mSettingsHelper->getQSettings()->endGroup();
@@ -177,7 +177,7 @@ ConfigDialog::saveConfigFormSettings() {
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (lineEditWidget) {
                 const int VALUE = lineEditWidget->text().toInt();
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
                 mSettingsHelper->getQSettings()->endGroup();
@@ -192,13 +192,15 @@ ConfigDialog::saveConfigFormSettings() {
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (checkboxWidget) {
                 const bool VALUE = checkboxWidget->checkState();
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
                 mSettingsHelper->getQSettings()->endGroup();
-                if (THIS_KEY == SettingsHelper::CFP_PREFERRED_ONTOP) {
+
+                if (THIS_KEY == SettingsHelper::PREFERRED_ONTOP) {
                     mXHelper->makeWindowStayOnTop(getWindow(), VALUE);
                     mXHelper->makeWindowStayOnBottom(getWindow(), !VALUE);
+                    continue;
                 }
             }
             continue;
@@ -212,7 +214,7 @@ ConfigDialog::saveConfigFormSettings() {
             if (colorButtonWidget) {
                 const QString VALUE = colorButtonWidget->
                     getButtonColor().name();
-                mSettingsHelper->getQSettings()->beginGroup("Configurable");
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
                 mSettingsHelper->getQSettings()->endGroup();
@@ -226,11 +228,10 @@ ConfigDialog::saveConfigFormSettings() {
             sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
                 itemAt(i, QFormLayout::FieldRole)->widget());
             if (sliderEditWidget) {
-                // Further update some realtime.
-                mSettingsHelper->setIntSetting(SettingsHelper::
-                    CFP_PREFERRED_DESKTOP, sliderEditWidget->value());
+                const int VALUE = sliderEditWidget->value();
+                mSettingsHelper->setIntSetting(THIS_KEY, VALUE);
                 // Ensure setting against invalidation by OS.
-                if (THIS_KEY == SettingsHelper::CFP_PREFERRED_DESKTOP) {
+                if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
                     mStickyWindow->rangeCheckPreferredDesktop(getWindow());
                 }
             }
@@ -257,7 +258,7 @@ ConfigDialog::buildConfigForm() {
     mFormLayout->setVerticalSpacing(FORM_LAYOUT_ROW_SPACING);
 
     // Begin group, get all keys, close group.
-    mSettingsHelper->getQSettings()->beginGroup("Configurable");
+    mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
     const QStringList ALL_KEYS = mSettingsHelper->
         getQSettings()->allKeys();
     mSettingsHelper->getQSettings()->endGroup();
@@ -316,51 +317,99 @@ ConfigDialog::buildConfigForm() {
             sliderEditWidget->setFixedWidth(120);
             mFormLayout->addRow(THIS_KEY, sliderEditWidget);
 
-            // Nice tooltip on hover.
-            connect(sliderEditWidget, &QSlider::valueChanged,
-                sliderEditWidget, [sliderEditWidget] (int value) {
-                const QString TOOLTIP_TEXT = (value == -1) ?
-                    "All" : "Desktop " + QString::number(value + 1);
-                const QPoint globalPos = QCursor::pos();
-                QToolTip::showText(QCursor::pos(),
-                    TOOLTIP_TEXT, sliderEditWidget);
-            });
-            struct LambdaFilter : public QObject {
-                QSlider* s;
-                LambdaFilter(QSlider* slider) :
-                    QObject(slider), s(slider) {}
-                bool eventFilter(QObject* obj, QEvent *event) override {
-                    // Show the immediate millisecond the mouse
-                    // crosses into the slider.
-                    if (event->type() == QEvent::Enter) {
-                        if (!s->isSliderDown()) {
-                            const int VALUE = s->value();
-                            const QString TOOLTIP_TEXT = (VALUE == -1) ?
-                                "All" : "Desktop " +
-                                    QString::number(VALUE + 1);
-                            QToolTip::showText(QCursor::pos(),
-                                TOOLTIP_TEXT, s);
+            // Nice tooltip on slow hover.
+            if (THIS_KEY == SettingsHelper::AUTOHIDE_DELAY) {
+                connect(sliderEditWidget, &QSlider::valueChanged,
+                    sliderEditWidget, [sliderEditWidget] (int value) {
+                    const QString TOOLTIP_TEXT = QString::number(value) +
+                        " seconds";
+                    QToolTip::showText(QCursor::pos(), TOOLTIP_TEXT,
+                        sliderEditWidget);
+                });
+            }
+            if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
+                connect(sliderEditWidget, &QSlider::valueChanged,
+                    sliderEditWidget, [sliderEditWidget] (int value) {
+                    const QString TOOLTIP_TEXT = (value == -1) ?
+                        "All" : "Desktop " + QString::number(value + 1);
+                    QToolTip::showText(QCursor::pos(), TOOLTIP_TEXT,
+                        sliderEditWidget);
+                });
+            }
+
+            // Nice tooltip on immediate hover & change.
+            if (THIS_KEY == SettingsHelper::AUTOHIDE_DELAY) {
+                struct LambdaFilter : public QObject {
+                    QSlider* s;
+                    LambdaFilter(QSlider* slider) :
+                        QObject(slider), s(slider) {}
+                    bool eventFilter(QObject* obj, QEvent *event) override {
+                        // Show the immediate millisecond the mouse
+                        // crosses into the slider.
+                        if (event->type() == QEvent::Enter) {
+                            if (!s->isSliderDown()) {
+                                const int VALUE = s->value();
+                                const QString TOOLTIP_TEXT =
+                                    QString::number(VALUE) + " seconds";
+                                QToolTip::showText(QCursor::pos(),
+                                    TOOLTIP_TEXT, s);
+                            }
+                            return false;
+                        }
+                        // Show also on interaction.
+                        if (event->type() == QEvent::ToolTip ||
+                            event->type() == QEvent::MouseMove) {
+                            if (!s->isSliderDown()) {
+                                const int VALUE = s->value();
+                                const QString TOOLTIP_TEXT =
+                                    QString::number(VALUE) + " seconds";
+                                QToolTip::showText(QCursor::pos(),
+                                    TOOLTIP_TEXT, s);
+                            }
                         }
                         return false;
                     }
-                    // Show also on interaction.
-                    if (event->type() == QEvent::ToolTip ||
-                        event->type() == QEvent::MouseMove) {
-                        if (!s->isSliderDown()) {
-                            const int VALUE = s->value();
-                            const QString TOOLTIP_TEXT = (VALUE == -1) ?
-                                "All" : "Desktop " +
-                                    QString::number(VALUE + 1);
-                            QToolTip::showText(QCursor::pos(),
-                                TOOLTIP_TEXT, s);
+                };
+                sliderEditWidget->installEventFilter(
+                    new LambdaFilter(sliderEditWidget));
+            }
+            if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
+                struct LambdaFilter : public QObject {
+                    QSlider* s;
+                    LambdaFilter(QSlider* slider) :
+                        QObject(slider), s(slider) {}
+                    bool eventFilter(QObject* o, QEvent* e) override {
+                        // Show the immediate millisecond the mouse
+                        // crosses into the slider.
+                        if (e->type() == QEvent::Enter) {
+                            if (!s->isSliderDown()) {
+                                const int VALUE = s->value();
+                                const QString TOOLTIP_TEXT =
+                                    (VALUE == -1) ? "All" : "Desktop " +
+                                        QString::number(VALUE + 1);
+                                QToolTip::showText(QCursor::pos(),
+                                    TOOLTIP_TEXT, s);
+                            }
+                            return false;
                         }
+                        // Show also on interaction.
+                        if (e->type() == QEvent::ToolTip ||
+                            e->type() == QEvent::MouseMove) {
+                            if (!s->isSliderDown()) {
+                                const int VALUE = s->value();
+                                const QString TOOLTIP_TEXT =
+                                    (VALUE == -1) ? "All" : "Desktop " +
+                                        QString::number(VALUE + 1);
+                                QToolTip::showText(QCursor::pos(),
+                                    TOOLTIP_TEXT, s);
+                            }
+                        }
+                        return false;
                     }
-                    return false;
-                }
-            };
-            sliderEditWidget->installEventFilter(new LambdaFilter(
-                sliderEditWidget));
-            continue;
+                };
+                sliderEditWidget->installEventFilter(
+                    new LambdaFilter(sliderEditWidget));
+            }
         }
     }
 

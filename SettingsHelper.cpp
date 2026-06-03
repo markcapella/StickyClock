@@ -87,20 +87,6 @@ SettingsHelper::setWindowHeight(const double height) {
 }
 
 /**
- * Getters & setters of window config mode.
- */
-bool
-SettingsHelper::getConfigMode() {
-    return getQSettings()->value("inConfigMode", true).toBool();
-}
-void
-SettingsHelper::setConfigMode(const bool state) {
-    getQSettings()->setValue("inConfigMode", state);
-
-    getQSettings()->sync();
-}
-
-/**
  * Getters for canvas x & y, w & h.
  */
 double
@@ -214,6 +200,20 @@ SettingsHelper::getBoolSetting(const QString setting) {
 }
 
 /**
+ * Setter for user configurable bool settings.
+ */
+void
+SettingsHelper::setBoolSetting(const QString setting,
+    const bool value) {
+    getQSettings()->beginGroup(mSettingsHelper->
+        getSettingsGroup(setting));
+
+    getQSettings()->setValue(setting, value);
+
+    getQSettings()->endGroup();
+}
+
+/**
  * Getter for user configurable int settings.
  */
 int
@@ -277,7 +277,6 @@ SettingsHelper::getSettingsGroup(const QString key) {
             return THIS_SETTING.group;
         }
     }
-
     return "";
 }
 
@@ -294,7 +293,6 @@ SettingsHelper::getSettingsValueType(const QString key) {
             return THIS_SETTING.valueType;
         }
     }
-
     return NONE_VALUETYPE;
 }
 
@@ -303,20 +301,17 @@ SettingsHelper::getSettingsValueType(const QString key) {
  */
 QString
 SettingsHelper::getSettingsDefaultValue(const QString key) {
+    QString resultValue = "";
     const int SETTINGS_SIZE = PROPERTIES.size();
-
-    QString defaultValue = "";
 
     for (int i = 0; i < SETTINGS_SIZE; i++) {
         const SettingsProperty THIS_SETTING = PROPERTIES[i];
-
         if (key == THIS_SETTING.name) {
-            defaultValue = THIS_SETTING.initialValue;
+            resultValue = THIS_SETTING.initialValue;
             break;
         }
     }
-
-    return defaultValue;
+    return resultValue;
 }
 
 /**
@@ -324,11 +319,21 @@ SettingsHelper::getSettingsDefaultValue(const QString key) {
  */
 int
 SettingsHelper::getSettingsIntRangeMinimum(const QString key) {
-    if (key == CFP_PREFERRED_DESKTOP) {
+    if (key == PREFERRED_DESKTOP) {
        return -1;
     }
 
-    return std::numeric_limits<unsigned int>::min();
+    int resultValue = numeric_limits<int>::min();
+    const int SETTINGS_SIZE = PROPERTIES.size();
+
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        const SettingsProperty THIS_SETTING = PROPERTIES[i];
+        if (key == THIS_SETTING.name) {
+            resultValue = THIS_SETTING.rangeMinimum;
+            break;
+        }
+    }
+    return resultValue;
 }
 
 /**
@@ -336,9 +341,19 @@ SettingsHelper::getSettingsIntRangeMinimum(const QString key) {
  */
 int
 SettingsHelper::getSettingsIntRangeMaximum(const QString key) {
-    if (key == CFP_PREFERRED_DESKTOP) {
+    if (key == PREFERRED_DESKTOP) {
         return mXHelper->getMaximumDesktops() - 1;
     }
 
-    return std::numeric_limits<unsigned int>::max();
+    int resultValue = numeric_limits<int>::max();
+    const int SETTINGS_SIZE = PROPERTIES.size();
+
+    for (int i = 0; i < SETTINGS_SIZE; i++) {
+        const SettingsProperty THIS_SETTING = PROPERTIES[i];
+        if (key == THIS_SETTING.name) {
+            resultValue = THIS_SETTING.rangeMaximum;
+            break;
+        }
+    }
+    return resultValue;
 }

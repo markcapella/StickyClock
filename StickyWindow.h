@@ -8,11 +8,7 @@
 class StickyWindow {
 
     public:
-        static inline const long OBSERVABLE_EVENTS =
-            ConfigureNotify | StructureNotifyMask | PropertyChangeMask |
-            EnterWindowMask | LeaveWindowMask |
-            PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
-            ExposureMask;
+        static inline constexpr QPoint INVALID_POINT {-1, -1};
 
         static inline constexpr chrono::milliseconds
             CURSOR_WATCHER_DELAY_MS{5};
@@ -30,21 +26,21 @@ class StickyWindow {
         void show();
 
         /**
-         * Overriden hide() method.
-         */
-        void hide();
-
-        /**
          * Overriden draw() method ensures we have a transparent
          * window with PinButton visible on mouse hover.
          */
         void draw();
 
         /**
+         * Overriden hide() method.
+         */
+        void hide();
+
+        /**
          * Overriden resize() method ensures we remember window
          * position & size on restarts.
          *
-         * Adjusts clickable button positions & their Input
+         * Adjusts Control Button positions & their Input
          * Shape Regions to the new locations.
          */
         void resize(const int xPos, const int yPos,
@@ -65,41 +61,33 @@ class StickyWindow {
          */
         void rangeCheckPreferredDesktop(const Window window);
 
+        XVisualInfo mVisualInfoStruct { };
     private:
         // Members.
+        string mPreviousClientUpdateSecond = "";
+
         Window mX11Window = None;
         char* mWindowTitle = nullptr;
+
+        Atom mDeleteMessage { };
+
+        bool mIsVisuallyTransparent = false;
+        Colormap mColorMap { };
 
         PinButton* mPinButton = nullptr;
         QuitButton* mQuitButton = nullptr;
         ConfigButton* mConfigButton = nullptr;
         MoveButton* mMoveButton = nullptr;
         SizeButton* mSizeButton = nullptr;
+
         vector<Button*> mButtons;
+        mutable recursive_mutex mButtonsMutLock;
 
         bool mIsMouseClicked = false;
-        int mRootClickPositionX = -1;
-        int mRootClickPositionY = -1;
-        int mWinClickPositionX = -1;
-        int mWinClickPositionY = -1;
-
-        string mPreviousClientUpdateSecond = "";
-        QPoint mCursorPosition { };
-
-        Clock::time_point mClickStart { };
-        bool mClickStartValueSet = false;
-
-        Clock::time_point mClickEnd { };
-
         QPoint mDragResizeButtonOffset { };
         QPoint mDragMoveButtonOffset { };
-        bool mWindowResized = false;
-
-        Atom mDeleteMessage { };
-
-        bool mIsVisuallyTransparent = false;
-        XVisualInfo mVisualInfoStruct { };
-        Colormap mColorMap { };
+        bool mIsSizingWindow = false;
+        unique_ptr<QTimer> mControlsTimer{nullptr};
 
         /**
          * Initialize Transparency & TrueColor 32.
@@ -123,10 +111,10 @@ class StickyWindow {
         void defineWindowOnFirstRun();
 
         /**
-         * Set "StickyWindow" type, which is normally an x11
-         * "SplashScreen". On KDE we use "Dock", as their
-         * "SplashScreen" window doesn't support InputRectangles
-         * meaning we can't click buttons.
+         * Set window type, which is normally "SplashScreen".
+         *
+         * TODO: ?? On KDE we use "Dock", as their "SplashScreen" window
+         * doesn't support InputRectangles meaning we can't click buttons.
          */
         void setStickyWindowType();
 
@@ -137,51 +125,72 @@ class StickyWindow {
         void setWindowStickPosition();
 
         /**
+         * Callback method for Autohide controls timer.
+         */
+        void setConfigModeOff();
+
+        /**
          * This method defines the Control buttons.
          */
-        void createWindowButtons();
+        void createAllWindowButtons();
 
         /**
          * This method updates the defined Control buttons.
          */
-        void updateWindowButtons();
-
-        /**
-         * Check to see if any UI Buttons pressed.
-         */
-        Button* whichButtonIsPressed();
-
-        /**
-         * Unpress all UI Buttons.
-         */
-        void unPressAllButtons();
-
-        /**
-         * Check to see which UI Button hovered.
-         */
-        Button* whichButtonIsHovered(const QPoint pos);
-
-        /**
-         * Setter for PinButton visibility state.
-         */
-        void setPinButtonVisibility(const bool visibility);
-
-        /**
-         * While not in configMode, hovering a (hidden)
-         * corner button will make it visible & actionable.
-         */
-        void setHoveredButtonVisibility(const QPoint pos);
-
-        /**
-         * Switch between window border state where titlebar &
-         * border displayed or not.
-         */
-        void onPinButtonClicked();
+        void updateAllWindowButtons();
 
         /**
          * Draw all visible buttons.
          */
-        void drawAllButtons();
+        void drawAllWindowButtons(const Picture renderPicture);
+
+        /**
+         * Set visibility state of the four corner control buttons.
+         */
+        void setControlButtonsVisibility();
+
+        /**
+         * Setter for PinButton visibility state.
+         */
+        void setHoveredPinButtonVisibility(const bool visibility);
+
+        /**
+         * While not in configMode, hovering a (hidden)
+         * Control button will make it visible & actionable.
+         */
+        void setHoveredControlButtonVisibility(
+            const QPoint position);
+
+        /**
+         * Press hovered button, & return it's position.
+         */
+        QPoint pressHoveredButton(const QPoint position);
+
+        /**
+         * Return draggable status of pressed button.
+         */
+        bool isPressedButtonDraggable();
+
+        /**
+         * Return sizeable status of pressed button.
+         */
+        bool isPressedButtonSizable();
+
+        /**
+         * Clicking pressed hovered, doesn't trigger click if we
+         * press button, drag off, then release.
+         */
+        void clickPressedHoveredButton(const QPoint position);
+
+        /**
+         * Toggle config mode.
+         */
+        void clickPressedPinButton();
+
+        /**
+         * Unpress all UI Buttons.
+         */
+        void unPressAllWindowButtons();
 
         /**
          * Define Canvas position inside Window.
@@ -196,7 +205,22 @@ class StickyWindow {
         /**
          * This method updates the clocks time string for draw().
          */
-        void drawCanvas();
+        void drawWindowCanvas();
+
+        /**
+         * Main X11 Event handler.
+         */
+        bool handleX11EventQueue();
+
+        /**
+         * Cursor watcher detects user actions.
+         */
+        void cursorWatcherThread();
+
+        /**
+         * This method saves the window workspace when changed.
+         */
+        void onPropertyNotify(const XPropertyEvent& event);
 
         /**
          * Getter for current time.
@@ -222,19 +246,4 @@ class StickyWindow {
          * Determine if it's WeedClock time.
          */
         bool isItWeedTime();
-
-        /**
-         * Main X11 Event handler.
-         */
-        bool handleX11EventQueue();
-
-        /**
-         * Cursor watcher detects user actions.
-         */
-        void cursorWatcherThread();
-
-        /**
-         * This method saves the window workspace when changed.
-         */
-        void onPropertyNotify(const XPropertyEvent& event);
 };

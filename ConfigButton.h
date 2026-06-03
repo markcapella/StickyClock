@@ -12,6 +12,10 @@ class ConfigButton : public Button {
             Button(mXPos, mYPos) { }
 
         void draw(const Window window) override;
+
+        void erase(const Window window,
+            const Picture renderPicture) override;
+
         void click(const Window window) override;
 
     private:

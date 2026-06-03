@@ -42,6 +42,15 @@ MoveButton::draw(const Window window) {
 }
 
 /**
+ * Erase the Button.
+ */
+void
+MoveButton::erase(const Window window, const Picture renderPicture) {
+    XRenderFillRectangle(mDisplay, PictOpSrc, renderPicture,
+        &TRANSPARENT_RCOLOR, getX(), getY(), getWidth(), getHeight());
+}
+
+/**
  * Clicks the MoveButton.
  */
 void

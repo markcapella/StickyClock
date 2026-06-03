@@ -75,8 +75,8 @@ class RecentsHelper {
         QString getRecentsNameNotActive(const vector<QString> recentNames);
 
         /**
-         * If there are no recent names available in the list
-         * slots, add one from end, or return "" if full.
+         * If there are no recent names available in the list,
+         * add one from end, or return "" if full.
          */
         QString getNextAvailableRecentsNameOrNone(
             const vector<QString> recentNames);

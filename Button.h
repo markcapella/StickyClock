@@ -71,8 +71,11 @@ class Button {
         }
 
         virtual void draw(const Window window) = 0;
-        virtual void click(const Window window) = 0;
 
+        virtual void erase(const Window window,
+            const Picture renderPicture) = 0;
+
+        virtual void click(const Window window) = 0;
 
     private:
         double mX;
@@ -80,7 +83,7 @@ class Button {
         double mWidth;
         double mHeight;
 
-        bool mButtonVisible = true;
+        bool mButtonVisible = false;
         bool mButtonPressed = false;
         bool mButtonDraggable = false;
         bool mButtonSizeable = false;

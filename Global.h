@@ -13,6 +13,7 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <signal.h>
 #include <thread>
 #include <unistd.h>
@@ -35,6 +36,7 @@ typedef chrono::steady_clock Clock;
 #include <QMouseEvent>
 #include <QFileInfo>
 #include <QDir>
+#include <QTimer>
 #include <QToolTip>
 #include <QStyleOptionFrame>
 #include <QPointer>

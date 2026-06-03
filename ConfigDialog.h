@@ -26,15 +26,21 @@ class ConfigDialog : public QDialog {
         explicit ConfigDialog(const QString& filePath,
             QWidget* parent = nullptr);
 
-    // public slots:
         /**
          * Load UI form with values from .Ini.
          */
         void loadConfigFormSettings();
 
-        Window getWindow() const { return mWindow; }
+        /**
+         * Gettters / Setters for StickyWindow.
+         */
+        Window getWindow() const {
+            return mWindow;
+        }
+
         void setWindow(const Window window) {
-            mWindow = window; }
+            mWindow = window;
+        }
 
     /**
      * Override eventFilter for QSlider hover action.

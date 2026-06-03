@@ -16,37 +16,68 @@ enum SettingsPropertyType {
 
 class SettingsHelper {
     public:
-        typedef QString ConfigSettingName;
+        static inline const QString CONFIG_MODE = "In Config mode";
+        static inline const QString AUTOHIDE_CONTROLS = "Auto hide Buttons";
+        static inline const QString AUTOHIDE_DELAY = "Auto hide Delay";
 
-        static inline const ConfigSettingName CFP_PREFERRED_DESKTOP =
-            "preferred_Desktop";
-        static inline const ConfigSettingName CFP_PREFERRED_ONTOP =
-            "preferred_onTop";
-        static inline const ConfigSettingName CFG_SHOW_WEED_CLOCK =
-            "showWeed_Clock";
-        static inline const ConfigSettingName CFG_WEED_CLOCK_COLOR =
-            "weedClock_Color";
+        static inline const QString PREFERRED_DESKTOP = "Preferred Desktop";
+        static inline const QString PREFERRED_ONTOP = "Prefer on Top";
+        static inline const QString SHOW_WEED_CLOCK = "Show Weedtime";
+        static inline const QString WEED_CLOCK_COLOR = "Weedtime color";
 
+        static inline const QString GROUP_GENERAL = "Volatile";
+        static inline const QString GROUP_CONFIGURABLE = APP_NAME;
 
         struct SettingsProperty {
             QString group = "";
             QString name = "";
             SettingsPropertyType valueType = NONE_VALUETYPE;
             QString initialValue = "";
+            int rangeMinimum = 0;
+            int rangeMaximum = 0;
         };
 
         static inline const vector<SettingsProperty> PROPERTIES = {
-            { .group = "Configurable", .name = CFP_PREFERRED_DESKTOP,
-                .valueType = SLIDER_VALUETYPE, .initialValue = "-1"
+            // General, hidden from ConfigDialog.
+            { .group = GROUP_GENERAL, .name = CONFIG_MODE,
+              .valueType = BOOL_VALUETYPE, .initialValue = "true",
+              .rangeMinimum = 0, .rangeMaximum = 1
             },
-            { .group = "Configurable", .name = CFP_PREFERRED_ONTOP,
-                .valueType = BOOL_VALUETYPE, .initialValue = "false"
+
+            // App configurables.
+            { .group = GROUP_CONFIGURABLE, .name = AUTOHIDE_CONTROLS,
+              .valueType = BOOL_VALUETYPE, .initialValue = "false",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
             },
-            { .group = "Configurable", .name = CFG_SHOW_WEED_CLOCK,
-                .valueType = BOOL_VALUETYPE, .initialValue = "true"
+
+            { .group = GROUP_CONFIGURABLE, .name = AUTOHIDE_DELAY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "4",
+              .rangeMinimum = 1, .rangeMaximum = 9
             },
-            { .group = "Configurable", .name = CFG_WEED_CLOCK_COLOR,
-                .valueType = COLOR_VALUETYPE, .initialValue = "#00faff"
+
+            { .group = GROUP_CONFIGURABLE, .name = PREFERRED_DESKTOP,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "-1",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = PREFERRED_ONTOP,
+              .valueType = BOOL_VALUETYPE, .initialValue = "false",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = SHOW_WEED_CLOCK,
+              .valueType = BOOL_VALUETYPE, .initialValue = "true",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = WEED_CLOCK_COLOR,
+              .valueType = COLOR_VALUETYPE, .initialValue = "#00faff",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
             }
         };
 
@@ -82,12 +113,6 @@ class SettingsHelper {
         void setWindowHeight(const double height);
 
         /**
-         * Getters & setters of window config mode.
-         */
-        bool getConfigMode();
-        void setConfigMode(const bool state);
-
-        /**
          * Getters for canvas x & y, w & h.
          */
         double getCanvasXPos();
@@ -118,6 +143,7 @@ class SettingsHelper {
          * Getters & setters for user configurable bool settings.
          */
         bool getBoolSetting(const QString setting);
+        void setBoolSetting(const QString setting, const bool value);
 
         /**
          * Getter for user configurable int settings.

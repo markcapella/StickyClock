@@ -20,7 +20,6 @@ class ColorButton : public QPushButton {
          */
         QColor getButtonColor() const;
 
-    public slots:
         /**
          * Open & show ColorPicker Dialog.
          */

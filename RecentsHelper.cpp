@@ -240,8 +240,8 @@ RecentsHelper::getRecentsNameNotActive(
 }
 
 /**
- * If there are no recent names available in the list
- * slots, add one from end, or return "" if full.
+ * If there are no recent names available in the list,
+ * add one from end, or return "" if full.
  */
 QString
 RecentsHelper::getNextAvailableRecentsNameOrNone(
