@@ -77,3 +77,11 @@ QuitButton::click(const Window window) {
         (XEvent*) &CLOSE_EVENT);
     XFlush(mDisplay);
 }
+
+/**
+ * Updates any Button Dialog.
+ */
+void
+QuitButton::updateDialog() {
+    // Nothing.
+}

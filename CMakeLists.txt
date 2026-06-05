@@ -14,8 +14,8 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.06.03")
-set(APP_VERSION_MINOR "00")
+set(APP_VERSION "26.06.05")
+set(APP_VERSION_MINOR "02")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
@@ -50,9 +50,9 @@ endif()
 
 # Create "Required Packages" list.
 set(PACKAGE_REQS "git cmake build-essential")
-set(PACKAGE_REQS "${PACKAGE_REQS} pkg-config qt6-base-dev")
-set(PACKAGE_REQS "${PACKAGE_REQS} libx11-dev wmctrl libxft-dev")
-set(PACKAGE_REQS "${PACKAGE_REQS} libxfixes-dev libxext-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} pkg-config wmctrl qt6-base-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} libx11-dev libxft-dev libxfixes-dev")
+set(PACKAGE_REQS "${PACKAGE_REQS} libxrender-dev libxext-dev")
 set(PACKAGE_REQS "${PACKAGE_REQS} libxcomposite-dev libpng-dev")
 
 # Create Pre-reqs install message 1.
@@ -67,21 +67,30 @@ set(INSTALL_MSG "${INSTALL_MSG} ${PACKAGE_REQS}|${COLOR_NORMAL}")
 
 # Chek all.
 find_package(Git QUIET)
-find_program(MAKE_EXECUTABLE make)
+find_program(MAKE_EXE make)
+
 find_package(PkgConfig QUIET)
+find_program(WMCTRL_EXE wmctrl)
+
 find_package(Qt6 QUIET COMPONENTS Core Widgets)
+
 find_package(X11 QUIET)
-find_program(WMCTRL_EXECUTABLE wmctrl)
 find_package(X11 QUIET COMPONENTS Xft)
+
 pkg_check_modules(XFIXES QUIET xfixes)
+pkg_check_modules(XRENDER QUIET xrender)
 pkg_check_modules(XEXT QUIET xext)
-find_package(PNG QUIET)
 pkg_check_modules(XCOMP QUIET xcomposite)
 
-if (NOT Git_FOUND OR NOT MAKE_EXECUTABLE OR NOT ${PkgConfig_FOUND} OR
-    NOT ${Qt6_FOUND} OR NOT ${X11_FOUND} OR NOT WMCTRL_EXECUTABLE OR
-    NOT ${X11_Xft_FOUND} OR NOT XFIXES_FOUND OR NOT XEXT_FOUND OR
-    NOT PNG_FOUND OR NOT XCOMP_FOUND)
+find_package(PNG QUIET)
+
+if (NOT Git_FOUND OR NOT MAKE_EXE OR
+    NOT ${PkgConfig_FOUND} OR NOT WMCTRL_EXE OR
+    NOT ${Qt6_FOUND} OR
+    NOT ${X11_FOUND} OR NOT ${X11_Xft_FOUND} OR
+    NOT XFIXES_FOUND OR NOT XRENDER_FOUND OR
+    NOT XEXT_FOUND OR NOT XCOMP_FOUND OR
+    NOT PNG_FOUND)
     message(STATUS "${COULDNT_LOCATE_MSG}")
     message(STATUS "${INSTALL_MSG}")
     message(STATUS "")
@@ -95,21 +104,24 @@ set(WIDGET_PROJECT ${APP_NAME})
 
 # All input sources.
 set(WIDGET_SOURCES
-    ColorButton.cpp
-
     PinButton.cpp
     QuitButton.cpp
     MoveButton.cpp
     SizeButton.cpp
 
-    ConfigButton.cpp
-    AboutDialog.cpp
     ConfigDialog.cpp
-    DisplayHelper.cpp
-    RecentsHelper.cpp
-    SettingsHelper.cpp
-    XHelper.cpp
+    ColorButton.cpp
+    AboutDialog.cpp
+    ConfigButton.cpp
+
+    Canvas.cpp
     StickyWindow.cpp
+
+    SettingsHelper.cpp
+    RecentsHelper.cpp
+    XHelper.cpp
+    DisplayHelper.cpp
+
     StickyWidgetIII.cpp
 )
 
@@ -135,9 +147,10 @@ target_compile_definitions(${WIDGET_PROJECT} PRIVATE
 target_include_directories(${WIDGET_PROJECT} PRIVATE
     ${X11_INCLUDE_DIR}
     ${XFIXES_INCLUDE_DIRS}
+    ${XRENDER_INCLUDE_DIRS}
     ${XEXT_INCLUDE_DIRS}
-    ${PNG_INCLUDE_DIRS}
     ${XCOMP_INCLUDE_DIRS}
+    ${PNG_INCLUDE_DIRS}
 )
 
 # All linker libs.
@@ -146,9 +159,10 @@ target_link_libraries(${WIDGET_PROJECT} PRIVATE
     ${X11_LIBRARIES}
     X11::Xft
     ${XFIXES_LIBRARIES}
+    ${XRENDER_LIBRARIES}
     ${XEXT_LIBRARIES}
-    ${PNG_LIBRARIES}
     ${XCOMP_LIBRARIES}
+    ${PNG_LIBRARIES}
 )
 
 ##

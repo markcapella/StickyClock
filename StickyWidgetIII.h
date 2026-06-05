@@ -65,7 +65,7 @@ static inline constexpr XRenderColor TURQUOISE_RCOLOR =
 static inline constexpr const char*
     TIME_DISPLAY_FONT = "Serif-42:bold";
 
-
+// Font colors.
 static inline constexpr XftColor BLACK_FCOLOR = {
     .pixel = 0x0, .color = { .red = 0xff, .green = 0xff,
         .blue = 0xff, .alpha = 0xffff } };

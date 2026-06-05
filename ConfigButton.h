@@ -9,7 +9,9 @@
 class ConfigButton : public Button {
     public:
         ConfigButton(const double mXPos, const double mYPos) :
-            Button(mXPos, mYPos) { }
+            Button(mXPos, mYPos) {
+            setHasDialog(true);
+        }
 
         void draw(const Window window) override;
 
@@ -17,6 +19,8 @@ class ConfigButton : public Button {
             const Picture renderPicture) override;
 
         void click(const Window window) override;
+
+        void updateDialog() override;
 
     private:
         bool mConfigShown = false;

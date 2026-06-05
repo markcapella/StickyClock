@@ -53,3 +53,11 @@ void
 PinButton::click(const Window window) {
     // Nothing.
 }
+
+/**
+ * Updates any Button Dialog.
+ */
+void
+PinButton::updateDialog() {
+    // Nothing.
+}

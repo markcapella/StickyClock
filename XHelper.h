@@ -77,6 +77,11 @@ class XHelper {
         long getVisibleDesktop();
 
         /**
+         * This method changes the users visible desktop.
+         */
+        void setVisibleDesktop(const long desktop);
+
+        /**
          * This method returns the maximum number of allowable
          * workspaces, where the OS allows multiple / virtual workspaces.
          *

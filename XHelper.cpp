@@ -277,6 +277,8 @@ XHelper::isDesktopShowing() {
  */
 long
 XHelper::getVisibleDesktop() {
+    XFlush(mDisplay);
+
     Atom type; int format;
     unsigned long nItems, unusedBytes;
     unsigned char* properties = nullptr;
@@ -290,24 +292,27 @@ XHelper::getVisibleDesktop() {
         XFree(properties);
         return result;
     }
-    XFree(properties);
-    properties = nullptr;
 
-    // This is a legacy property used by older window managers,
-    // particularly those following the older GNOME 1.x hints.
-    // It is rarely used today.
-    if (XGetWindowProperty(mDisplay, DefaultRootWindow(
-        mDisplay), XInternAtom(mDisplay, "_WIN_WORKSPACE",
-        False), 0, 1, False, AnyPropertyType, &type, &format,
-        &nItems, &unusedBytes, &properties) == Success &&
-        type == XA_CARDINAL) {
-        const long result = *(long*) (void*) properties;
-        XFree(properties);
-        return result;
-    }
     XFree(properties);
-
     return -1;
+}
+
+/**
+ * This method changes the users visible desktop.
+ */
+void
+XHelper::setVisibleDesktop(const long desktop) {
+    const Atom MESSAGE = XInternAtom(mDisplay,
+        "_NET_CURRENT_DESKTOP", False);
+
+    XEvent event = { .xclient = { .type = ClientMessage,
+        .window = DefaultRootWindow(mDisplay),
+        .message_type = MESSAGE, .format = 32,
+        .data = { .l = { desktop, 1, CurrentTime, 0, 0 } } } };
+
+    XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
+        SubstructureNotifyMask | SubstructureRedirectMask, &event);
+    XFlush(mDisplay);
 }
 
 /**
@@ -602,6 +607,7 @@ XHelper::setWindowType(const Window window,
 
     XChangeProperty(mDisplay, window, WINDOW_TYPE, XA_ATOM, 32,
         PropModeReplace, (unsigned char*) &windowType, 1);
+    XFlush(mDisplay);
 }
 
 /**
@@ -673,23 +679,8 @@ XHelper::getWindowDesktop(const Window window) {
         XFree(properties);
         return result;
     }
-    XFree(properties);
-    properties = nullptr;
 
-    // This is a legacy property used by older window managers,
-    // particularly those following the older GNOME 1.x hints.
-    // It is rarely used today.
-    if (XGetWindowProperty(mDisplay, window, XInternAtom(
-        mDisplay, "_WIN_WORKSPACE", False), 0, 1, False,
-        AnyPropertyType, &type, &format, &nItems,
-        &unusedBytes, &properties) == Success &&
-        type == XA_CARDINAL && properties) {
-        const long result = *(long*) (void*) properties;
-        XFree(properties);
-        return result;
-    }
     XFree(properties);
-
     return -1;
 }
 
@@ -949,19 +940,18 @@ XHelper::isWindowHovered(const Window window, const QPoint pos,
 void
 XHelper::makeWindowStayOnTop(const Window window,
     const bool onOrOff) {
-
-    const Atom NET_WM_STATE = XInternAtom(mDisplay,
+    const Atom MESSAGE = XInternAtom(mDisplay,
         "_NET_WM_STATE", False);
+
     const Atom NET_WM_STATE_ABOVE = XInternAtom(mDisplay,
         "_NET_WM_STATE_ABOVE", False);
-
-    XEvent EVENT = { .xclient = { .type = ClientMessage,
-        .window = window, .message_type = NET_WM_STATE,
+    XEvent event = { .xclient = { .type = ClientMessage,
+        .window = window, .message_type = MESSAGE,
         .format = 32, .data = { .l = { onOrOff ? 1 : 0,
             (long) NET_WM_STATE_ABOVE, 0, 1, 0 } } } };
 
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
-        SubstructureRedirectMask | SubstructureNotifyMask, &EVENT);
+        SubstructureNotifyMask | SubstructureRedirectMask, &event);
     XFlush(mDisplay);
 }
 
@@ -972,19 +962,18 @@ XHelper::makeWindowStayOnTop(const Window window,
 void
 XHelper::makeWindowStayOnBottom(const Window window,
     const bool onOrOff) {
-
-    const Atom NET_WM_STATE = XInternAtom(mDisplay,
+    const Atom MESSAGE = XInternAtom(mDisplay,
         "_NET_WM_STATE", False);
+
     const Atom NET_WM_STATE_BELOW = XInternAtom(mDisplay,
         "_NET_WM_STATE_BELOW", False);
-
-    XEvent EVENT = { .xclient = { .type = ClientMessage,
-        .window = window, .message_type = NET_WM_STATE,
+    XEvent event = { .xclient = { .type = ClientMessage,
+        .window = window, .message_type = MESSAGE,
         .format = 32, .data = { .l = { onOrOff ? 1 : 0,
             (long) NET_WM_STATE_BELOW, 0, 1, 0 } } } };
 
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
-        SubstructureRedirectMask | SubstructureNotifyMask, &EVENT);
+        SubstructureNotifyMask | SubstructureRedirectMask, &event);
     XFlush(mDisplay);
 }
 

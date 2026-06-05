@@ -54,25 +54,29 @@ class StickyWindow {
         /**
          * This method returns StickyWindows internal x11 window.
          */
-        Window getX11Window();
+        Window getX11Window() const {
+            return mX11Window;
+        }
 
         /**
          * Ensure window opens on valid remembered desktop.
          */
-        void rangeCheckPreferredDesktop(const Window window);
+        void rangeCheckPreferredDesktopSetting(const Window window);
 
-        XVisualInfo mVisualInfoStruct { };
     private:
         // Members.
-        string mPreviousClientUpdateSecond = "";
+        bool mIsVisuallyTransparent = false;
+        XVisualInfo mVisualInfoStruct { };
+        Colormap mColorMap { };
+
+        Atom mDeleteMessage { };
 
         Window mX11Window = None;
         char* mWindowTitle = nullptr;
 
-        Atom mDeleteMessage { };
-
-        bool mIsVisuallyTransparent = false;
-        Colormap mColorMap { };
+        vector<Button*> mButtons;
+        mutable recursive_mutex mButtonsMutLock;
+        unique_ptr<QTimer> mControlsTimer{nullptr};
 
         PinButton* mPinButton = nullptr;
         QuitButton* mQuitButton = nullptr;
@@ -80,14 +84,13 @@ class StickyWindow {
         MoveButton* mMoveButton = nullptr;
         SizeButton* mSizeButton = nullptr;
 
-        vector<Button*> mButtons;
-        mutable recursive_mutex mButtonsMutLock;
+        Canvas* mCanvas = nullptr;
 
         bool mIsMouseClicked = false;
-        QPoint mDragResizeButtonOffset { };
-        QPoint mDragMoveButtonOffset { };
         bool mIsSizingWindow = false;
-        unique_ptr<QTimer> mControlsTimer{nullptr};
+
+        QPoint mDragMoveButtonOffset { };
+        QPoint mDragResizeButtonOffset { };
 
         /**
          * Initialize Transparency & TrueColor 32.
@@ -205,7 +208,7 @@ class StickyWindow {
         /**
          * This method updates the clocks time string for draw().
          */
-        void drawWindowCanvas();
+        void updateWindowCanvas();
 
         /**
          * Main X11 Event handler.
@@ -213,9 +216,10 @@ class StickyWindow {
         bool handleX11EventQueue();
 
         /**
-         * Cursor watcher detects user actions.
+         * Update the Config Dialog if it's active &
+         * the UI needs updating.
          */
-        void cursorWatcherThread();
+        void updateActiveConfigButtonDialog();
 
         /**
          * This method saves the window workspace when changed.
@@ -223,27 +227,17 @@ class StickyWindow {
         void onPropertyNotify(const XPropertyEvent& event);
 
         /**
-         * Getter for current time.
+         * Cursor watcher detects user actions.
          */
-        string getCurrentTime();
+        void cursorWatcherThread();
 
         /**
-         * Getter for current hour.
+         * Perform window drag.
          */
-        string getCurrentHour();
+        void dragWindowToPoint(const QPoint position);
 
         /**
-         * Getter for current minute.
+         * Perform window resizing.
          */
-        string getCurrentMinute();
-
-        /**
-         * Getter for current second.
-         */
-        string getCurrentSecond();
-
-        /**
-         * Determine if it's WeedClock time.
-         */
-        bool isItWeedTime();
+        void resizeWindowToPoint(const QPoint position);
 };

@@ -49,6 +49,10 @@ class Button {
         void setSizeable(const bool sizeable) {
             mButtonSizeable = sizeable; }
 
+        bool hasDialog() const { return mButtonHasDialog; }
+        void setHasDialog(const bool hasDialog) {
+            mButtonHasDialog = hasDialog; }
+
         XImage* getButtonImage(const int index) const {
             if (index >= mButtonImages.size()) {
                 return nullptr;
@@ -77,6 +81,8 @@ class Button {
 
         virtual void click(const Window window) = 0;
 
+        virtual void updateDialog() = 0;
+
     private:
         double mX;
         double mY;
@@ -87,6 +93,7 @@ class Button {
         bool mButtonPressed = false;
         bool mButtonDraggable = false;
         bool mButtonSizeable = false;
+        bool mButtonHasDialog = false;
 
         vector<pair<QImage, XImage*>> mButtonImages;
 };

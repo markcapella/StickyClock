@@ -19,4 +19,6 @@ class SizeButton : public Button {
             const Picture renderPicture) override;
 
         void click(const Window window) override;
+
+        void updateDialog() override;
 };

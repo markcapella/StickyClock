@@ -136,111 +136,59 @@ ConfigDialog::loadConfigFormSettings() {
 }
 
 /**
- * Callback to Save UI form values to .Ini.
+ * Update any runtime dialog controls, range settings, etc.
  */
 void
-ConfigDialog::saveConfigFormSettings() {
+ConfigDialog::updateControls() {
+    // Update preferred desktop slider, if user changes
+    // maximum desktop value.
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
-        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(i,
-            QFormLayout::LabelRole)->widget();
+        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
+            i, QFormLayout::LabelRole)->widget();
         if (!LABEL_WIDGET) {
             continue;
         }
 
-        // Get key, valueType, & defaultValue.
-        const QString THIS_KEY = LABEL_WIDGET->
-            property("text").toString();
-        const SettingsPropertyType THIS_VALUETYPE =
-            mSettingsHelper->getSettingsValueType(THIS_KEY);
-        const QString THIS_DEFAULT_VALUE =
-            mSettingsHelper->getSettingsDefaultValue(THIS_KEY);
-
-        // Get QLineEdit for Strings.
-        if (THIS_VALUETYPE == STRING_VALUETYPE) {
-            QLineEdit* stringEditWidget = nullptr;
-            stringEditWidget = qobject_cast<QLineEdit*>(mFormLayout->
-                itemAt(i, QFormLayout::FieldRole)->widget());
-            if (stringEditWidget) {
-                const QString VALUE = stringEditWidget->text();
-                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
-                mSettingsHelper->getQSettings()->
-                    setValue(THIS_KEY, VALUE);
-                mSettingsHelper->getQSettings()->endGroup();
-            }
+        // Ignore if wrong key.
+        const QString THIS_KEY = LABEL_WIDGET->property(
+            "text").toString();
+        if (THIS_KEY != SettingsHelper::PREFERRED_DESKTOP) {
             continue;
         }
 
-        // Get QlineEdit for Ints.
-        if (THIS_VALUETYPE == INT_VALUETYPE) {
-            QLineEdit* lineEditWidget = nullptr;
-            lineEditWidget = qobject_cast<QLineEdit*>(mFormLayout->
-                itemAt(i, QFormLayout::FieldRole)->widget());
-            if (lineEditWidget) {
-                const int VALUE = lineEditWidget->text().toInt();
-                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
-                mSettingsHelper->getQSettings()->
-                    setValue(THIS_KEY, VALUE);
-                mSettingsHelper->getQSettings()->endGroup();
-            }
+        // Ignore if control type mismatch :-/
+        QSlider* sliderEditWidget = nullptr;
+        sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
+            itemAt(i, QFormLayout::FieldRole)->widget());
+        if (!sliderEditWidget) {
             continue;
         }
 
-        // Get QCheckBox for Booleans.
-        if (THIS_VALUETYPE == BOOL_VALUETYPE) {
-            QCheckBox* checkboxWidget = nullptr;
-            checkboxWidget = qobject_cast<QCheckBox*>(mFormLayout->
-                itemAt(i, QFormLayout::FieldRole)->widget());
-            if (checkboxWidget) {
-                const bool VALUE = checkboxWidget->checkState();
-                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
-                mSettingsHelper->getQSettings()->
-                    setValue(THIS_KEY, VALUE);
-                mSettingsHelper->getQSettings()->endGroup();
+        sliderEditWidget->setMaximum(
+            mXHelper->getMaximumDesktops() - 1);
+    }
+}
 
-                if (THIS_KEY == SettingsHelper::PREFERRED_ONTOP) {
-                    mXHelper->makeWindowStayOnTop(getWindow(), VALUE);
-                    mXHelper->makeWindowStayOnBottom(getWindow(), !VALUE);
-                    continue;
-                }
+/**
+ * Override eventFilter for QSlider hover action & tooltip.
+ */
+bool
+ConfigDialog::eventFilter(QObject* obj, QEvent* event) {
+    // Intercept both static hover (ToolTip event)
+    // and active movement (MouseMove).
+    QSlider* slider = qobject_cast<QSlider*> (obj);
+    if (slider) {
+        if (event->type() == QEvent::ToolTip ||
+            event->type() == QEvent::MouseMove) {
+            if (!slider->isSliderDown()) { 
+                QToolTip::showText(QCursor::pos(),
+                    QString::number(slider->value()), slider);
             }
-            continue;
-        }
-
-        // Get QColorButton for Colors.
-        if (THIS_VALUETYPE == COLOR_VALUETYPE) {
-            ColorButton* colorButtonWidget = nullptr;
-            colorButtonWidget = qobject_cast<ColorButton*>(mFormLayout->
-                itemAt(i, QFormLayout::FieldRole)->widget());
-            if (colorButtonWidget) {
-                const QString VALUE = colorButtonWidget->
-                    getButtonColor().name();
-                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
-                mSettingsHelper->getQSettings()->
-                    setValue(THIS_KEY, VALUE);
-                mSettingsHelper->getQSettings()->endGroup();
-            }
-            continue;
-        }
-
-        // Get QSlider for preferredDesktop.
-        if (THIS_VALUETYPE == SLIDER_VALUETYPE) {
-            QSlider* sliderEditWidget = nullptr;
-            sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
-                itemAt(i, QFormLayout::FieldRole)->widget());
-            if (sliderEditWidget) {
-                const int VALUE = sliderEditWidget->value();
-                mSettingsHelper->setIntSetting(THIS_KEY, VALUE);
-                // Ensure setting against invalidation by OS.
-                if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
-                    mStickyWindow->rangeCheckPreferredDesktop(getWindow());
-                }
-            }
-            continue;
+            return true;
         }
     }
 
-    // And done.
-    accept();
+    return ConfigDialog::eventFilter(obj, event);
 }
 
 /**
@@ -268,8 +216,6 @@ ConfigDialog::buildConfigForm() {
         // Get key valueType & key defaultValue.
         const SettingsPropertyType THIS_VALUETYPE =
             mSettingsHelper->getSettingsValueType(THIS_KEY);
-        const QString THIS_DEFAULT_VALUE =
-            mSettingsHelper->getSettingsDefaultValue(THIS_KEY);
 
         // Get QLineEdit for Strings.
         if (THIS_VALUETYPE == STRING_VALUETYPE) {
@@ -443,25 +389,111 @@ ConfigDialog::buildConfigForm() {
 }
 
 /**
- * Override eventFilter for QSlider hover action & tooltip.
+ * Callback to Save UI form values to .Ini.
  */
-bool
-ConfigDialog::eventFilter(QObject* obj, QEvent* event) {
-    // Intercept both static hover (ToolTip event)
-    // and active movement (MouseMove).
-    QSlider* slider = qobject_cast<QSlider*> (obj);
-    if (slider) {
-        if (event->type() == QEvent::ToolTip ||
-            event->type() == QEvent::MouseMove) {
-            if (!slider->isSliderDown()) { 
-                QToolTip::showText(QCursor::pos(),
-                    QString::number(slider->value()), slider);
+void
+ConfigDialog::saveConfigFormSettings() {
+    for (int i = 0; i < mFormLayout->rowCount(); ++i) {
+        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(i,
+            QFormLayout::LabelRole)->widget();
+        if (!LABEL_WIDGET) {
+            continue;
+        }
+
+        // Get key, valueType, & defaultValue.
+        const QString THIS_KEY = LABEL_WIDGET->
+            property("text").toString();
+        const SettingsPropertyType THIS_VALUETYPE =
+            mSettingsHelper->getSettingsValueType(THIS_KEY);
+        const QString THIS_DEFAULT_VALUE =
+            mSettingsHelper->getSettingsDefaultValue(THIS_KEY);
+
+        // Get QLineEdit for Strings.
+        if (THIS_VALUETYPE == STRING_VALUETYPE) {
+            QLineEdit* stringEditWidget = nullptr;
+            stringEditWidget = qobject_cast<QLineEdit*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (stringEditWidget) {
+                const QString VALUE = stringEditWidget->text();
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
+                mSettingsHelper->getQSettings()->
+                    setValue(THIS_KEY, VALUE);
+                mSettingsHelper->getQSettings()->endGroup();
             }
-            return true;
+            continue;
+        }
+
+        // Get QlineEdit for Ints.
+        if (THIS_VALUETYPE == INT_VALUETYPE) {
+            QLineEdit* lineEditWidget = nullptr;
+            lineEditWidget = qobject_cast<QLineEdit*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (lineEditWidget) {
+                const int VALUE = lineEditWidget->text().toInt();
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
+                mSettingsHelper->getQSettings()->
+                    setValue(THIS_KEY, VALUE);
+                mSettingsHelper->getQSettings()->endGroup();
+            }
+            continue;
+        }
+
+        // Get QCheckBox for Booleans.
+        if (THIS_VALUETYPE == BOOL_VALUETYPE) {
+            QCheckBox* checkboxWidget = nullptr;
+            checkboxWidget = qobject_cast<QCheckBox*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (checkboxWidget) {
+                const bool VALUE = checkboxWidget->checkState();
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
+                mSettingsHelper->getQSettings()->
+                    setValue(THIS_KEY, VALUE);
+                mSettingsHelper->getQSettings()->endGroup();
+
+                if (THIS_KEY == SettingsHelper::ON_TOP_INSTEAD) {
+                    mXHelper->makeWindowStayOnTop(getWindow(), VALUE);
+                    mXHelper->makeWindowStayOnBottom(getWindow(), !VALUE);
+                    continue;
+                }
+            }
+            continue;
+        }
+
+        // Get QColorButton for Colors.
+        if (THIS_VALUETYPE == COLOR_VALUETYPE) {
+            ColorButton* colorButtonWidget = nullptr;
+            colorButtonWidget = qobject_cast<ColorButton*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (colorButtonWidget) {
+                const QString VALUE = colorButtonWidget->
+                    getButtonColor().name();
+                mSettingsHelper->getQSettings()->beginGroup(APP_NAME);
+                mSettingsHelper->getQSettings()->
+                    setValue(THIS_KEY, VALUE);
+                mSettingsHelper->getQSettings()->endGroup();
+            }
+            continue;
+        }
+
+        // Get QSlider for preferredDesktop.
+        if (THIS_VALUETYPE == SLIDER_VALUETYPE) {
+            QSlider* sliderEditWidget = nullptr;
+            sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (sliderEditWidget) {
+                const int VALUE = sliderEditWidget->value();
+                mSettingsHelper->setIntSetting(THIS_KEY, VALUE);
+                // Ensure setting against invalidation by OS.
+                if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
+                    mStickyWindow->rangeCheckPreferredDesktopSetting(getWindow());
+                }
+            }
+            continue;
         }
     }
 
-    return ConfigDialog::eventFilter(obj, event);
+    // And done.
+    accept();
 }
 
 /**

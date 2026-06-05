@@ -37,10 +37,14 @@ class ConfigDialog : public QDialog {
         Window getWindow() const {
             return mWindow;
         }
-
         void setWindow(const Window window) {
             mWindow = window;
         }
+
+        /**
+         * Update any runtime dialog controls, range settings, etc.
+         */
+        void updateControls();
 
     /**
      * Override eventFilter for QSlider hover action.
@@ -58,14 +62,14 @@ class ConfigDialog : public QDialog {
         QDialog* mAboutDialog = nullptr;
 
         /**
-         * Callback to Save UI form values to .Ini.
-         */
-        void saveConfigFormSettings();
-
-        /**
          * Build the UI form layout.
          */
         void buildConfigForm();
+
+        /**
+         * Callback to Save UI form values to .Ini.
+         */
+        void saveConfigFormSettings();
 
         /**
          * Show this apps "About" dialog.

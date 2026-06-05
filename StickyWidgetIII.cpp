@@ -116,9 +116,9 @@ main(int argc, char** argv) {
     StickyWindow* mStickyWindow = new StickyWindow();
     if (mStickyWindow->getX11Window() != None) {
         mStickyWindow->run();
-        delete mStickyWindow;
     }
 
+    delete mStickyWindow;
     delete mSettingsHelper;
     delete mRecentsHelper;
 

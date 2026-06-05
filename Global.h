@@ -45,18 +45,12 @@ typedef chrono::steady_clock Clock;
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
-
-// x11 xft library.
 #include <X11/Xft/Xft.h>
 
-// x11 xfixes libraries.
-#include <X11/extensions/Xfixes.h>
-
-// x11 xext Shape libraries.
 #include <X11/extensions/shape.h>
-
-// x11 xext Xcomposite libraries.
 #include <X11/extensions/Xcomposite.h>
+#include <X11/extensions/Xfixes.h>
+#include <X11/extensions/Xrender.h>
 
 // libpng library.
 #include <png.h>
@@ -67,7 +61,6 @@ typedef chrono::steady_clock Clock;
 
 // Application libraries.
 #include "Button.h"
-#include "ColorButton.h"
 
 #include "PinButton.h"
 #include "QuitButton.h"
@@ -75,14 +68,18 @@ typedef chrono::steady_clock Clock;
 #include "SizeButton.h"
 
 #include "ConfigDialog.h"
+#include "ColorButton.h"
+#include "AboutDialog.h"
 #include "ConfigButton.h"
 
-#include "AboutDialog.h"
-#include "DisplayHelper.h"
-#include "RecentsHelper.h"
+#include "Canvas.h"
+#include "StickyWindow.h"
+
 #include "SettingsHelper.h"
+#include "RecentsHelper.h"
+#include "DisplayHelper.h"
+
 #include "WinInfo.h"
 #include "XHelper.h"
 
-#include "StickyWindow.h"
 #include "StickyWidgetIII.h"

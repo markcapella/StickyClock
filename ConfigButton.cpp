@@ -73,3 +73,16 @@ ConfigButton::click(const Window window) {
     mConfigDialog->raise();
     mConfigDialog->activateWindow();
 }
+
+/**
+ * Updates any Button Dialog.
+ */
+void
+ConfigButton::updateDialog() {
+    // Create Dialog jit.
+    if (!mConfigDialog || !mConfigDialog->isVisible()) {
+        return;
+    }
+
+    mConfigDialog->updateControls();
+}

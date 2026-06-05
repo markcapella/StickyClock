@@ -60,3 +60,11 @@ void
 SizeButton::click(const Window window) {
     // Nothing.
 }
+
+/**
+ * Updates any Button Dialog.
+ */
+void
+SizeButton::updateDialog() {
+    // Nothing.
+}

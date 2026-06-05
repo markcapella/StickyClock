@@ -15,18 +15,23 @@ enum SettingsPropertyType {
 };
 
 class SettingsHelper {
+
     public:
-        static inline const QString CONFIG_MODE = "In Config mode";
+        static inline const QString GROUP_CONFIGURABLE = APP_NAME;
+        static inline const QString GROUP_VOLATILE = "Volatile";
+
+        // Configurable.
         static inline const QString AUTOHIDE_CONTROLS = "Auto hide Buttons";
         static inline const QString AUTOHIDE_DELAY = "Auto hide Delay";
-
+        static inline const QString DRAG_THRU_DESKTOPS = "Drag thru Desktops";
         static inline const QString PREFERRED_DESKTOP = "Preferred Desktop";
-        static inline const QString PREFERRED_ONTOP = "Prefer on Top";
+        static inline const QString ON_TOP_INSTEAD = "On Top Instead";
         static inline const QString SHOW_WEED_CLOCK = "Show Weedtime";
         static inline const QString WEED_CLOCK_COLOR = "Weedtime color";
 
-        static inline const QString GROUP_GENERAL = "Volatile";
-        static inline const QString GROUP_CONFIGURABLE = APP_NAME;
+        // Volatile.
+        static inline const QString CONFIG_MODE = "In Config mode";
+
 
         struct SettingsProperty {
             QString group = "";
@@ -38,12 +43,6 @@ class SettingsHelper {
         };
 
         static inline const vector<SettingsProperty> PROPERTIES = {
-            // General, hidden from ConfigDialog.
-            { .group = GROUP_GENERAL, .name = CONFIG_MODE,
-              .valueType = BOOL_VALUETYPE, .initialValue = "true",
-              .rangeMinimum = 0, .rangeMaximum = 1
-            },
-
             // App configurables.
             { .group = GROUP_CONFIGURABLE, .name = AUTOHIDE_CONTROLS,
               .valueType = BOOL_VALUETYPE, .initialValue = "false",
@@ -56,13 +55,19 @@ class SettingsHelper {
               .rangeMinimum = 1, .rangeMaximum = 9
             },
 
+            { .group = GROUP_CONFIGURABLE, .name = DRAG_THRU_DESKTOPS,
+              .valueType = BOOL_VALUETYPE, .initialValue = "true",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
             { .group = GROUP_CONFIGURABLE, .name = PREFERRED_DESKTOP,
               .valueType = SLIDER_VALUETYPE, .initialValue = "-1",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PREFERRED_ONTOP,
+            { .group = GROUP_CONFIGURABLE, .name = ON_TOP_INSTEAD,
               .valueType = BOOL_VALUETYPE, .initialValue = "false",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
@@ -78,6 +83,12 @@ class SettingsHelper {
               .valueType = COLOR_VALUETYPE, .initialValue = "#00faff",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            // Volatile internals, hidden from ConfigDialog.
+            { .group = GROUP_VOLATILE, .name = CONFIG_MODE,
+              .valueType = BOOL_VALUETYPE, .initialValue = "true",
+              .rangeMinimum = 0, .rangeMaximum = 1
             }
         };
 

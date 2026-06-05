@@ -57,3 +57,11 @@ void
 MoveButton::click(const Window window) {
     // Nothing.
 }
+
+/**
+ * Updates any Button Dialog.
+ */
+void
+MoveButton::updateDialog() {
+    // Nothing.
+}
