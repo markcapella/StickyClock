@@ -5,9 +5,6 @@
  * StickyWindow class wraps an x11 Window object.
  */
 StickyWindow::StickyWindow() {
-    mDeleteMessage = XInternAtom(mDisplay,
-        "WM_DELETE_WINDOW", False);
-
     // Init visual transparency & TrueColor 32. Also,
     // Sets mVisualInfoStruct & mColorMap.
     mIsVisuallyTransparent = initVisualTransparency();
@@ -40,6 +37,12 @@ StickyWindow::StickyWindow() {
     });
 
     setControlButtonsVisibility();
+
+    // X11 message Atoms.
+    mDeleteMessage = XInternAtom(mDisplay,
+        "WM_DELETE_WINDOW", False);
+    mConfigDialogUpdated = XInternAtom(mDisplay,
+        CONFIG_DIALOG_UPDATED_EVENT.c_str(), False);
 }
 
 /**
@@ -85,8 +88,8 @@ void
 StickyWindow::draw() {
     const XRenderPictFormat* RENDER_FORMAT =
         XRenderFindVisualFormat(mDisplay, mVisualInfoStruct.visual);
-    const Picture RENDER_PICTURE = XRenderCreatePicture(
-        mDisplay, mX11Window, RENDER_FORMAT, 0, nullptr);
+    Picture renderPic = XRenderCreatePicture(mDisplay, mX11Window,
+        RENDER_FORMAT, 0, nullptr);
 
     // If drawing on wrong desktop, erase instead.
     const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
@@ -94,10 +97,10 @@ StickyWindow::draw() {
         getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
     if (VISIBLE_DESKTOP != -1 && PREFERRED_DESKTOP != -1 &&
         (VISIBLE_DESKTOP != PREFERRED_DESKTOP)) {
-        XRenderFillRectangle(mDisplay, PictOpSrc, RENDER_PICTURE,
+        XRenderFillRectangle(mDisplay, PictOpSrc, renderPic,
             &TRANSPARENT_RCOLOR, 0, 0, mSettingsHelper->
             getWindowWidth(), mSettingsHelper->getWindowHeight());
-        XRenderFreePicture(mDisplay, RENDER_PICTURE);
+        XRenderFreePicture(mDisplay, renderPic);
         XFlush(mDisplay);
         return;
     }
@@ -105,7 +108,7 @@ StickyWindow::draw() {
     // Erase entire window before draw while
     // resizing to avoid screen artifacts.
     if (mIsSizingWindow) {
-        XRenderFillRectangle(mDisplay, PictOpSrc, RENDER_PICTURE,
+        XRenderFillRectangle(mDisplay, PictOpSrc, renderPic,
             &TRANSPARENT_RCOLOR, 0, 0, mSettingsHelper->
             getWindowWidth(), mSettingsHelper->getWindowHeight());
     }
@@ -114,10 +117,10 @@ StickyWindow::draw() {
     mCanvas->drawCanvas();
 
     // Draw Control buttons & pin button.
-    drawAllWindowButtons(RENDER_PICTURE);
+    drawAllWindowButtons(renderPic);
 
     // Cleanup.
-    XRenderFreePicture(mDisplay, RENDER_PICTURE);
+    XRenderFreePicture(mDisplay, renderPic);
     XFlush(mDisplay);
 }
 
@@ -198,7 +201,7 @@ StickyWindow::run() {
  * Ensure window opens on valid remembered desktop.
  */
 void
-StickyWindow::rangeCheckPreferredDesktopSetting(const Window window) {
+StickyWindow::rangeCheckPreferredDesktopSetting() {
     const int PREFERRED_DESKTOP = mSettingsHelper->
         getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
     if (PREFERRED_DESKTOP == -1) {
@@ -263,6 +266,7 @@ StickyWindow::createX11Window() {
     XSetWindowAttributes wAttrs;
     wAttrs.colormap = mColorMap;
     wAttrs.border_pixel = 0;
+    wAttrs.event_mask = OBSERVABLE_EVENTS;
 
     mX11Window = XCreateWindow(mDisplay, RootWindow(mDisplay,
         mVisualInfoStruct.screen), mSettingsHelper->getWindowXPos(),
@@ -277,6 +281,12 @@ StickyWindow::createX11Window() {
             XCOLOR_NORMAL << endl << endl;
         return mX11Window;
     }
+
+    // Filter events we care to see in event loop.
+    XSelectInput(mDisplay, mX11Window, OBSERVABLE_EVENTS);
+    XSelectInput(mDisplay, DefaultRootWindow(mDisplay),
+        PropertyChangeMask);
+    XSetWMProtocols(mDisplay, mX11Window, &mDeleteMessage, 1);
 
     // Set procID on our window, for RecentsHelper().
     mXHelper->setWindowPID(mX11Window);
@@ -314,7 +324,7 @@ StickyWindow::createX11Window() {
     mXHelper->setWindowDesktop(mX11Window, -1);
 
     // Ensure window opens on valid remembered desktop.
-    rangeCheckPreferredDesktopSetting(mX11Window);
+    rangeCheckPreferredDesktopSetting();
 
     // Set "StickyWindow" type, show window, set config state.
     setStickyWindowType();
@@ -498,7 +508,7 @@ StickyWindow::drawAllWindowButtons(const Picture renderPicture) {
             };
             rects.push_back(buttonInputRegion);
         } else {
-            mButtons[i]->erase(mX11Window, renderPicture);
+            mButtons[i]->erase(renderPicture);
         }
     }
     XShapeCombineRectangles(mDisplay, mX11Window, ShapeInput,
@@ -525,7 +535,9 @@ StickyWindow::setControlButtonsVisibility() {
 
     // If not Config mode, stop autohide timer & done.
     if (!CONFIG_MODE) {
-        mControlsTimer->stop();
+        if (mControlsTimer) {
+            mControlsTimer->stop();
+        }
         return;
     }
 
@@ -712,62 +724,37 @@ StickyWindow::defineWindowCanvasSize() {
  */
 bool
 StickyWindow::handleX11EventQueue() {
-    // ConfigureNotify.
-    Window resizedWindow = None;
-    int resizedPosX = -1;
-    int resizedPosY = -1;
-
-    // ButtonPress, ButtonRelease.
-    unsigned int clickStatus = 0;
-
-    Window root = None;
-    int rootClickPositionX = -1;
-    int rootClickPositionY = -1;
-
-    Window window = None;
-    int windowClickPositionX = -1;
-    int windowClickPositionY = -1;
-
-    // ButtonPress.
-    QPoint clickedButtonPosition;
-
-    // Filter events we care to see in event loop.
-    const long OBSERVABLE_EVENTS = ConfigureNotify |
-        StructureNotifyMask | PropertyChangeMask |
-        ButtonPressMask | ButtonReleaseMask | ExposureMask;
-    XSelectInput(mDisplay, mX11Window, OBSERVABLE_EVENTS);
-
-    XSelectInput(mDisplay, DefaultRootWindow(mDisplay),
-        PropertyChangeMask);
-    XSetWMProtocols(mDisplay, mX11Window, &mDeleteMessage, 1);
-
     // Event loop, until window close.
     XEvent event;
     while (XPending(mDisplay)) {
         XNextEvent(mDisplay, &event);
         switch (event.type) {
 
-            // ClientMsg says window close.
-            case ClientMessage:
-                if (event.xclient.data.l[0] == mDeleteMessage) {
-                    return true;
-                }
-                break;
-
-            // Detect root window or desktop property changes.
+            // Detect mRootWindow window or desktop property changes.
             case PropertyNotify:
                 if (event.xproperty.window ==
                     DefaultRootWindow(mDisplay)) {
                     // MAXIMUM DESKTOPS parm change.
                     if (event.xproperty.atom == XInternAtom(mDisplay,
                         "_NET_NUMBER_OF_DESKTOPS", False)) {
-                        rangeCheckPreferredDesktopSetting(getX11Window());
+                        rangeCheckPreferredDesktopSetting();
                         updateActiveConfigButtonDialog();
                     }
                     break;
                 }
-                // Else, our window property change.
-                onPropertyNotify(event.xproperty);
+                break;
+
+            // ClientMsg says window close.
+            case ClientMessage:
+                if (static_cast<Atom>(event.xclient.data.l[0]) ==
+                    mDeleteMessage) {
+                    return true;
+                }
+
+                if (event.xclient.message_type ==
+                    mConfigDialogUpdated) {
+                    receiveConfigDialogUpdatedEvent();
+                }
                 break;
 
             // Type = Expose.
@@ -788,25 +775,26 @@ StickyWindow::handleX11EventQueue() {
             // Type = 22; ConfigureNotify.
             case ConfigureNotify:
                 XTranslateCoordinates(mDisplay, event.xconfigure.window,
-                    RootWindow(mDisplay, DefaultScreen(mDisplay)),
-                    0, 0, &resizedPosX, &resizedPosY, &resizedWindow);
-                resize(resizedPosX, resizedPosY, event.xconfigure.width,
-                    event.xconfigure.height);
+                    RootWindow(mDisplay, DefaultScreen(mDisplay)), 0, 0,
+                        &mTranslatePosX, &mTranslatePosY,
+                            &mTranslateWindow);
+                resize(mTranslatePosX, mTranslatePosY,
+                    event.xconfigure.width, event.xconfigure.height);
                 break;
 
             case ButtonPress:
                 // Find the cursor down location.
-                if (!XQueryPointer(mDisplay, mX11Window, &root,
-                    &window, &rootClickPositionX, &rootClickPositionY,
-                    &windowClickPositionX, &windowClickPositionY,
-                    &clickStatus)) {
+                if (!XQueryPointer(mDisplay, mX11Window, &mRootWindow,
+                    &mClickWindow, &mRootClickPositionX,
+                    &mRootClickPositionY, &mWindowClickPositionX,
+                    &mWindowClickPositionY, &mClickStatus)) {
                     break;
                 }
 
                 // Do pressed highlighting for pinbutton & controls.
-                clickedButtonPosition = pressHoveredButton(
-                    QPoint(windowClickPositionX, windowClickPositionY));
-                if (clickedButtonPosition == INVALID_POINT) {
+                mClickedButtonPosition = pressHoveredButton(
+                    QPoint(mWindowClickPositionX, mWindowClickPositionY));
+                if (mClickedButtonPosition == INVALID_POINT) {
                     break;
                 }
 
@@ -821,15 +809,15 @@ StickyWindow::handleX11EventQueue() {
                 // Set cursor offset position within button @ start
                 // of move ... (Top left) corner distance.
                 mDragMoveButtonOffset = QPoint(
-                    windowClickPositionX - clickedButtonPosition.x(),
-                    windowClickPositionY - clickedButtonPosition.y());
+                    mWindowClickPositionX - mClickedButtonPosition.x(),
+                    mWindowClickPositionY - mClickedButtonPosition.y());
 
                 // Set cursor offset position within button @ start
                 // of resizing ... (Bottom right) corner distance.
                 mDragResizeButtonOffset = QPoint(
-                    windowClickPositionX - clickedButtonPosition.x() -
+                    mWindowClickPositionX - mClickedButtonPosition.x() -
                         Button::BUTTON_WIDTH,
-                    windowClickPositionY - clickedButtonPosition.y() -
+                    mWindowClickPositionY - mClickedButtonPosition.y() -
                         Button::BUTTON_HEIGHT);
                 break;
 
@@ -838,16 +826,16 @@ StickyWindow::handleX11EventQueue() {
                 XUngrabPointer(mDisplay, CurrentTime);
 
                 // Find the cursor up location.
-                if (!XQueryPointer(mDisplay, mX11Window, &root,
-                    &window, &rootClickPositionX, &rootClickPositionY,
-                    &windowClickPositionX, &windowClickPositionY,
-                    &clickStatus)) {
+                if (!XQueryPointer(mDisplay, mX11Window, &mRootWindow,
+                    &mClickWindow, &mRootClickPositionX, &mRootClickPositionY,
+                    &mWindowClickPositionX, &mWindowClickPositionY,
+                    &mClickStatus)) {
                     break;
                 }
 
                 // If still hovering a control, release a click.
-                clickPressedHoveredButton(QPoint(windowClickPositionX,
-                    windowClickPositionY));
+                clickPressedHoveredButton(QPoint(mWindowClickPositionX,
+                    mWindowClickPositionY));
 
                 if (mIsSizingWindow) {
                     defineWindowCanvasPosition();
@@ -884,22 +872,14 @@ StickyWindow::updateActiveConfigButtonDialog() {
 }
 
 /**
- * This method observes property changes to window.
- * Useful for debug.
+ * Receives an event from Qt ConfigDialog that it has
+ * completed with new user config settings.
  */
 void
-StickyWindow::onPropertyNotify(const XPropertyEvent& event) {
-/*
-    if (event.display && event.atom) {
-        char* atomName = XGetAtomName(event.display, event.atom);
-        if (atomName && string(atomName) == "_NET_WM_DESKTOP") {
-            // Foo;
-            XFree(atomName);
-            return;
-        }
-        XFree(atomName);
-    }
-*/
+StickyWindow::receiveConfigDialogUpdatedEvent() {
+    setControlButtonsVisibility();
+    setWindowStickPosition();
+    rangeCheckPreferredDesktopSetting();
 }
 
 /**
@@ -908,12 +888,18 @@ StickyWindow::onPropertyNotify(const XPropertyEvent& event) {
 void
 StickyWindow::cursorWatcherThread() {
     // Find the cursor location.
-    Window root, window;
-    int rootX, rootY, winX, winY;
-    unsigned int clickStatus;
+    unsigned int clickStatus = 0;
 
-    if (!XQueryPointer(mDisplay, mX11Window, &root, &window,
-        &rootX, &rootY, &winX, &winY, &clickStatus)) {
+    Window mRootWindow = None;
+    int rootX = -1;
+    int rootY = -1;
+
+    Window window = None;
+    int winX = -1;
+    int winY = -1;
+
+    if (!XQueryPointer(mDisplay, mX11Window, &mRootWindow, &window,
+        &rootX, &rootY, &winX, &winY, &mClickStatus)) {
         cout << XCOLOR_YELLOW << "StickyClock: Failed to query "
             "Cursor location." << XCOLOR_NORMAL << endl;
         return;

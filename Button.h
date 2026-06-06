@@ -53,19 +53,6 @@ class Button {
         void setHasDialog(const bool hasDialog) {
             mButtonHasDialog = hasDialog; }
 
-        XImage* getButtonImage(const int index) const {
-            if (index >= mButtonImages.size()) {
-                return nullptr;
-            }
-            return mButtonImages[index].second;
-        }
-
-        void setButtonImage(const QImage buttonQImage,
-            XImage* buttonXImage) {
-            cout << "STORING IMAGE!" << endl;
-            mButtonImages.push_back({buttonQImage, buttonXImage});
-        }
-
         string toString() const {
             ostringstream outString;
             outString << "mX , mY : [" <<
@@ -76,8 +63,7 @@ class Button {
 
         virtual void draw(const Window window) = 0;
 
-        virtual void erase(const Window window,
-            const Picture renderPicture) = 0;
+        virtual void erase(const Picture renderPicture) = 0;
 
         virtual void click(const Window window) = 0;
 
@@ -94,6 +80,4 @@ class Button {
         bool mButtonDraggable = false;
         bool mButtonSizeable = false;
         bool mButtonHasDialog = false;
-
-        vector<pair<QImage, XImage*>> mButtonImages;
 };

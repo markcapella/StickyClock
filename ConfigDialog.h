@@ -23,8 +23,7 @@ class ConfigDialog : public QDialog {
         static inline const QString ABOUT_STRING = "About";
 
         // Constructor.
-        explicit ConfigDialog(const QString& filePath,
-            QWidget* parent = nullptr);
+        explicit ConfigDialog(QWidget* parent = nullptr);
 
         /**
          * Load UI form with values from .Ini.
@@ -54,6 +53,8 @@ class ConfigDialog : public QDialog {
 
     private:
         Window mWindow = None;
+        Atom mConfigDialogUpdated { };
+
         QFormLayout* mFormLayout = nullptr;
         QVBoxLayout* mMainLayout = nullptr;
 
@@ -70,6 +71,12 @@ class ConfigDialog : public QDialog {
          * Callback to Save UI form values to .Ini.
          */
         void saveConfigFormSettings();
+
+        /**
+         * Send an event to the X11 thread telling it to update
+         * with new user config settings.
+         */
+        void sendConfigDialogUpdatedEvent();
 
         /**
          * Show this apps "About" dialog.

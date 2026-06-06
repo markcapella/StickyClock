@@ -77,6 +77,9 @@ static inline constexpr XftColor GREEN_FCOLOR = {
 static inline const QString PIN_IN_PNG_FILENAME = "pinIn.png";
 static inline const QString PIN_OUT_PNG_FILENAME = "pinOut.png";
 
+static inline const string CONFIG_DIALOG_UPDATED_EVENT =
+    "CONFIG_DIALOG_UPDATED";
+
 // App globals.
 extern DisplayHelper* mDisplayHelper;
 extern Display* mDisplay;

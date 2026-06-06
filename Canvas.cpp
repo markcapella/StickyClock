@@ -20,24 +20,23 @@ Canvas::drawCanvas() {
     const XRenderPictFormat* RENDER_FORMAT =
         XRenderFindVisualFormat(mDisplay, mVisual);
 
-    const Picture RENDER_PICTURE = XRenderCreatePicture(mDisplay,
-        mWindow, RENDER_FORMAT, 0, nullptr);
-
     // Draw canvas border gray, indented margin blue,
     // interior white or tourquiose for weedClocktime.
     const double X_POS = mSettingsHelper->getCanvasXPos();
     const double Y_POS = mSettingsHelper->getCanvasYPos();
     const double WIDTH = mSettingsHelper->getCanvasWidth();
     const double HEIGHT = mSettingsHelper->getCanvasHeight();
-    XRenderFillRectangle(mDisplay, PictOpOver, RENDER_PICTURE,
+
+    Picture renderPic = XRenderCreatePicture(mDisplay,
+        mWindow, RENDER_FORMAT, 0, nullptr);
+    XRenderFillRectangle(mDisplay, PictOpOver, renderPic,
         &GRAY_RCOLOR, X_POS, Y_POS, WIDTH, HEIGHT);
-    XRenderFillRectangle(mDisplay, PictOpOver, RENDER_PICTURE,
+    XRenderFillRectangle(mDisplay, PictOpOver, renderPic,
         &BLUE_RCOLOR, X_POS + 2, Y_POS + 2, WIDTH - 4, HEIGHT - 4);
 
     Pixmap renderPixmap = XCreatePixmap(mDisplay,
         mWindow, 1, 1, 32);
-
-    const Picture BACKGROUND_R_PICTURE = XRenderCreatePicture(
+    Picture BACKGROUND_R_PICTURE = XRenderCreatePicture(
         mDisplay, renderPixmap, RENDER_FORMAT, 0, nullptr);
     XRenderFillRectangle(mDisplay, PictOpSrc,
         BACKGROUND_R_PICTURE, &WHITE_RCOLOR, 0, 0, 1, 1);
@@ -46,7 +45,7 @@ Canvas::drawCanvas() {
         getBoolSetting(SettingsHelper::SHOW_WEED_CLOCK)) ?
             mSettingsHelper->getColorSetting(
                 SettingsHelper::WEED_CLOCK_COLOR) : WHITE_RCOLOR;
-    XRenderFillRectangle(mDisplay, PictOpOver, RENDER_PICTURE,
+    XRenderFillRectangle(mDisplay, PictOpOver, renderPic,
         &backgroundColor, X_POS + 4, Y_POS + 4, WIDTH - 8, HEIGHT - 8);
     XRenderFreePicture(mDisplay, BACKGROUND_R_PICTURE);
 
@@ -70,7 +69,7 @@ Canvas::drawCanvas() {
     XftDrawDestroy(xft_draw);
     xft_draw = nullptr;
     XFreePixmap(mDisplay, renderPixmap);
-    XRenderFreePicture(mDisplay, RENDER_PICTURE);
+    XRenderFreePicture(mDisplay, renderPic);
 
     XFlush(mDisplay);
 }
@@ -96,9 +95,6 @@ Canvas::updateCanvas() {
  */
 string
 Canvas::getCurrentTime() {
-    const time_t time = std::time(0);
-    const tm* now = localtime(&time);
-
     return mXHelper->addLeadZeroToNN(getCurrentHour()) + ":" +
         mXHelper->addLeadZeroToNN(getCurrentMinute());
 }

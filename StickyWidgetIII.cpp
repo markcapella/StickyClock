@@ -58,6 +58,8 @@ QImage mPinOutQImage { };
 int
 main(int argc, char** argv) {
     // Init Display global.
+    XInitThreads();
+
     mDisplayHelper = new DisplayHelper();
     mDisplay = mDisplayHelper->getDisplay();
 
@@ -182,7 +184,6 @@ initAppPngImages() {
         ZPixmap, 0,
         (char*) mPinOutQImage.bits(), mPinOutQImage.width(), mPinOutQImage.height(),
         32, 0);
-    XImage* fff = mPinOutXImage;
 
     return true;
 }

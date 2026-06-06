@@ -16,43 +16,55 @@ PinButton::~PinButton() { }
  */
 void
 PinButton::draw(const Window window) {
-    const XRenderPictureAttributes PIC_ATTR = {
-        .poly_edge = PolyEdgeSmooth };
-    const Picture CANVAS = XRenderCreatePicture(mDisplay, window,
+    // All button white.
+    XRenderPictureAttributes PIC_ATTR{};
+    PIC_ATTR.poly_edge = PolyEdgeSmooth;
+
+    Picture canvasPic = XRenderCreatePicture(mDisplay, window,
         XRenderFindStandardFormat(mDisplay, PictStandardARGB32),
         CPPolyEdge, &PIC_ATTR);
 
-    // All button white.
-    XRenderFillRectangle(mDisplay, PictOpOver, CANVAS,
+    XRenderFillRectangle(mDisplay, PictOpOver, canvasPic,
         &WHITE_RCOLOR, getX(), getY(), getWidth(), getHeight());
 
     // Display pinIn or pinOut png.
     GC gc = XCreateGC(mDisplay, window, 0, nullptr);
     XPutImage(mDisplay, window, gc, (mSettingsHelper->getBoolSetting(
-        SettingsHelper::CONFIG_MODE) ?
-        mPinOutXImage : mPinInXImage), 0, 0, getX() + 2, getY() + 2,
-        getWidth() - 4, getHeight() - 4);
+        SettingsHelper::CONFIG_MODE) ? mPinOutXImage : mPinInXImage),
+            0, 0, getX() + 2, getY() + 2,
+                getWidth() - 4, getHeight() - 4);
     XFreeGC(mDisplay, gc);
 
     // Cleanup.
-    XRenderFreePicture(mDisplay, CANVAS);
+    XRenderFreePicture(mDisplay, canvasPic);
 }
 
 /**
  * Erase the Button.
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 void
-PinButton::erase(const Window window, const Picture renderPicture) {
+PinButton::erase(const Picture renderPicture) {
     // Nothing.
 }
+
+#pragma GCC diagnostic pop
 
 /**
  * Clicks the PinButton.
  */
+// Suppress warnings based on Clang or GCC.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 void
 PinButton::click(const Window window) {
     // Nothing.
 }
+
+#pragma GCC diagnostic pop
 
 /**
  * Updates any Button Dialog.

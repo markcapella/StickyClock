@@ -14,8 +14,8 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.06.05")
-set(APP_VERSION_MINOR "02")
+set(APP_VERSION "26.06.06")
+set(APP_VERSION_MINOR "07")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
@@ -168,10 +168,16 @@ target_link_libraries(${WIDGET_PROJECT} PRIVATE
 ##
 # Display leak report after app runs.
 #
-target_compile_options(${WIDGET_PROJECT} PUBLIC
-    -fsanitize=address -fno-omit-frame-pointer)
-target_link_options(${WIDGET_PROJECT} PUBLIC
-    -fsanitize=address)
+# Debug #1.
+#target_compile_options(${WIDGET_PROJECT} PRIVATE
+#    -O1 -Wall -Wextra -Wuninitialized -Wmaybe-uninitialized
+#)
+#
+# Debug #2.
+#target_compile_options(${WIDGET_PROJECT} PUBLIC
+#    -fsanitize=address -fno-omit-frame-pointer)
+#target_link_options(${WIDGET_PROJECT} PUBLIC
+#    -fsanitize=address)
 
 ##
 # Prevent sudo make install before make.

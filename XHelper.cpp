@@ -305,10 +305,17 @@ XHelper::setVisibleDesktop(const long desktop) {
     const Atom MESSAGE = XInternAtom(mDisplay,
         "_NET_CURRENT_DESKTOP", False);
 
-    XEvent event = { .xclient = { .type = ClientMessage,
-        .window = DefaultRootWindow(mDisplay),
-        .message_type = MESSAGE, .format = 32,
-        .data = { .l = { desktop, 1, CurrentTime, 0, 0 } } } };
+    XEvent event{};
+    event.type = ClientMessage;
+    event.xclient.window = DefaultRootWindow(mDisplay);
+    event.xclient.message_type = MESSAGE;
+
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = desktop;
+    event.xclient.data.l[1] = CurrentTime; 
+    event.xclient.data.l[2] = 0;
+    event.xclient.data.l[3] = 0;
+    event.xclient.data.l[4] = 0;
 
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
         SubstructureNotifyMask | SubstructureRedirectMask, &event);
@@ -359,7 +366,7 @@ XHelper::getWindowsStackedList() {
         &unusedBytes, &properties) == Success) {
         Window* windows = (Window*) properties;
         // 0 is desktop, add up.
-        for (int i = 0; i < nItems; i++) {
+        for (unsigned long i = 0; i < nItems; i++) {
             result.push_back(windows[i]);
         }
     }
@@ -515,10 +522,9 @@ XHelper::getWindowPosition(const Window window) {
  */
 QSize
 XHelper::getWindowSize(const Window window) {
-    XWindowAttributes wAttrs = { .x = -1, .y = -1,
-        .width = -1, .height = -1, .map_state = -1 };
-
+    XWindowAttributes wAttrs;
     XGetWindowAttributes(mDisplay, window, &wAttrs);
+
     return QSize(wAttrs.width, wAttrs.height);
 }
 
@@ -553,8 +559,7 @@ XHelper::getWindowFrameOffset(const Window window) {
  */
 int
 XHelper::getWindowMapstate(const Window window) {
-    XWindowAttributes wAttrs = { .x = -1, .y = -1,
-        .width = -1, .height = -1, .map_state = -1 };
+    XWindowAttributes wAttrs;
     XGetWindowAttributes(mDisplay, window, &wAttrs);
 
     return wAttrs.map_state;
@@ -575,9 +580,9 @@ XHelper::getWindowPID(const Window window) {
         AnyPropertyType, &type, &format, &nItems, &unusedBytes,
         &properties);
 
-    unsigned long pid =
-        (RESULT == Success && properties != nullptr) ?
-            pid = *((unsigned long*) properties) : 0;
+    unsigned long pid = 0;
+    pid = (RESULT == Success && properties != nullptr) ?
+        *((unsigned long*) properties) : 0;
 
     XFree(properties);
     return pid;
@@ -945,10 +950,19 @@ XHelper::makeWindowStayOnTop(const Window window,
 
     const Atom NET_WM_STATE_ABOVE = XInternAtom(mDisplay,
         "_NET_WM_STATE_ABOVE", False);
-    XEvent event = { .xclient = { .type = ClientMessage,
-        .window = window, .message_type = MESSAGE,
-        .format = 32, .data = { .l = { onOrOff ? 1 : 0,
-            (long) NET_WM_STATE_ABOVE, 0, 1, 0 } } } };
+
+    XEvent event{};
+    event.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = MESSAGE;
+
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = onOrOff ? 1 : 0;
+    event.xclient.data.l[1] = NET_WM_STATE_ABOVE;
+
+    event.xclient.data.l[2] = 0; 
+    event.xclient.data.l[3] = 1; 
+    event.xclient.data.l[4] = 0;
 
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
         SubstructureNotifyMask | SubstructureRedirectMask, &event);
@@ -967,10 +981,19 @@ XHelper::makeWindowStayOnBottom(const Window window,
 
     const Atom NET_WM_STATE_BELOW = XInternAtom(mDisplay,
         "_NET_WM_STATE_BELOW", False);
-    XEvent event = { .xclient = { .type = ClientMessage,
-        .window = window, .message_type = MESSAGE,
-        .format = 32, .data = { .l = { onOrOff ? 1 : 0,
-            (long) NET_WM_STATE_BELOW, 0, 1, 0 } } } };
+
+    XEvent event{};
+    event.type = ClientMessage;
+    event.xclient.window = window;
+    event.xclient.message_type = MESSAGE;
+
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = onOrOff ? 1 : 0;
+    event.xclient.data.l[1] = NET_WM_STATE_BELOW;
+
+    event.xclient.data.l[2] = 0; 
+    event.xclient.data.l[3] = 1; 
+    event.xclient.data.l[4] = 0;
 
     XSendEvent(mDisplay, DefaultRootWindow(mDisplay), False,
         SubstructureNotifyMask | SubstructureRedirectMask, &event);
@@ -1167,9 +1190,11 @@ XHelper::logWinInfo(const WinInfo* winInfo) {
  */
 void
 XHelper::debugX11EventQueue() {
-    XFlush(mDisplay);
     XEvent event;
+
+    XFlush(mDisplay);
     while (XPending(mDisplay)) {
+
         XNextEvent(mDisplay, &event);
         const XAnyEvent* EVENT = (XAnyEvent*) &event;
         debugXAnyEvent(EVENT);

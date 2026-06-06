@@ -11,8 +11,7 @@
 
         void draw(const Window window) override;
 
-        void erase(const Window window,
-            const Picture renderPicture) override;
+        void erase(const Picture renderPicture) override;
 
         void click(const Window window) override;
 

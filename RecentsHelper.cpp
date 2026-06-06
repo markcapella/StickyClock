@@ -226,7 +226,6 @@ QString
 RecentsHelper::getRecentsNameNotActive(
     const vector<QString> recentNames) {
 
-    const int ACTIVE_RECENTS_SIZE = recentNames.size();
     QStringList myList(recentNames.begin(), recentNames.end());
 
     const int RECENTS_SIZE = RecentsHelper::RECENTS_NAMES.size();

@@ -4,8 +4,7 @@
 /**
  * Simple class to represent a ConfigDialog.
  */
-ConfigDialog::ConfigDialog(const QString& filePath,
-    QWidget* parent) : QDialog(parent) {
+ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
 
     // Set the window title.
     const QString FIRST_RECENTS_NAME = mRecentsHelper->RECENTS_NAMES[0];
@@ -22,17 +21,19 @@ ConfigDialog::ConfigDialog(const QString& filePath,
     setWindowFlags(Qt::Dialog | Qt::Tool);
     setMinimumWidth(CONFIG_DIALOG_MIX_WIDTH);
     setMaximumHeight(CONFIG_DIALOG_MAX_HEIGHT);
-
     buildConfigForm();
 
-    // Callback to Save UI form values to .Ini.
+    // Callbacks.
     connect(mConfigButtonBox, &QDialogButtonBox::accepted, this,
         &ConfigDialog::saveConfigFormSettings);
     connect(mConfigButtonBox, &QDialogButtonBox::rejected, this,
         &ConfigDialog::reject);
-
     connect(mAboutButton, &QPushButton::clicked, this,
         &ConfigDialog::about);
+
+    // X11 message Atoms.
+    mConfigDialogUpdated = XInternAtom(mDisplay,
+        CONFIG_DIALOG_UPDATED_EVENT.c_str(), False);
 }
 
 /**
@@ -286,9 +287,12 @@ ConfigDialog::buildConfigForm() {
             // Nice tooltip on immediate hover & change.
             if (THIS_KEY == SettingsHelper::AUTOHIDE_DELAY) {
                 struct LambdaFilter : public QObject {
-                    QSlider* s;
                     LambdaFilter(QSlider* slider) :
                         QObject(slider), s(slider) {}
+                    QSlider* s;
+
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wunused-parameter"
                     bool eventFilter(QObject* obj, QEvent *event) override {
                         // Show the immediate millisecond the mouse
                         // crosses into the slider.
@@ -315,15 +319,20 @@ ConfigDialog::buildConfigForm() {
                         }
                         return false;
                     }
+                    #pragma GCC diagnostic pop
                 };
                 sliderEditWidget->installEventFilter(
                     new LambdaFilter(sliderEditWidget));
             }
+
             if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
                 struct LambdaFilter : public QObject {
-                    QSlider* s;
                     LambdaFilter(QSlider* slider) :
                         QObject(slider), s(slider) {}
+                    QSlider* s;
+
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wunused-parameter"
                     bool eventFilter(QObject* o, QEvent* e) override {
                         // Show the immediate millisecond the mouse
                         // crosses into the slider.
@@ -352,6 +361,7 @@ ConfigDialog::buildConfigForm() {
                         }
                         return false;
                     }
+                    #pragma GCC diagnostic pop
                 };
                 sliderEditWidget->installEventFilter(
                     new LambdaFilter(sliderEditWidget));
@@ -449,12 +459,6 @@ ConfigDialog::saveConfigFormSettings() {
                 mSettingsHelper->getQSettings()->
                     setValue(THIS_KEY, VALUE);
                 mSettingsHelper->getQSettings()->endGroup();
-
-                if (THIS_KEY == SettingsHelper::ON_TOP_INSTEAD) {
-                    mXHelper->makeWindowStayOnTop(getWindow(), VALUE);
-                    mXHelper->makeWindowStayOnBottom(getWindow(), !VALUE);
-                    continue;
-                }
             }
             continue;
         }
@@ -483,17 +487,34 @@ ConfigDialog::saveConfigFormSettings() {
             if (sliderEditWidget) {
                 const int VALUE = sliderEditWidget->value();
                 mSettingsHelper->setIntSetting(THIS_KEY, VALUE);
-                // Ensure setting against invalidation by OS.
-                if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
-                    mStickyWindow->rangeCheckPreferredDesktopSetting(getWindow());
-                }
             }
             continue;
         }
     }
 
+    // Signal X11 thread we're updated.
+    sendConfigDialogUpdatedEvent();
+
     // And done.
     accept();
+}
+
+/**
+ * Send an event to the X11 thread telling it to update
+ * with new user config settings.
+ */
+void
+ConfigDialog::sendConfigDialogUpdatedEvent() {
+    XEvent event{};
+    event.xclient.type = ClientMessage;
+    event.xclient.window = getWindow();
+    event.xclient.message_type = mConfigDialogUpdated;
+
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = 12345;
+
+    XSendEvent(mDisplay, getWindow(), False, NoEventMask, &event);
+    XFlush(mDisplay);
 }
 
 /**

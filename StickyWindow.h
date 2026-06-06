@@ -10,6 +10,12 @@ class StickyWindow {
     public:
         static inline constexpr QPoint INVALID_POINT {-1, -1};
 
+        static inline const long OBSERVABLE_EVENTS =
+            ConfigureNotify | StructureNotifyMask | PropertyChangeMask |
+            EnterWindowMask | LeaveWindowMask |
+            PointerMotionMask | ButtonPressMask | ButtonReleaseMask |
+            ExposureMask;
+
         static inline constexpr chrono::milliseconds
             CURSOR_WATCHER_DELAY_MS{5};
         static inline constexpr chrono::milliseconds
@@ -61,7 +67,12 @@ class StickyWindow {
         /**
          * Ensure window opens on valid remembered desktop.
          */
-        void rangeCheckPreferredDesktopSetting(const Window window);
+        void rangeCheckPreferredDesktopSetting();
+
+        /**
+         * Set visibility state of the four corner control buttons.
+         */
+        void setControlButtonsVisibility();
 
     private:
         // Members.
@@ -70,6 +81,7 @@ class StickyWindow {
         Colormap mColorMap { };
 
         Atom mDeleteMessage { };
+        Atom mConfigDialogUpdated { };
 
         Window mX11Window = None;
         char* mWindowTitle = nullptr;
@@ -85,6 +97,25 @@ class StickyWindow {
         SizeButton* mSizeButton = nullptr;
 
         Canvas* mCanvas = nullptr;
+
+        // handleX11EventQueue.
+        Window mTranslateWindow = None;
+        int mTranslatePosX = -1;
+        int mTranslatePosY = -1;
+
+        // ButtonPress, ButtonRelease.
+        unsigned int mClickStatus = 0;
+
+        Window mRootWindow = None;
+        int mRootClickPositionX = -1;
+        int mRootClickPositionY = -1;
+
+        Window mClickWindow = None;
+        int mWindowClickPositionX = -1;
+        int mWindowClickPositionY = -1;
+
+        // ButtonPress.
+        QPoint mClickedButtonPosition;
 
         bool mIsMouseClicked = false;
         bool mIsSizingWindow = false;
@@ -146,11 +177,6 @@ class StickyWindow {
          * Draw all visible buttons.
          */
         void drawAllWindowButtons(const Picture renderPicture);
-
-        /**
-         * Set visibility state of the four corner control buttons.
-         */
-        void setControlButtonsVisibility();
 
         /**
          * Setter for PinButton visibility state.
@@ -222,9 +248,10 @@ class StickyWindow {
         void updateActiveConfigButtonDialog();
 
         /**
-         * This method saves the window workspace when changed.
+         * Receives an event from Qt ConfigDialog that it has
+         * completed with new user config settings.
          */
-        void onPropertyNotify(const XPropertyEvent& event);
+        void receiveConfigDialogUpdatedEvent();
 
         /**
          * Cursor watcher detects user actions.
