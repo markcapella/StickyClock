@@ -38,8 +38,6 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
     appVersionsFont.setPointSize(FONT_BASE_SIZE + 2);
     appVersionsLine->setFont(appVersionsFont);
     mainLayout->addWidget(appVersionsLine);
-
-    // Add blank line before Description.
     mainLayout->addSpacing(10);
 
     // App description line.
@@ -51,9 +49,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
     appDescFont.setItalic(true);
     appDescLine->setFont(appDescFont);
     mainLayout->addWidget(appDescLine);
-
-    // Add blank line before Author.
-    mainLayout->addSpacing(20);
+    mainLayout->addSpacing(10);
 
     // App author & org line.
     QLabel* appAuthorLine = new QLabel(QString(APP_AUTHOR) +
@@ -64,6 +60,26 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
     appAuthorFont.setPointSize(FONT_BASE_SIZE + 2);
     appAuthorLine->setFont(appAuthorFont);
     mainLayout->addWidget(appAuthorLine);
+    mainLayout->addSpacing(15);
+
+    // Credits line.
+    QLabel* iconCreditsLine = new QLabel(this);
+    iconCreditsLine->setText("Icon artwork provided by "
+        "<a href=\"https://deepai.org/machine-learning-model/"
+            "minimalistic-art-generator\""
+                ">the Minimalistic Art Generator</a>");
+    iconCreditsLine->setOpenExternalLinks(true);
+    iconCreditsLine->setTextInteractionFlags(
+        Qt::LinksAccessibleByMouse);
+    iconCreditsLine->setAlignment(Qt::AlignCenter);
+    iconCreditsLine->setWordWrap(true);
+    QFont iconCreditsFont = iconCreditsLine->font();
+    iconCreditsFont.setPointSize(FONT_BASE_SIZE);
+    iconCreditsLine->setFont(iconCreditsFont);
+    QPalette iconCreditsPalette = iconCreditsLine->palette();
+    iconCreditsPalette.setColor(QPalette::WindowText, QColor("black"));
+    iconCreditsLine->setPalette(iconCreditsPalette);
+    mainLayout->addWidget(iconCreditsLine);
 
     // Prepare warnings.
     const QString THIS_WM_NAME(mXHelper->
@@ -89,10 +105,10 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
         appVTWarnFont.setPointSize(FONT_BASE_SIZE + 2);
         appVTWarnLine->setFont(appVTWarnFont);
         QPalette appVTWarnPalette = appVTWarnLine->palette();
-        appVTWarnPalette.setColor(QPalette::WindowText,
-            QColor("#B22222"));
+        appVTWarnPalette.setColor(QPalette::WindowText, QColor("#B22222"));
         appVTWarnLine->setPalette(appVTWarnPalette);
         mainLayout->addWidget(appVTWarnLine);
+        mainLayout->addSpacing(8);
     }
 
     // App pointer transparency warning line.
@@ -113,10 +129,10 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
         appPTWarnFont.setPointSize(FONT_BASE_SIZE + 2);
         appPTWarnLine->setFont(appPTWarnFont);
         QPalette appPTWarnPalette = appPTWarnLine->palette();
-        appPTWarnPalette.setColor(QPalette::WindowText,
-            QColor("#B22222"));
+        appPTWarnPalette.setColor(QPalette::WindowText, QColor("#B22222"));
         appPTWarnLine->setPalette(appPTWarnPalette);
         mainLayout->addWidget(appPTWarnLine);
+        mainLayout->addSpacing(8);
     }
 
     // App tiling WM warning line.
@@ -138,12 +154,11 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
         appTilingWMFont.setPointSize(FONT_BASE_SIZE + 2);
         appTilingWMLine->setFont(appTilingWMFont);
         QPalette appTilingWMPalette = appTilingWMLine->palette();
-        appTilingWMPalette.setColor(QPalette::WindowText,
-            QColor("#B22222"));
+        appTilingWMPalette.setColor(QPalette::WindowText, QColor("#B22222"));
         appTilingWMLine->setPalette(appTilingWMPalette);
         mainLayout->addWidget(appTilingWMLine);
+        mainLayout->addSpacing(8);
     }
-
 
     // App No Compositor warning line.
     if (COMPOSITOR_NAME.isEmpty()) {
@@ -163,14 +178,14 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
         compositorFont.setPointSize(FONT_BASE_SIZE + 2);
         compositorLine->setFont(compositorFont);
         QPalette compositorPalette = compositorLine->palette();
-        compositorPalette.setColor(QPalette::WindowText,
-            QColor("#B22222"));
+        compositorPalette.setColor(QPalette::WindowText, QColor("#B22222"));
         compositorLine->setPalette(compositorPalette);
         mainLayout->addWidget(compositorLine);
+        mainLayout->addSpacing(8);
     }
 
     // Add blank line before WM / Compositor summary.
-    mainLayout->addSpacing(20);
+    mainLayout->addSpacing(7);
 
     // App WM and Compositor summary line.
     const QString SUMMARY_WM_WARNING = "Your Window Manager is " +

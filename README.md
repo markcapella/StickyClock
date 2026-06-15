@@ -1,12 +1,13 @@
 # StickyClock
     
+!['StickyClockIcon'](https://github.com/markcapella/StickyClock/blob/main/StickyClock.png)
 !['StickyClock'](https://github.com/markcapella/StickyClock/blob/main/screenshot.png)
     
 ## Description
-    StickyClock is the first app in the StickyWidgetIII series.
+    StickyClock is an X11 StickyWidgetIII based desktop view.
     
-    StickyWidgetIII is an X-based prototype for applications
-    that act like KDE desktop Plasmoids.
+    A basic Digital Clock that is sizable and configurable.
+    
     
     Desktop widgets with various views can be stuck in place to
     the desktop below other windows and display custom views with
