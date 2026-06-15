@@ -92,9 +92,8 @@ main(int argc, char** argv) {
     if (!mDisplay) {
         QMessageBox::information(NULL, APP_NAME, "X11 Windows are "
             "unavailable with this Desktop, FATAL.");
-        cout << endl << XCOLOR_RED << "StickyClock: "
-            "X11 Windows are unavailable with this Desktop, FATAL." <<
-            XCOLOR_NORMAL << endl;
+        cout << endl << XCOLOR_RED << "X11 Windows are unavailable "
+            "with this Desktop, FATAL." << XCOLOR_NORMAL << endl;
         return true;
     }
 

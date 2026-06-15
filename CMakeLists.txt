@@ -14,12 +14,12 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.06.06")
-set(APP_VERSION_MINOR "07")
+set(APP_VERSION "26.06.15")
+set(APP_VERSION_MINOR "00")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
-set(SOURCE_REPO "https://github.com/markcapella/StickyClock")
+set(SOURCE_REPO "https://github.com/markcapella/${APP_NAME}")
 
 # Enable cmake.
 set(CMAKE_CXX_STANDARD 20)
@@ -38,11 +38,21 @@ cmake_minimum_required(VERSION 3.10)
 project(${APP_NAME} VERSION ${APP_VERSION} LANGUAGES CXX)
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 
+# Enable full threading.
+if (NOT DEFINED ENV{CMAKE_BUILD_PARALLEL_LEVEL})
+    message(STATUS "${COLOR_GREEN}All cores enabled.${COLOR_NORMAL}")
+    cmake_host_system_information(RESULT num_cores
+        QUERY NUMBER_OF_LOGICAL_CORES)
+    set(ENV{CMAKE_BUILD_PARALLEL_LEVEL} "${num_cores}")
+endif()
+
 # Enable ccache.
 find_program(CCACHE_PROGRAM ccache)
 if (CCACHE_PROGRAM)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${CCACHE_PROGRAM}")
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
+        CACHE STRING "C compiler launcher")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}"
+        CACHE STRING "C++ compiler launcher")
     message(STATUS "${COLOR_GREEN}ccache enabled.${COLOR_NORMAL}")
 else()
     message(STATUS "${COLOR_YELLOW}ccache not enabled.${COLOR_NORMAL}")
@@ -170,8 +180,7 @@ target_link_libraries(${WIDGET_PROJECT} PRIVATE
 #
 # Debug #1.
 #target_compile_options(${WIDGET_PROJECT} PRIVATE
-#    -O1 -Wall -Wextra -Wuninitialized -Wmaybe-uninitialized
-#)
+#    -O1 -Wall -Wextra -Wuninitialized -Wmaybe-uninitialized)
 #
 # Debug #2.
 #target_compile_options(${WIDGET_PROJECT} PUBLIC
@@ -189,8 +198,7 @@ install(CODE "
         message(STATUS \"ERROR: Local build is not complete.\")
         message(FATAL_ERROR \"First make this package, then \"
             \"you can install it.\")
-    endif()
-")
+    endif()")
 
 ##
 # Halt any old active instances.
@@ -206,10 +214,6 @@ install(TARGETS ${WIDGET_PROJECT} DESTINATION bin)
 ##
 # Install App & Button icons.
 #
-# TODO: sudo touch /usr/share/icons/*
-# TODO: sudo gtk-update-icon-cache -f -t /usr/share/icons/
-# TODO: kill & restart lxqt-panel
-#
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${APP_NAME}.png"
     DESTINATION "${ICON_PATH}"
         RENAME ${APP_NAME}.png)
@@ -224,17 +228,22 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${APP_NAME}-pinOut.png"
 ##
 # Install .desktop.
 #
-# TODO: kill & restart lxqt-panel
-# TODO: libglib2.0-bin: has gio launch FOO.desktop
-# TODO: kde-cli-tools:  has kioclient exec FOO.desktop
-#
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/${APP_NAME}.desktop"
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/desktop.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.desktop"
+    @ONLY
+)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}.desktop"
     DESTINATION share/applications)
 
 ##
-# Reset Lxqt panel.
+# Reset Lxqt panel, & FreeDesktop and XDG cache updates
+# so the panel sees the changes immediately.
 #
-# TODO: gtk-update-icon-cache -f -t /usr/share/icons
+install(CODE "
+    message(STATUS \"Updating icon and desktop caches...\")
+    execute_process(COMMAND update-desktop-database)
+    execute_process(COMMAND xdg-icon-resource forceupdate --theme hicolor)")
 
 ##
 # Setup convenience target |make run|.

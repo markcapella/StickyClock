@@ -5,8 +5,8 @@
  * Simple class to represent a ColorButton.
  *
  */
-ColorButton::ColorButton(QWidget* parent) :
-    QPushButton(parent), mColor(Qt::white) {
+ColorButton::ColorButton(const QString title, QWidget* parent) :
+    QPushButton(parent), mTitle(title), mColor(Qt::white) {
 
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     updateButtonStyle();
@@ -30,7 +30,7 @@ void
 ColorButton::openColorPicker() {
     QColorDialog* COLOR_PICKER = new QColorDialog(mColor, this);
 
-    COLOR_PICKER->setWindowTitle("Select Color");
+    COLOR_PICKER->setWindowTitle("Select " + mTitle);
     COLOR_PICKER->setOption(QColorDialog::ShowAlphaChannel);
     COLOR_PICKER->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -46,11 +46,8 @@ ColorButton::openColorPicker() {
 void
 ColorButton::setButtonColor(const QColor& color) {
     if (color.isValid()) {
-        if (mColor != color) {
-            mColor = color;
-            updateButtonStyle();
-            // emit colorChanged(mColor);
-        }
+        mColor = color;
+        updateButtonStyle();
     }
 }
 

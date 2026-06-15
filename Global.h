@@ -60,6 +60,10 @@ typedef chrono::steady_clock Clock;
 #include <sys/resource.h>
 
 // Application libraries.
+#include "AutoHideDelayHints.h"
+#include "DesktopPreferenceHints.h"
+#include "OpacityHints.h"
+
 #include "Button.h"
 
 #include "PinButton.h"
@@ -83,3 +87,10 @@ typedef chrono::steady_clock Clock;
 #include "XHelper.h"
 
 #include "StickyWidgetIII.h"
+
+// Utiliy Macros.
+#define newRenderColor(r, g, b, a) \
+    { (unsigned short)(((r) * (a)) / 255), \
+      (unsigned short)(((g) * (a)) / 255), \
+      (unsigned short)(((b) * (a)) / 255), \
+      (unsigned short)((a) * 257) }

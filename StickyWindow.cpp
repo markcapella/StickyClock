@@ -10,10 +10,9 @@ StickyWindow::StickyWindow() {
     mIsVisuallyTransparent = initVisualTransparency();
     if (!mIsVisuallyTransparent) {
         QMessageBox::information(NULL, APP_NAME, "Visual transparency "
-            "is unavailable with this Desktop, FATAL.");
-        cout << endl << XCOLOR_RED << "StickyClock: Visual "
-            "transparency is unavailable with this Desktop, FATAL." <<
-            XCOLOR_NORMAL << endl;
+            "unavailable with this Desktop, FATAL.");
+        cout << endl << XCOLOR_RED << "Visual transparency unavailable "
+            "with this Desktop, FATAL." << XCOLOR_NORMAL << endl;
         return;
     }
 
@@ -742,6 +741,7 @@ StickyWindow::handleX11EventQueue() {
                     }
                     break;
                 }
+                onPropertyNotify(event.xproperty);
                 break;
 
             // ClientMsg says window close.
@@ -888,8 +888,6 @@ StickyWindow::receiveConfigDialogUpdatedEvent() {
 void
 StickyWindow::cursorWatcherThread() {
     // Find the cursor location.
-    unsigned int clickStatus = 0;
-
     Window mRootWindow = None;
     int rootX = -1;
     int rootY = -1;
@@ -900,8 +898,8 @@ StickyWindow::cursorWatcherThread() {
 
     if (!XQueryPointer(mDisplay, mX11Window, &mRootWindow, &window,
         &rootX, &rootY, &winX, &winY, &mClickStatus)) {
-        cout << XCOLOR_YELLOW << "StickyClock: Failed to query "
-            "Cursor location." << XCOLOR_NORMAL << endl;
+        cout << XCOLOR_YELLOW << "Failed to query Cursor location." <<
+            XCOLOR_NORMAL << endl;
         return;
     }
 
@@ -937,18 +935,21 @@ StickyWindow::dragWindowToPoint(const QPoint position) {
     const bool ON_ALL_DESKTOPS = mSettingsHelper->getIntSetting(
         SettingsHelper::PREFERRED_DESKTOP) == -1;
     const bool ALLOW_DRAG_THRU_DESKTOPS = mSettingsHelper->
-        getBoolSetting(SettingsHelper::DRAG_THRU_DESKTOPS);
+        getBoolSetting(SettingsHelper::ALLOW_DESKTOP_DRAG);
 
     const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
     const int SCREEN_WIDTH = WidthOfScreen(
         DefaultScreenOfDisplay(mDisplay));
 
     if ((dragPosition.x() <= 0) &&
-        ON_ALL_DESKTOPS && ALLOW_DRAG_THRU_DESKTOPS) {
+        ALLOW_DRAG_THRU_DESKTOPS) {
         int desktop = VISIBLE_DESKTOP - 1;
         if (desktop < 0) {
             desktop = mXHelper->getMaximumDesktops() - 1;
         }
+
+        mSettingsHelper->setIntSetting(
+            SettingsHelper::PREFERRED_DESKTOP, desktop);
         mXHelper->setVisibleDesktop(desktop);
 
         const int KICK_DISTANCE = 2;
@@ -958,11 +959,14 @@ StickyWindow::dragWindowToPoint(const QPoint position) {
 
     } else {
        if ((dragPosition.x() >= SCREEN_WIDTH - 1) &&
-           ON_ALL_DESKTOPS && ALLOW_DRAG_THRU_DESKTOPS) {
+           ALLOW_DRAG_THRU_DESKTOPS) {
             int desktop = VISIBLE_DESKTOP + 1;
             if (desktop >= mXHelper->getMaximumDesktops()) {
                 desktop = 0;
             }
+
+            mSettingsHelper->setIntSetting(
+                SettingsHelper::PREFERRED_DESKTOP, desktop);
             mXHelper->setVisibleDesktop(desktop);
 
             const int KICK_DISTANCE = 2;
@@ -1046,4 +1050,37 @@ StickyWindow::resizeWindowToPoint(const QPoint position) {
 
     // Re-draw all & done.
     draw();
+}
+
+/**
+ * This method updates any visible ConfigDialog on drag
+ * thru desktop changing "Preferred Desktop" slider value.
+ */
+void
+StickyWindow::onPropertyNotify(const XPropertyEvent& event) {
+    // Only respond to desktop changes.
+    if (!event.display || !event.atom) {
+        return;
+    }
+    char* atomName = XGetAtomName(event.display, event.atom);
+    if (!atomName || string(atomName) != "_NET_WM_DESKTOP") {
+        XFree(atomName);
+        return;
+    }
+    XFree(atomName);
+
+    // Respond to ConfigDialog control updates required when
+    // preferred desktop changes as user drags across desktops.
+    if (!mIsMouseClicked) {
+        return;
+    }
+
+    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
+    if (VISIBLE_DESKTOP == mPreviousDesktop) {
+        return;
+    }
+    mPreviousDesktop = VISIBLE_DESKTOP;
+
+    // Payload.
+    updateActiveConfigButtonDialog();
 }

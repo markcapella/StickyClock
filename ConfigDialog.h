@@ -17,8 +17,8 @@ class ConfigDialog : public QDialog {
     Q_OBJECT
 
     public:
-        static inline const long CONFIG_DIALOG_MIX_WIDTH = 300;
-        static inline const long CONFIG_DIALOG_MAX_HEIGHT = 800;
+        static inline const long CONFIG_DIALOG_WIDTH = 450;
+        static inline const long CONFIG_DIALOG_HEIGHT = 600;
 
         static inline const QString ABOUT_STRING = "About";
 

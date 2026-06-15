@@ -123,6 +123,8 @@ class StickyWindow {
         QPoint mDragMoveButtonOffset { };
         QPoint mDragResizeButtonOffset { };
 
+        int mPreviousDesktop = -1;
+
         /**
          * Initialize Transparency & TrueColor 32.
          */
@@ -267,4 +269,10 @@ class StickyWindow {
          * Perform window resizing.
          */
         void resizeWindowToPoint(const QPoint position);
+
+        /**
+         * This method updates any visible ConfigDialog on drag
+         * thru desktop changing "Preferred Desktop" slider value.
+         */
+        void onPropertyNotify(const XPropertyEvent& event);
 };

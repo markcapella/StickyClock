@@ -46,3 +46,13 @@ IFS=$OLDIFS
 if [ "$WERE_ANY_HALTED" != "true" ]; then
     echo "-- No Active ""$APP_NAME"" to shutdown."
 fi
+
+APPS_TO_KILL=$(pgrep $APP_NAME 1>/dev/null 2>/dev/null; echo $?)
+if [ "$APPS_TO_KILL" == "1" ]; then
+    echo "-- No Active proc ""$APP_NAME"" to shutdown."
+else
+    echo -e "$COLOR_YELLOW""$TEXT_BOLD""-- Warning,"\
+        "$ALLTEXT_NORMAL""Active proc ""$APP_NAME"\
+        "is being shutdown."
+    pkill $APP_NAME
+fi

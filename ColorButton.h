@@ -13,7 +13,8 @@ class ColorButton : public QPushButton {
     Q_OBJECT
 
     public:
-        explicit ColorButton(QWidget* parent = nullptr);
+        explicit ColorButton(const QString title,
+            QWidget* parent = nullptr);
 
         /**
          * Getter for current color.
@@ -31,6 +32,8 @@ class ColorButton : public QPushButton {
         void setButtonColor(const QColor& color);
 
     private:
+        QString mTitle;
+
         QColor mColor;
 
         /**

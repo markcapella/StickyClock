@@ -17,17 +17,45 @@ enum SettingsPropertyType {
 class SettingsHelper {
 
     public:
+        // General.
         static inline const QString GROUP_CONFIGURABLE = APP_NAME;
         static inline const QString GROUP_VOLATILE = "Volatile";
 
         // Configurable.
-        static inline const QString AUTOHIDE_CONTROLS = "Auto hide Buttons";
-        static inline const QString AUTOHIDE_DELAY = "Auto hide Delay";
-        static inline const QString DRAG_THRU_DESKTOPS = "Drag thru Desktops";
-        static inline const QString PREFERRED_DESKTOP = "Preferred Desktop";
-        static inline const QString ON_TOP_INSTEAD = "On Top Instead";
-        static inline const QString SHOW_WEED_CLOCK = "Show Weedtime";
-        static inline const QString WEED_CLOCK_COLOR = "Weedtime color";
+        static inline const QString AUTOHIDE_CONTROLS =
+            "00 Auto hide Controls";
+        static inline const QString AUTOHIDE_DELAY =
+            "01 Auto hide Delay";
+
+        static inline const QString PREFERRED_DESKTOP =
+            "02 Preferred Desktop";
+        static inline const QString ALLOW_DESKTOP_DRAG =
+            "03 Allow Desktop Drag";
+
+        static inline const QString ON_TOP_INSTEAD =
+            "04 Stick to Top";
+
+        static inline const QString PANEL_COLOR =
+            "05 Background Color";
+        static inline const QString PANEL_OPACITY =
+            "06 Background Opacity";
+
+        static inline const QString PANEL_OUTLINE_COLOR =
+            "07 Outline Color";
+        static inline const QString PANEL_OUTLINE_OPACITY =
+            "08 Outline Opacity";
+
+        static inline const QString TEXT_COLOR =
+            "09 Text Color";
+        static inline const QString TEXT_OPACITY =
+            "10 Text Opacity";
+
+        static inline const QString SHOW_WEED_CLOCK =
+            "11 Observe Weedclock Time";
+        static inline const QString WEED_CLOCK_COLOR =
+            "12 Weedtime Color";
+        static inline const QString WEED_CLOCK_OPACITY =
+            "13 Weedtime Opacity";
 
         // Volatile.
         static inline const QString CONFIG_MODE = "In Config mode";
@@ -55,14 +83,14 @@ class SettingsHelper {
               .rangeMinimum = 1, .rangeMaximum = 9
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = DRAG_THRU_DESKTOPS,
-              .valueType = BOOL_VALUETYPE, .initialValue = "true",
+            { .group = GROUP_CONFIGURABLE, .name = PREFERRED_DESKTOP,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "-1",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PREFERRED_DESKTOP,
-              .valueType = SLIDER_VALUETYPE, .initialValue = "-1",
+            { .group = GROUP_CONFIGURABLE, .name = ALLOW_DESKTOP_DRAG,
+              .valueType = BOOL_VALUETYPE, .initialValue = "true",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
@@ -71,6 +99,39 @@ class SettingsHelper {
               .valueType = BOOL_VALUETYPE, .initialValue = "false",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = PANEL_COLOR,
+              .valueType = COLOR_VALUETYPE, .initialValue = "white",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = PANEL_OPACITY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
+              .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = PANEL_OUTLINE_COLOR,
+              .valueType = COLOR_VALUETYPE, .initialValue = "blue",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = PANEL_OUTLINE_OPACITY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
+              .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = TEXT_COLOR,
+              .valueType = COLOR_VALUETYPE, .initialValue = "black",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = TEXT_OPACITY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
+              .rangeMinimum = 0, .rangeMaximum = 255
             },
 
             { .group = GROUP_CONFIGURABLE, .name = SHOW_WEED_CLOCK,
@@ -83,6 +144,11 @@ class SettingsHelper {
               .valueType = COLOR_VALUETYPE, .initialValue = "#00faff",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = WEED_CLOCK_OPACITY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
+              .rangeMinimum = 0, .rangeMaximum = 255
             },
 
             // Volatile internals, hidden from ConfigDialog.
