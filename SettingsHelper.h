@@ -45,17 +45,19 @@ class SettingsHelper {
         static inline const QString PANEL_OUTLINE_OPACITY =
             "08 Outline Opacity";
 
+        static inline const QString TEXT_SIZE =
+            "09 Text Size";
         static inline const QString TEXT_COLOR =
-            "09 Text Color";
+            "10 Text Color";
         static inline const QString TEXT_OPACITY =
-            "10 Text Opacity";
+            "11 Text Opacity";
 
         static inline const QString SHOW_WEED_CLOCK =
-            "11 Observe Weedclock Time";
+            "12 Observe Weedclock Time";
         static inline const QString WEED_CLOCK_COLOR =
-            "12 Weedtime Color";
+            "13 Weedtime Color";
         static inline const QString WEED_CLOCK_OPACITY =
-            "13 Weedtime Opacity";
+            "14 Weedtime Opacity";
 
         // Volatile.
         static inline const QString CONFIG_MODE = "In Config mode";
@@ -121,6 +123,11 @@ class SettingsHelper {
             { .group = GROUP_CONFIGURABLE, .name = PANEL_OUTLINE_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = TEXT_SIZE,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "42",
+              .rangeMinimum = 10, .rangeMaximum = 80
             },
 
             { .group = GROUP_CONFIGURABLE, .name = TEXT_COLOR,

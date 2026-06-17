@@ -38,6 +38,11 @@ class StickyWindow {
         void draw();
 
         /**
+         * Erase window method.
+         */
+        void eraseWindow();
+
+        /**
          * Overriden hide() method.
          */
         void hide();
@@ -124,11 +129,6 @@ class StickyWindow {
         QPoint mDragResizeButtonOffset { };
 
         int mPreviousDesktop = -1;
-
-        /**
-         * Initialize Transparency & TrueColor 32.
-         */
-        bool initVisualTransparency();
 
         /**
          * This method sets StickyWindows internal x11 window.
@@ -247,7 +247,7 @@ class StickyWindow {
          * Update the Config Dialog if it's active &
          * the UI needs updating.
          */
-        void updateActiveConfigButtonDialog();
+        void updateActiveConfigDialog();
 
         /**
          * Receives an event from Qt ConfigDialog that it has
@@ -275,4 +275,24 @@ class StickyWindow {
          * thru desktop changing "Preferred Desktop" slider value.
          */
         void onPropertyNotify(const XPropertyEvent& event);
+
+        /**
+         * Initialize Transparency & TrueColor 32.
+         */
+        bool initVisualTransparency();
+
+        /**
+         * Update font size on Config settings change.
+         */
+        void updateFontSizeOnChange();
+
+        /**
+         * On scroll up, reload font with new increased size.
+         */
+        void increaseFontSize();
+
+        /**
+         * On scroll down, reload font with new decreased size.
+         */
+        void decreaseFontSize();
 };

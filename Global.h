@@ -63,6 +63,7 @@ typedef chrono::steady_clock Clock;
 #include "AutoHideDelayHints.h"
 #include "DesktopPreferenceHints.h"
 #include "OpacityHints.h"
+#include "FontSizeHints.h"
 
 #include "Button.h"
 

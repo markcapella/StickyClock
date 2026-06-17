@@ -146,8 +146,6 @@ ConfigDialog::loadConfigFormSettings() {
  */
 void
 ConfigDialog::updateControls() {
-    // Update preferred desktop slider, if user changes
-    // maximum desktop value.
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
             i, QFormLayout::LabelRole)->widget();
@@ -155,35 +153,47 @@ ConfigDialog::updateControls() {
             continue;
         }
 
-        // Ignore if wrong key.
+        // Get key.
         const QString THIS_KEY =
             QString("%1 ").arg(i, 2, 10, QChar('0')) +
             LABEL_WIDGET->property("text").toString();
-        if (THIS_KEY != SettingsHelper::PREFERRED_DESKTOP) {
+
+        // Reset Text Size slider if user scrolls controls.
+        if (THIS_KEY == SettingsHelper::TEXT_SIZE) {
+            QSlider* sliderEditWidget = nullptr;
+            sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (sliderEditWidget) {
+                const int VALUE = mSettingsHelper->getIntSetting(
+                    SettingsHelper::TEXT_SIZE);
+                sliderEditWidget->setSliderPosition(VALUE);
+            }
             continue;
         }
 
-        // Ignore if control type mismatch :-/
-        QSlider* sliderEditWidget = nullptr;
-        sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
-            itemAt(i, QFormLayout::FieldRole)->widget());
-        if (!sliderEditWidget) {
+        // Reset desktop preference slider for 2 reasons.
+        if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
+            QSlider* sliderEditWidget = nullptr;
+            sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (sliderEditWidget) {
+                // Update preferred desktop slider range maximum
+                // if OS changes max desktops while dialog open.
+                sliderEditWidget->setMaximum(mXHelper->
+                    getMaximumDesktops() - 1);
+                // Update current desktop slider value if
+                // window dragging changes desktops while dialog open.
+                const bool HAS_DESKTOP_PREFERENCE =
+                    mSettingsHelper->getIntSetting(SettingsHelper::
+                        PREFERRED_DESKTOP) != -1;
+                if (HAS_DESKTOP_PREFERENCE) {
+                    const int VISIBLE_DESKTOP = mXHelper->
+                        getVisibleDesktop();
+                    sliderEditWidget->setSliderPosition(VISIBLE_DESKTOP);
+                }
+            }
             continue;
         }
-
-        sliderEditWidget->setMaximum(
-            mXHelper->getMaximumDesktops() - 1);
-
-        // Reset Preferred desktop slide value. No change
-        // if on all desktops.
-        const bool ON_ALL_DESKTOPS = mSettingsHelper->getIntSetting(
-            SettingsHelper::PREFERRED_DESKTOP) == -1;
-        if (ON_ALL_DESKTOPS) {
-            return;
-        }
-
-        const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
-        sliderEditWidget->setSliderPosition(VISIBLE_DESKTOP);
     }
 }
 
@@ -309,8 +319,23 @@ ConfigDialog::buildConfigForm() {
                 continue;
             }
 
+            if (THIS_KEY == SettingsHelper::TEXT_SIZE) {
+                connect(sliderEditWidget, &QSlider::valueChanged,
+                    sliderEditWidget, [sliderEditWidget] (int value) {
+                    const QString TOOLTIP_TEXT = QString::number(value) +
+                        " pts";
+                    QToolTip::showText(QCursor::pos(), TOOLTIP_TEXT,
+                        sliderEditWidget);
+                });
+                sliderEditWidget->installEventFilter(
+                    new FontSizeHints(sliderEditWidget));
+                continue;
+            }
+
             if (THIS_KEY == SettingsHelper::PANEL_OPACITY ||
-                THIS_KEY == SettingsHelper::TEXT_OPACITY) {
+                THIS_KEY == SettingsHelper::PANEL_OUTLINE_OPACITY ||
+                THIS_KEY == SettingsHelper::TEXT_OPACITY ||
+                THIS_KEY == SettingsHelper::WEED_CLOCK_OPACITY) {
                 connect(sliderEditWidget, &QSlider::valueChanged,
                     sliderEditWidget, [sliderEditWidget] (int value) {
                     const int VALUE_PCT = 100 * value / 255;

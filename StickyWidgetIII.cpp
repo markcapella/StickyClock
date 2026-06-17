@@ -39,6 +39,7 @@ Display* mDisplay = nullptr;
 XHelper* mXHelper = nullptr;
 
 XftFont* mFont = nullptr;
+int mFontSize = -1;
 RecentsHelper* mRecentsHelper = nullptr;
 SettingsHelper* mSettingsHelper = nullptr;
 
@@ -97,10 +98,6 @@ main(int argc, char** argv) {
         return true;
     }
 
-    // Init Fonts.
-    mFont = XftFontOpenName(mDisplay, DefaultScreen(mDisplay),
-        TIME_DISPLAY_FONT);
-
     // Init Recents helper.
     mRecentsHelper = new RecentsHelper();
     if (mRecentsHelper->getAppRecentsName().isEmpty()) {
@@ -112,18 +109,29 @@ main(int argc, char** argv) {
     mSettingsHelper = new SettingsHelper();
     mSettingsHelper->ensureSettingsAreConfigurable();
 
+    // Init Fonts.
+    mFontSize = mSettingsHelper->getIntSetting(
+        SettingsHelper::TEXT_SIZE);
+    const string FONT_SIZE = to_string(mFontSize);
+    const string TIME_DISPLAY_FONT = "Serif-" + FONT_SIZE + ":bold";
+    mFont = XftFontOpenName(mDisplay, DefaultScreen(mDisplay),
+        TIME_DISPLAY_FONT.c_str());
+
+    // Init PinButton images.
     initAppPngImages();
 
+    // Open the window & run.
     StickyWindow* mStickyWindow = new StickyWindow();
     if (mStickyWindow->getX11Window() != None) {
         mStickyWindow->run();
     }
 
+    // Cleanup & done.
     delete mStickyWindow;
     delete mSettingsHelper;
     delete mRecentsHelper;
-
     sanitizeGlobals();
+
     return false;
 }
 

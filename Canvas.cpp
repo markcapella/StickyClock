@@ -84,16 +84,21 @@ Canvas::drawCanvas() {
         TEXT_COLOR.red, TEXT_COLOR.green,
         TEXT_COLOR.blue, TEXT_OPACITY);
 
-    // Get text string & geometry.
-    const QString TEXT = QString::fromStdString(getCurrentTime());
-    const string TEXT_STD_STRING = TEXT.toStdString();
+    // Get text string & fit geometry.
+    QString timeText = QString::fromStdString(getCurrentTime());
+    int textWidth = mXHelper->getStringPixelWidth(timeText);
+    int textHeight = mXHelper->getStringPixelHeight(timeText);
+    if (textWidth >= WIDTH || textHeight >= HEIGHT) {
+        timeText = " ";
+        textWidth = mXHelper->getStringPixelWidth(timeText);
+        textHeight = mXHelper->getStringPixelHeight(timeText);
+    }
+    const string TEXT_STD_STRING = timeText.toStdString();
     const char* TEXT_CHARS = TEXT_STD_STRING.c_str();
 
-    const int TEXT_WIDTH = mXHelper->getStringPixelWidth(TEXT);
-    const int TEXT_HEIGHT = mXHelper->getStringPixelHeight(TEXT);
-
-    const int TEXT_X = X_POS + (WIDTH - TEXT_WIDTH) / 2;
-    const int TEXT_Y = Y_POS + (HEIGHT - TEXT_HEIGHT) / 2 + TEXT_HEIGHT;
+    const int TEXT_X = X_POS + (WIDTH - textWidth) / 2;
+    const int TEXT_Y = Y_POS + (HEIGHT - textHeight) / 2 +
+        textHeight;
 
     // Draw text.
     XftColorAllocValue(mDisplay, mVisual, mColormap,

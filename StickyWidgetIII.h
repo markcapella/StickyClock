@@ -61,10 +61,6 @@ static inline constexpr XRenderColor BLUE_RCOLOR =
 static inline constexpr XRenderColor TURQUOISE_RCOLOR =
     { 0x0000, 0xffff, 0xfaff, 0xffff };
 
-// x11 Fonts.
-static inline constexpr const char*
-    TIME_DISPLAY_FONT = "Serif-42:bold";
-
 // Font colors.
 static inline constexpr XftColor BLACK_FCOLOR = {
     .pixel = 0x0, .color = { .red = 0xff, .green = 0xff,
@@ -86,6 +82,8 @@ extern Display* mDisplay;
 extern XHelper* mXHelper;
 
 extern XftFont* mFont;
+extern int mFontSize;
+
 extern RecentsHelper* mRecentsHelper;
 extern SettingsHelper* mSettingsHelper;
 

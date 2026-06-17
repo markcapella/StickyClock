@@ -96,11 +96,7 @@ StickyWindow::draw() {
         getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
     if (VISIBLE_DESKTOP != -1 && PREFERRED_DESKTOP != -1 &&
         (VISIBLE_DESKTOP != PREFERRED_DESKTOP)) {
-        XRenderFillRectangle(mDisplay, PictOpSrc, renderPic,
-            &TRANSPARENT_RCOLOR, 0, 0, mSettingsHelper->
-            getWindowWidth(), mSettingsHelper->getWindowHeight());
-        XRenderFreePicture(mDisplay, renderPic);
-        XFlush(mDisplay);
+        eraseWindow();
         return;
     }
 
@@ -112,13 +108,30 @@ StickyWindow::draw() {
             getWindowWidth(), mSettingsHelper->getWindowHeight());
     }
 
-    // Draw Widget canvas.
+    // Draw Widget canvas, Control buttons & pin button.
     mCanvas->drawCanvas();
-
-    // Draw Control buttons & pin button.
     drawAllWindowButtons(renderPic);
 
-    // Cleanup.
+    // Cleanup & done.
+    XRenderFreePicture(mDisplay, renderPic);
+    XFlush(mDisplay);
+}
+
+/**
+ * Erase window method.
+ */
+void
+StickyWindow::eraseWindow() {
+    const XRenderPictFormat* RENDER_FORMAT =
+        XRenderFindVisualFormat(mDisplay, mVisualInfoStruct.visual);
+    Picture renderPic = XRenderCreatePicture(mDisplay, mX11Window,
+        RENDER_FORMAT, 0, nullptr);
+
+    XRenderFillRectangle(mDisplay, PictOpSrc, renderPic,
+        &TRANSPARENT_RCOLOR, 0, 0, mSettingsHelper->
+        getWindowWidth(), mSettingsHelper->getWindowHeight());
+
+    // Cleanup & done.
     XRenderFreePicture(mDisplay, renderPic);
     XFlush(mDisplay);
 }
@@ -214,28 +227,6 @@ StickyWindow::rangeCheckPreferredDesktopSetting() {
         mSettingsHelper->setIntSetting(
             SettingsHelper::PREFERRED_DESKTOP, -1);
     }
-}
-
-/**
- * Initialize Transparency & TrueColor 32.
- */
-bool
-StickyWindow::initVisualTransparency() {
-    // Ensure we have a compositor running.
-    if (!mXHelper->isACompositorRunning()) {
-        return false;
-    }
-
-    const int VISUAL_COLOR_DEPTH = 32;
-    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
-        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
-        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
-            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
-                AllocNone);
-        return true;
-    }
-
-    return false;
 }
 
 /**
@@ -737,7 +728,7 @@ StickyWindow::handleX11EventQueue() {
                     if (event.xproperty.atom == XInternAtom(mDisplay,
                         "_NET_NUMBER_OF_DESKTOPS", False)) {
                         rangeCheckPreferredDesktopSetting();
-                        updateActiveConfigButtonDialog();
+                        updateActiveConfigDialog();
                     }
                     break;
                 }
@@ -783,6 +774,20 @@ StickyWindow::handleX11EventQueue() {
                 break;
 
             case ButtonPress:
+                // Raise or lower Font size on controls scroll.
+                if (event.xbutton.button == Button4) {
+                    increaseFontSize();
+                    updateActiveConfigDialog();
+                    draw();
+                    break;
+                }
+                if (event.xbutton.button == Button5) {
+                    decreaseFontSize();
+                    updateActiveConfigDialog();
+                    draw();
+                    break;
+                }
+
                 // Find the cursor down location.
                 if (!XQueryPointer(mDisplay, mX11Window, &mRootWindow,
                     &mClickWindow, &mRootClickPositionX,
@@ -822,6 +827,12 @@ StickyWindow::handleX11EventQueue() {
                 break;
 
             case ButtonRelease:
+                // Ignore controls scroll on ButtonRelease.
+                if (event.xbutton.button == Button4 ||
+                    event.xbutton.button == Button5) {
+                    break;
+                }
+
                 // Release the cursor on exit.
                 XUngrabPointer(mDisplay, CurrentTime);
 
@@ -859,7 +870,7 @@ StickyWindow::handleX11EventQueue() {
  * the UI needs updating.
  */
 void
-StickyWindow::updateActiveConfigButtonDialog() {
+StickyWindow::updateActiveConfigDialog() {
     lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
     const int BUTTONS_COUNT = mButtons.size();
@@ -880,6 +891,7 @@ StickyWindow::receiveConfigDialogUpdatedEvent() {
     setControlButtonsVisibility();
     setWindowStickPosition();
     rangeCheckPreferredDesktopSetting();
+    updateFontSizeOnChange();
 }
 
 /**
@@ -932,55 +944,64 @@ void
 StickyWindow::dragWindowToPoint(const QPoint position) {
     QPoint dragPosition = position;
 
-    const bool ON_ALL_DESKTOPS = mSettingsHelper->getIntSetting(
-        SettingsHelper::PREFERRED_DESKTOP) == -1;
     const bool ALLOW_DRAG_THRU_DESKTOPS = mSettingsHelper->
         getBoolSetting(SettingsHelper::ALLOW_DESKTOP_DRAG);
 
     const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
+
+    const bool HAS_DESKTOP_PREFERENCE = mSettingsHelper->
+        getIntSetting(SettingsHelper::PREFERRED_DESKTOP) != -1;
+
     const int SCREEN_WIDTH = WidthOfScreen(
         DefaultScreenOfDisplay(mDisplay));
 
-    if ((dragPosition.x() <= 0) &&
-        ALLOW_DRAG_THRU_DESKTOPS) {
+    const int KICK_DISTANCE = 2;
+
+    // Check for drag left thru desktops.
+    if ((dragPosition.x() <= 0) && ALLOW_DRAG_THRU_DESKTOPS) {
         int desktop = VISIBLE_DESKTOP - 1;
         if (desktop < 0) {
             desktop = mXHelper->getMaximumDesktops() - 1;
         }
 
-        mSettingsHelper->setIntSetting(
-            SettingsHelper::PREFERRED_DESKTOP, desktop);
-        mXHelper->setVisibleDesktop(desktop);
+        // Drag from preferred desktop changes preferred desktop.
+        if (HAS_DESKTOP_PREFERENCE) {
+            mSettingsHelper->setIntSetting(SettingsHelper::
+                PREFERRED_DESKTOP, desktop);
+        }
 
-        const int KICK_DISTANCE = 2;
         dragPosition.setX(SCREEN_WIDTH - KICK_DISTANCE);
+        mXHelper->setVisibleDesktop(desktop);
         XWarpPointer(mDisplay, None, DefaultRootWindow(mDisplay),
             0, 0, 0, 0, dragPosition.x(), dragPosition.y());
 
-    } else {
-       if ((dragPosition.x() >= SCREEN_WIDTH - 1) &&
-           ALLOW_DRAG_THRU_DESKTOPS) {
-            int desktop = VISIBLE_DESKTOP + 1;
-            if (desktop >= mXHelper->getMaximumDesktops()) {
-                desktop = 0;
-            }
-
-            mSettingsHelper->setIntSetting(
-                SettingsHelper::PREFERRED_DESKTOP, desktop);
-            mXHelper->setVisibleDesktop(desktop);
-
-            const int KICK_DISTANCE = 2;
-            dragPosition.setX(KICK_DISTANCE);
-            XWarpPointer(mDisplay, None, DefaultRootWindow(mDisplay),
-                0, 0, 0, 0, dragPosition.x(), dragPosition.y());
-        }
     }
 
+    // Check for drag right thru desktops.
+    if ((dragPosition.x() >= SCREEN_WIDTH - 1) &&
+        ALLOW_DRAG_THRU_DESKTOPS) {
+        int desktop = VISIBLE_DESKTOP + 1;
+        if (desktop >= mXHelper->getMaximumDesktops()) {
+            desktop = 0;
+        }
+
+        // Drag from preferred desktop changes preferred desktop.
+        if (HAS_DESKTOP_PREFERENCE) {
+            mSettingsHelper->setIntSetting(
+                SettingsHelper::PREFERRED_DESKTOP, desktop);
+        }
+
+        dragPosition.setX(KICK_DISTANCE);
+        mXHelper->setVisibleDesktop(desktop);
+        XWarpPointer(mDisplay, None, DefaultRootWindow(mDisplay),
+            0, 0, 0, 0, dragPosition.x(), dragPosition.y());
+    }
+
+    // Set final position & move there.
     mSettingsHelper->setWindowXPos(dragPosition.x() -
         mDragMoveButtonOffset.x());
     mSettingsHelper->setWindowYPos(dragPosition.y() -
         mDragMoveButtonOffset.y());
-
     XMoveWindow(mDisplay, mX11Window, mSettingsHelper->
         getWindowXPos(), mSettingsHelper->getWindowYPos());
 }
@@ -1082,5 +1103,107 @@ StickyWindow::onPropertyNotify(const XPropertyEvent& event) {
     mPreviousDesktop = VISIBLE_DESKTOP;
 
     // Payload.
-    updateActiveConfigButtonDialog();
+    updateActiveConfigDialog();
+}
+
+/**
+ * Initialize Transparency & TrueColor 32.
+ */
+bool
+StickyWindow::initVisualTransparency() {
+    // Ensure we have a compositor running.
+    if (!mXHelper->isACompositorRunning()) {
+        return false;
+    }
+
+    const int VISUAL_COLOR_DEPTH = 32;
+    if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
+        VISUAL_COLOR_DEPTH, TrueColor, &mVisualInfoStruct)) {
+        mColorMap = XCreateColormap(mDisplay, RootWindow(mDisplay,
+            DefaultScreen(mDisplay)), mVisualInfoStruct.visual,
+                AllocNone);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * On scroll up, reload font with new increased size.
+ */
+void
+StickyWindow::increaseFontSize() {
+    const int INCREASED_FONT_SIZE = mSettingsHelper->
+        getIntSetting(SettingsHelper::TEXT_SIZE) + 1;
+    const int MAX_FONT_SIZE = mSettingsHelper->
+        getSettingsIntRangeMaximum(SettingsHelper::TEXT_SIZE);
+    if (INCREASED_FONT_SIZE > MAX_FONT_SIZE) {
+        return;
+    }
+
+    mSettingsHelper->setIntSetting(SettingsHelper::TEXT_SIZE,
+        INCREASED_FONT_SIZE);
+    updateFontSizeOnChange();
+}
+
+/**
+ * On scroll down, reload font with new decreased size.
+ */
+void
+StickyWindow::decreaseFontSize() {
+    const int DECREASED_FONT_SIZE = mSettingsHelper->
+        getIntSetting(SettingsHelper::TEXT_SIZE) - 1;
+    const int MIN_FONT_SIZE = mSettingsHelper->
+        getSettingsIntRangeMinimum(SettingsHelper::TEXT_SIZE);
+    if (DECREASED_FONT_SIZE < MIN_FONT_SIZE) {
+        return;
+    }
+
+    mSettingsHelper->setIntSetting(SettingsHelper::TEXT_SIZE,
+        DECREASED_FONT_SIZE);
+    updateFontSizeOnChange();
+}
+
+/**
+ * Update font size on Config settings change.
+ */
+void
+StickyWindow::updateFontSizeOnChange() {
+    const int THIS_FONT_SIZE = mSettingsHelper->
+        getIntSetting(SettingsHelper::TEXT_SIZE);
+    if (mFontSize == THIS_FONT_SIZE) {
+        return;
+    }
+    XftPattern* thisPattern = XftPatternDuplicate(mFont->pattern);
+    if (!thisPattern) {
+        return;
+    }
+
+    // Delete current size from pattern, add desired size.
+    XftPatternDel(thisPattern, XFT_SIZE);
+    XftPatternDel(thisPattern, XFT_PIXEL_SIZE);
+    XftPatternAddDouble(thisPattern, XFT_SIZE, THIS_FONT_SIZE);
+
+    // Get a new macthing font from pattern, destroy pattern.
+    XftResult result;
+    XftPattern* match;
+    match = XftFontMatch(mDisplay, mVisualInfoStruct.screen,
+        thisPattern, &result);
+    XftFont* newFont = XftFontOpenPattern(mDisplay, match);
+    XftPatternDestroy(thisPattern);
+
+    // If found font, close old one, switch to new one, done.
+    if (newFont) {
+        //eraseWindow();
+        XftFontClose(mDisplay, mFont);
+        mFont = newFont;
+        return;
+    }
+
+    // XftPatternDestroy the match if newFont fails. You don't
+    // destroy the match if XftFontOpenPattern succeeds, as it
+    // grabs a pointer for itself & destroys it later.
+    if (match) {
+        XftPatternDestroy(match);
+    }
 }
