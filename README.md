@@ -29,7 +29,9 @@
     
     
 ## Installation.
-    You'll need an X11 based DisplayManager & a TrueColor32 capable
+    KDE, Ubuntu/Gnome, or OpenBox-like Window Managers are supported.
+    
+    Basically, an X11 based DisplayManager, with TrueColor32 capable
     Window Manager (Kwin, Openbox, Fluxbox, Xfwm4, Mutter/Gnome).
     
     Tiling managers such as Awesome may run but without pointer event
