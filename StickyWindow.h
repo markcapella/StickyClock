@@ -124,6 +124,7 @@ class StickyWindow {
 
         bool mIsMouseClicked = false;
         bool mIsSizingWindow = false;
+        bool mIsMovingWindow = false;
 
         QPoint mDragMoveButtonOffset { };
         QPoint mDragResizeButtonOffset { };
@@ -274,7 +275,7 @@ class StickyWindow {
          * This method updates any visible ConfigDialog on drag
          * thru desktop changing "Preferred Desktop" slider value.
          */
-        void onPropertyNotify(const XPropertyEvent& event);
+        void onWindowDesktopChange();
 
         /**
          * Initialize Transparency & TrueColor 32.
@@ -295,4 +296,9 @@ class StickyWindow {
          * On scroll down, reload font with new decreased size.
          */
         void decreaseFontSize();
+
+        /**
+         * This method forces a draw on visible desktop changes.
+         */
+        void onVisibleDesktopChange();
 };

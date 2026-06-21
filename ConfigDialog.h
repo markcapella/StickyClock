@@ -28,7 +28,7 @@ class ConfigDialog : public QDialog {
         /**
          * Load UI form with values from .Ini.
          */
-        void loadConfigFormSettings();
+        void loadConfigDialogControls();
 
         /**
          * Gettters / Setters for StickyWindow.
@@ -43,7 +43,7 @@ class ConfigDialog : public QDialog {
         /**
          * Update any runtime dialog controls, range settings, etc.
          */
-        void updateControls();
+        void updateConfigDialogControls();
 
     /**
      * Override eventFilter for QSlider hover action.
@@ -65,12 +65,12 @@ class ConfigDialog : public QDialog {
         /**
          * Build the UI form layout.
          */
-        void buildConfigForm();
+        void createConfigDialogControls();
 
         /**
          * Callback to Save UI form values to .Ini.
          */
-        void saveConfigFormSettings();
+        void acceptConfigDialogControls();
 
         /**
          * Send an event to the X11 thread telling it to update

@@ -24,11 +24,11 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
     setMinimumWidth(CONFIG_DIALOG_WIDTH);
     setMaximumHeight(CONFIG_DIALOG_HEIGHT);
 
-    buildConfigForm();
+    createConfigDialogControls();
 
     // Callbacks.
     connect(mConfigButtonBox, &QDialogButtonBox::accepted, this,
-        &ConfigDialog::saveConfigFormSettings);
+        &ConfigDialog::acceptConfigDialogControls);
     connect(mConfigButtonBox, &QDialogButtonBox::rejected, this,
         &ConfigDialog::reject);
     connect(mAboutButton, &QPushButton::clicked, this,
@@ -43,7 +43,7 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
  * Load UI form with values from .Ini.
  */
 void
-ConfigDialog::loadConfigFormSettings() {
+ConfigDialog::loadConfigDialogControls() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
             i, QFormLayout::LabelRole)->widget();
@@ -145,7 +145,7 @@ ConfigDialog::loadConfigFormSettings() {
  * Update any runtime dialog controls, range settings, etc.
  */
 void
-ConfigDialog::updateControls() {
+ConfigDialog::updateConfigDialogControls() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
             i, QFormLayout::LabelRole)->widget();
@@ -158,7 +158,27 @@ ConfigDialog::updateControls() {
             QString("%1 ").arg(i, 2, 10, QChar('0')) +
             LABEL_WIDGET->property("text").toString();
 
-        // Reset Text Size slider if user scrolls controls.
+        // Reset desktop preference slider for 2 reasons.
+        if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
+            QSlider* sliderEditWidget = nullptr;
+            sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
+                itemAt(i, QFormLayout::FieldRole)->widget());
+            if (sliderEditWidget) {
+                // Reset preferred desktop slider range maximum
+                // as OS can change max desktops while dialog open.
+                const int VALUE_MAX = mXHelper->getMaximumDesktops() - 1;
+                sliderEditWidget->setMaximum(VALUE_MAX);
+
+                // Reset current desktop slider value as window drag
+                // can change preferred desktop while dialog open.
+                const int VALUE_CURRENT = mSettingsHelper->getIntSetting(
+                    mSettingsHelper->SettingsHelper::PREFERRED_DESKTOP);
+                sliderEditWidget->setSliderPosition(VALUE_CURRENT);
+            }
+            continue;
+        }
+
+        // Reset Text Size slider if user scrolls control buttons.
         if (THIS_KEY == SettingsHelper::TEXT_SIZE) {
             QSlider* sliderEditWidget = nullptr;
             sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
@@ -167,30 +187,6 @@ ConfigDialog::updateControls() {
                 const int VALUE = mSettingsHelper->getIntSetting(
                     SettingsHelper::TEXT_SIZE);
                 sliderEditWidget->setSliderPosition(VALUE);
-            }
-            continue;
-        }
-
-        // Reset desktop preference slider for 2 reasons.
-        if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
-            QSlider* sliderEditWidget = nullptr;
-            sliderEditWidget = qobject_cast<QSlider*>(mFormLayout->
-                itemAt(i, QFormLayout::FieldRole)->widget());
-            if (sliderEditWidget) {
-                // Update preferred desktop slider range maximum
-                // if OS changes max desktops while dialog open.
-                sliderEditWidget->setMaximum(mXHelper->
-                    getMaximumDesktops() - 1);
-                // Update current desktop slider value if
-                // window dragging changes desktops while dialog open.
-                const bool HAS_DESKTOP_PREFERENCE =
-                    mSettingsHelper->getIntSetting(SettingsHelper::
-                        PREFERRED_DESKTOP) != -1;
-                if (HAS_DESKTOP_PREFERENCE) {
-                    const int VISIBLE_DESKTOP = mXHelper->
-                        getVisibleDesktop();
-                    sliderEditWidget->setSliderPosition(VISIBLE_DESKTOP);
-                }
             }
             continue;
         }
@@ -223,7 +219,7 @@ ConfigDialog::eventFilter(QObject* obj, QEvent* event) {
  * Build the UI form layout.
  */
 void
-ConfigDialog::buildConfigForm() {
+ConfigDialog::createConfigDialogControls() {
     // Build form.
     mFormLayout = new QFormLayout();
     const int FORM_TOP_BOTTOM_SPACING = 30;
@@ -384,7 +380,7 @@ ConfigDialog::buildConfigForm() {
  * Callback to Save UI form values to .Ini.
  */
 void
-ConfigDialog::saveConfigFormSettings() {
+ConfigDialog::acceptConfigDialogControls() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const QWidget* LABEL_WIDGET = mFormLayout->itemAt(i,
             QFormLayout::LabelRole)->widget();
