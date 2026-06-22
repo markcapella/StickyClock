@@ -278,6 +278,11 @@ class StickyWindow {
         void onWindowDesktopChange();
 
         /**
+         * This method forces a draw on visible desktop changes.
+         */
+        void onVisibleDesktopChange();
+
+        /**
          * Initialize Transparency & TrueColor 32.
          */
         bool initVisualTransparency();
@@ -296,9 +301,4 @@ class StickyWindow {
          * On scroll down, reload font with new decreased size.
          */
         void decreaseFontSize();
-
-        /**
-         * This method forces a draw on visible desktop changes.
-         */
-        void onVisibleDesktopChange();
 };

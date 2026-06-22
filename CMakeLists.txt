@@ -14,7 +14,7 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.06.21")
+set(APP_VERSION "26.06.22")
 set(APP_VERSION_MINOR "00")
 
 set(APP_AUTHOR "Mark James Capella")

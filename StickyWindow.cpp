@@ -738,13 +738,13 @@ StickyWindow::handleX11EventQueue() {
                         onVisibleDesktopChange();
                         break;
                     }
+                    break;
                 }
-                break;
-
                 // Our window Desktop property changes.
                 if (event.xproperty.atom == XInternAtom(mDisplay,
                     "_NET_WM_DESKTOP", False)) {
                     onWindowDesktopChange();
+                    break;
                 }
                 break;
 
@@ -1108,6 +1108,15 @@ StickyWindow::onWindowDesktopChange() {
 }
 
 /**
+ * This method forces a draw on visible desktop changes.
+ */
+void
+StickyWindow::onVisibleDesktopChange() {
+
+    draw();
+}
+
+/**
  * Initialize Transparency & TrueColor 32.
  */
 bool
@@ -1207,13 +1216,4 @@ StickyWindow::updateFontSizeOnChange() {
     if (match) {
         XftPatternDestroy(match);
     }
-}
-
-/**
- * This method forces a draw on visible desktop changes.
- */
-void
-StickyWindow::onVisibleDesktopChange() {
-
-    draw();
 }
