@@ -1,6 +1,8 @@
 
 #include "Global.h"
 
+#include <QStyleFactory>
+
 /**
  * Simple class to represent a ConfigDialog.
  */
@@ -166,14 +168,21 @@ ConfigDialog::updateConfigDialogControls() {
             if (sliderEditWidget) {
                 // Reset preferred desktop slider range maximum
                 // as OS can change max desktops while dialog open.
-                const int VALUE_MAX = mXHelper->getMaximumDesktops() - 1;
-                sliderEditWidget->setMaximum(VALUE_MAX);
+                const int CURRENT_MAX = sliderEditWidget->maximum();
+                const int ACTUAL_MAX = mXHelper->getMaximumDesktops() - 1;
+                if (CURRENT_MAX != ACTUAL_MAX) {
+                    sliderEditWidget->setMaximum(ACTUAL_MAX);
+                }
 
                 // Reset current desktop slider value as window drag
                 // can change preferred desktop while dialog open.
+                const int SLIDER_CURRENT = sliderEditWidget->
+                    sliderPosition();
                 const int VALUE_CURRENT = mSettingsHelper->getIntSetting(
                     mSettingsHelper->SettingsHelper::PREFERRED_DESKTOP);
-                sliderEditWidget->setSliderPosition(VALUE_CURRENT);
+                if (SLIDER_CURRENT != VALUE_CURRENT) {
+                    sliderEditWidget->setSliderPosition(VALUE_CURRENT);
+                }
             }
             continue;
         }
@@ -188,7 +197,6 @@ ConfigDialog::updateConfigDialogControls() {
                     SettingsHelper::TEXT_SIZE);
                 sliderEditWidget->setSliderPosition(VALUE);
             }
-            continue;
         }
     }
 }
@@ -204,7 +212,7 @@ ConfigDialog::eventFilter(QObject* obj, QEvent* event) {
     if (slider) {
         if (event->type() == QEvent::ToolTip ||
             event->type() == QEvent::MouseMove) {
-            if (!slider->isSliderDown()) { 
+            if (!slider->isSliderDown()) {
                 QToolTip::showText(QCursor::pos(),
                     QString::number(slider->value()), slider);
             }
@@ -222,9 +230,6 @@ void
 ConfigDialog::createConfigDialogControls() {
     // Build form.
     mFormLayout = new QFormLayout();
-    const int FORM_TOP_BOTTOM_SPACING = 30;
-    const int FORM_LAYOUT_ROW_SPACING = 10;
-
     mFormLayout->setContentsMargins(0, FORM_TOP_BOTTOM_SPACING,
         0, FORM_TOP_BOTTOM_SPACING);
     mFormLayout->setVerticalSpacing(FORM_LAYOUT_ROW_SPACING);
@@ -244,8 +249,7 @@ ConfigDialog::createConfigDialogControls() {
 
         // Get QLineEdit for Strings.
         if (THIS_VALUETYPE == STRING_VALUETYPE) {
-            QLineEdit* stringEditWidget = nullptr;
-            stringEditWidget = new QLineEdit(this);
+            QLineEdit* stringEditWidget = new QLineEdit(this);
             stringEditWidget->setObjectName(THIS_DISPLAY_KEY);
             stringEditWidget->setFixedWidth(360);
             mFormLayout->addRow(THIS_DISPLAY_KEY, stringEditWidget);
@@ -254,8 +258,7 @@ ConfigDialog::createConfigDialogControls() {
 
         // Get QlineEdit for Ints.
         if (THIS_VALUETYPE == INT_VALUETYPE) {
-            QLineEdit* lineEditWidget = nullptr;
-            lineEditWidget = new QLineEdit(this);
+            QLineEdit* lineEditWidget = new QLineEdit(this);
             lineEditWidget->setObjectName(THIS_DISPLAY_KEY);
             lineEditWidget->setFixedWidth(120);
             mFormLayout->addRow(THIS_DISPLAY_KEY, lineEditWidget);
@@ -264,8 +267,7 @@ ConfigDialog::createConfigDialogControls() {
 
         // Get QCheckBox for Booleans.
         if (THIS_VALUETYPE == BOOL_VALUETYPE) {
-            QCheckBox* checkboxWidget = nullptr;
-            checkboxWidget = new QCheckBox(this);
+            QCheckBox* checkboxWidget = new QCheckBox(this);
             checkboxWidget->setObjectName(THIS_DISPLAY_KEY);
             mFormLayout->addRow(THIS_DISPLAY_KEY, checkboxWidget);
             continue;
@@ -273,8 +275,8 @@ ConfigDialog::createConfigDialogControls() {
 
         // Get QColorButton for Colors.
         if (THIS_VALUETYPE == COLOR_VALUETYPE) {
-            ColorButton* colorButtonWidget = nullptr;
-            colorButtonWidget = new ColorButton(THIS_DISPLAY_KEY, this);
+            ColorButton* colorButtonWidget = new ColorButton(
+                THIS_DISPLAY_KEY, this);
             colorButtonWidget->setObjectName(THIS_DISPLAY_KEY);
             mFormLayout->addRow(THIS_DISPLAY_KEY, colorButtonWidget);
             continue;
@@ -282,8 +284,7 @@ ConfigDialog::createConfigDialogControls() {
 
         // Get QSlider for preferredDesktop.
         if (THIS_VALUETYPE == SLIDER_VALUETYPE) {
-            QSlider* sliderEditWidget = nullptr;
-            sliderEditWidget = new QSlider(Qt::Horizontal, this);
+            QSlider* sliderEditWidget = new QSlider(Qt::Horizontal, this);
             sliderEditWidget->setObjectName(THIS_DISPLAY_KEY);
             sliderEditWidget->setFixedWidth(120);
             mFormLayout->addRow(THIS_DISPLAY_KEY, sliderEditWidget);
@@ -303,11 +304,22 @@ ConfigDialog::createConfigDialogControls() {
             }
 
             if (THIS_KEY == SettingsHelper::PREFERRED_DESKTOP) {
+                // Sliders with tick marks get Fusion stlye.
+                sliderEditWidget->setTickInterval(1);
+                sliderEditWidget->setTickPosition(QSlider::TicksBelow);
+                sliderEditWidget->setStyle(QStyleFactory::create("Fusion"));
                 connect(sliderEditWidget, &QSlider::valueChanged,
                     sliderEditWidget, [sliderEditWidget] (int value) {
+                    // Use the calculated center of the slider for
+                    // ToolTip, as updates happen during window drag and
+                    // pointer is nowhere near the slider at that point.
+                    const QPoint LOCAL_POSITION = sliderEditWidget->
+                        rect().center(); 
+                    const QPoint GLOBAL_POSITION = sliderEditWidget->
+                        mapToGlobal(LOCAL_POSITION);
                     const QString TOOLTIP_TEXT = (value == -1) ?
                         "All" : "Desktop " + QString::number(value + 1);
-                    QToolTip::showText(QCursor::pos(), TOOLTIP_TEXT,
+                    QToolTip::showText(GLOBAL_POSITION, TOOLTIP_TEXT,
                         sliderEditWidget);
                 });
                 sliderEditWidget->installEventFilter(

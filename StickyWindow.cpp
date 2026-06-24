@@ -5,8 +5,7 @@
  * StickyWindow class wraps an x11 Window object.
  */
 StickyWindow::StickyWindow() {
-    // Init visual transparency & TrueColor 32. Also,
-    // Sets mVisualInfoStruct & mColorMap.
+    // Init visual transparency & TrueColor 32.
     mIsVisuallyTransparent = initVisualTransparency();
     if (!mIsVisuallyTransparent) {
         QMessageBox::information(NULL, APP_NAME, "Visual transparency "
@@ -25,19 +24,18 @@ StickyWindow::StickyWindow() {
 
     // Create control buttons.
     createAllWindowButtons();
+    setControlButtonsVisibility();
 
     // Create autohide timer for control buttons,
     // then set control buttons visibility.
-    mControlsTimer = make_unique<QTimer>();
-    mControlsTimer->setSingleShot(true);
-    QObject::connect(mControlsTimer.get(), &QTimer::timeout,
+    mAutoHideControlsTimer = make_unique<QTimer>();
+    mAutoHideControlsTimer->setSingleShot(true);
+    QObject::connect(mAutoHideControlsTimer.get(), &QTimer::timeout,
         [this] () {
         setConfigModeOff();
     });
 
-    setControlButtonsVisibility();
-
-    // X11 message Atoms.
+    // Define any X11 message Atoms.
     mDeleteMessage = XInternAtom(mDisplay,
         "WM_DELETE_WINDOW", False);
     mConfigDialogUpdated = XInternAtom(mDisplay,
@@ -141,15 +139,6 @@ StickyWindow::eraseWindow() {
  */
 void
 StickyWindow::hide() {
-    // If hiding on wrong desktop, don't.
-    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
-    const int PREFERRED_DESKTOP = mSettingsHelper->
-        getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
-
-    if (VISIBLE_DESKTOP == -1 || PREFERRED_DESKTOP == -1 ||
-        (VISIBLE_DESKTOP == PREFERRED_DESKTOP)) {
-        return;
-    }
 }
 
 /**
@@ -210,27 +199,6 @@ StickyWindow::run() {
 }
 
 /**
- * Ensure window opens on valid remembered desktop.
- */
-void
-StickyWindow::rangeCheckPreferredDesktopSetting() {
-    // If we have no preferred desktop, no changes.
-    const int PREFERRED_DESKTOP = mSettingsHelper->
-        getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
-    if (PREFERRED_DESKTOP == -1) {
-        return;
-    }
-
-    // If preferred desktop no longer exists, set preferred to all.
-    const int BOUNDED_PREFERRED_DESKTOP = PREFERRED_DESKTOP + 1;
-    const int MAX_OS_DESKTOPS = mXHelper->getMaximumDesktops();
-    if (BOUNDED_PREFERRED_DESKTOP > MAX_OS_DESKTOPS) {
-        mSettingsHelper->setIntSetting(
-            SettingsHelper::PREFERRED_DESKTOP, -1);
-    }
-}
-
-/**
  * Private method sets StickyWindows internal x11 window.
  */
 void 
@@ -267,9 +235,8 @@ StickyWindow::createX11Window() {
         CWColormap | CWEventMask | CWBorderPixel, &wAttrs);
 
     if (mX11Window == None) {
-        cout << endl << XCOLOR_RED << "StickyWindow: X11 failed "
-            "to create a StickyClock window - Fatal." <<
-            XCOLOR_NORMAL << endl << endl;
+        cout << endl << XCOLOR_RED << "X11 failed to create a window - "
+            "Fatal." << XCOLOR_NORMAL << endl << endl;
         return mX11Window;
     }
 
@@ -311,7 +278,8 @@ StickyWindow::createX11Window() {
         mWindowTitle, None, nullptr, 0, nullptr);
     free(mWindowTitle);
 
-    // Ensure we're placed on all desktops.
+    // Ensure we're placed on all desktops. We appear to be
+    // "on" or "off" a desktop through logical show/hides.
     mXHelper->setWindowDesktop(mX11Window, -1);
 
     // Ensure window opens on valid remembered desktop.
@@ -526,8 +494,8 @@ StickyWindow::setControlButtonsVisibility() {
 
     // If not Config mode, stop autohide timer & done.
     if (!CONFIG_MODE) {
-        if (mControlsTimer) {
-            mControlsTimer->stop();
+        if (mAutoHideControlsTimer) {
+            mAutoHideControlsTimer->stop();
         }
         return;
     }
@@ -535,7 +503,7 @@ StickyWindow::setControlButtonsVisibility() {
     // If using autohide Config buttons, start timer.
     if (mSettingsHelper->getBoolSetting(SettingsHelper::
         AUTOHIDE_CONTROLS)) {
-        mControlsTimer->start(mSettingsHelper->getIntSetting(
+        mAutoHideControlsTimer->start(mSettingsHelper->getIntSetting(
             SettingsHelper::AUTOHIDE_DELAY) * 1000);
     }
 }
@@ -735,15 +703,9 @@ StickyWindow::handleX11EventQueue() {
                     // VISIBLE DESKTOP change.
                     if (event.xproperty.atom == XInternAtom(mDisplay,
                         "_NET_CURRENT_DESKTOP", False)) {
-                        onVisibleDesktopChange();
+                        draw();
                         break;
                     }
-                    break;
-                }
-                // Our window Desktop property changes.
-                if (event.xproperty.atom == XInternAtom(mDisplay,
-                    "_NET_WM_DESKTOP", False)) {
-                    onWindowDesktopChange();
                     break;
                 }
                 break;
@@ -866,8 +828,8 @@ StickyWindow::handleX11EventQueue() {
                     defineWindowCanvasSize();
                     updateAllWindowButtons();
                     setHoveredPinButtonVisibility(true);
-                    draw();
                     mIsSizingWindow = false;
+                    draw();
                 }
 
                 unPressAllWindowButtons();
@@ -877,6 +839,27 @@ StickyWindow::handleX11EventQueue() {
         }
     }
     return false;
+}
+
+/**
+ * Ensure window opens on valid remembered desktop.
+ */
+void
+StickyWindow::rangeCheckPreferredDesktopSetting() {
+    // If we have no preferred desktop, no changes.
+    const int PREFERRED_DESKTOP = mSettingsHelper->
+        getIntSetting(SettingsHelper::PREFERRED_DESKTOP);
+    if (PREFERRED_DESKTOP == -1) {
+        return;
+    }
+
+    // If preferred desktop no longer exists, set preferred to all.
+    const int BOUNDED_PREFERRED_DESKTOP = PREFERRED_DESKTOP + 1;
+    const int MAX_OS_DESKTOPS = mXHelper->getMaximumDesktops();
+    if (BOUNDED_PREFERRED_DESKTOP > MAX_OS_DESKTOPS) {
+        mSettingsHelper->setIntSetting(
+            SettingsHelper::PREFERRED_DESKTOP, -1);
+    }
 }
 
 /**
@@ -983,8 +966,10 @@ StickyWindow::dragWindowToPoint(const QPoint position) {
                 PREFERRED_DESKTOP, desktop);
         }
 
-        dragPosition.setX(SCREEN_WIDTH - KICK_DISTANCE);
         mXHelper->setVisibleDesktop(desktop);
+        updateActiveConfigDialog();
+
+        dragPosition.setX(SCREEN_WIDTH - KICK_DISTANCE);
         XWarpPointer(mDisplay, None, DefaultRootWindow(mDisplay),
             0, 0, 0, 0, dragPosition.x(), dragPosition.y());
 
@@ -1004,8 +989,10 @@ StickyWindow::dragWindowToPoint(const QPoint position) {
                 SettingsHelper::PREFERRED_DESKTOP, desktop);
         }
 
-        dragPosition.setX(KICK_DISTANCE);
         mXHelper->setVisibleDesktop(desktop);
+        updateActiveConfigDialog();
+
+        dragPosition.setX(KICK_DISTANCE);
         XWarpPointer(mDisplay, None, DefaultRootWindow(mDisplay),
             0, 0, 0, 0, dragPosition.x(), dragPosition.y());
     }
@@ -1084,35 +1071,6 @@ StickyWindow::resizeWindowToPoint(const QPoint position) {
     updateAllWindowButtons();
 
     // Re-draw all & done.
-    draw();
-}
-
-/**
- * This method updates any visible ConfigDialog on drag
- * thru desktop changing "Preferred Desktop" slider value.
- */
-void
-StickyWindow::onWindowDesktopChange() {
-    // Respond to ConfigDialog control updates required when
-    // preferred desktop changes as user drags across desktops.
-    if (!mIsMovingWindow) {
-        return;
-    }
-
-    // Ignore if moved to this desktop just previously.
-    const int VISIBLE_DESKTOP = mXHelper->getVisibleDesktop();
-    if (mPreviousDesktop != VISIBLE_DESKTOP) {
-        mPreviousDesktop = VISIBLE_DESKTOP;
-        updateActiveConfigDialog();
-    }
-}
-
-/**
- * This method forces a draw on visible desktop changes.
- */
-void
-StickyWindow::onVisibleDesktopChange() {
-
     draw();
 }
 

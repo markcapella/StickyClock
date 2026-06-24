@@ -17,8 +17,11 @@ class ConfigDialog : public QDialog {
     Q_OBJECT
 
     public:
-        static inline const long CONFIG_DIALOG_WIDTH = 450;
-        static inline const long CONFIG_DIALOG_HEIGHT = 600;
+        static inline const int CONFIG_DIALOG_WIDTH = 450;
+        static inline const int CONFIG_DIALOG_HEIGHT = 600;
+
+        static inline const int FORM_TOP_BOTTOM_SPACING = 30;
+        static inline const int FORM_LAYOUT_ROW_SPACING = 10;
 
         static inline const QString ABOUT_STRING = "About";
 
@@ -31,7 +34,7 @@ class ConfigDialog : public QDialog {
         void loadConfigDialogControls();
 
         /**
-         * Gettters / Setters for StickyWindow.
+         * Gettters / Setters for window.
          */
         Window getWindow() const {
             return mWindow;
@@ -53,7 +56,7 @@ class ConfigDialog : public QDialog {
 
     private:
         Window mWindow = None;
-        Atom mConfigDialogUpdated { };
+        Atom mConfigDialogUpdated{};
 
         QFormLayout* mFormLayout = nullptr;
         QVBoxLayout* mMainLayout = nullptr;

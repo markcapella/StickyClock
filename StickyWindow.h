@@ -70,11 +70,6 @@ class StickyWindow {
         }
 
         /**
-         * Ensure window opens on valid remembered desktop.
-         */
-        void rangeCheckPreferredDesktopSetting();
-
-        /**
          * Set visibility state of the four corner control buttons.
          */
         void setControlButtonsVisibility();
@@ -93,7 +88,7 @@ class StickyWindow {
 
         vector<Button*> mButtons;
         mutable recursive_mutex mButtonsMutLock;
-        unique_ptr<QTimer> mControlsTimer{nullptr};
+        unique_ptr<QTimer> mAutoHideControlsTimer{nullptr};
 
         PinButton* mPinButton = nullptr;
         QuitButton* mQuitButton = nullptr;
@@ -126,8 +121,8 @@ class StickyWindow {
         bool mIsSizingWindow = false;
         bool mIsMovingWindow = false;
 
-        QPoint mDragMoveButtonOffset { };
-        QPoint mDragResizeButtonOffset { };
+        QPoint mDragMoveButtonOffset{};
+        QPoint mDragResizeButtonOffset{};
 
         int mPreviousDesktop = -1;
 
@@ -245,6 +240,11 @@ class StickyWindow {
         bool handleX11EventQueue();
 
         /**
+         * Ensure window opens on valid remembered desktop.
+         */
+        void rangeCheckPreferredDesktopSetting();
+
+        /**
          * Update the Config Dialog if it's active &
          * the UI needs updating.
          */
@@ -270,17 +270,6 @@ class StickyWindow {
          * Perform window resizing.
          */
         void resizeWindowToPoint(const QPoint position);
-
-        /**
-         * This method updates any visible ConfigDialog on drag
-         * thru desktop changing "Preferred Desktop" slider value.
-         */
-        void onWindowDesktopChange();
-
-        /**
-         * This method forces a draw on visible desktop changes.
-         */
-        void onVisibleDesktopChange();
 
         /**
          * Initialize Transparency & TrueColor 32.

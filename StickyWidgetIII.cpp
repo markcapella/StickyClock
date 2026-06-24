@@ -49,8 +49,8 @@ XImage* mPinInXImage = nullptr;
 XImage* mPinOutXImage = nullptr;
 
 // App globals;
-QImage mPinInQImage { };
-QImage mPinOutQImage { };
+QImage mPinInQImage{};
+QImage mPinOutQImage{};
 
 
 /**
@@ -71,9 +71,8 @@ main(int argc, char** argv) {
     // QApplication app(argc, argv) issues warnings in stdout
     // if platform is using qt themeing - wrap before.
     if (areWeUsingQtPlatformTheming()) {
-        cout << endl << XCOLOR_YELLOW << "StickyClock sees you "
-            "using Qt Platform theming ... warnings start." <<
-            XCOLOR_NORMAL << endl;
+        cout << endl << XCOLOR_YELLOW << "Sees you using Qt Platform "
+            "theming ... warnings start." << XCOLOR_NORMAL << endl;
     }
 
     // Qt6 Application setup.
@@ -84,9 +83,8 @@ main(int argc, char** argv) {
     // QApplication app(argc, argv) issues warnings in stdout
     // if platform is using qt themeing - wrap after.
     if (areWeUsingQtPlatformTheming()) {
-        cout << XCOLOR_YELLOW << "StickyClock sees you "
-            "using Qt Platform theming ... warnings end." <<
-            XCOLOR_NORMAL << endl << endl;
+        cout << XCOLOR_YELLOW << "Sees you using Qt Platform theming "
+            "... warnings end." << XCOLOR_NORMAL << endl << endl;
     }
 
     // If no X Display, Qt can still display a gui error.
@@ -130,8 +128,8 @@ main(int argc, char** argv) {
     delete mStickyWindow;
     delete mSettingsHelper;
     delete mRecentsHelper;
-    sanitizeGlobals();
 
+    sanitizeGlobals();
     return false;
 }
 
@@ -158,39 +156,35 @@ initAppPngImages() {
     const QString PIN_IN_FILE = ICON_PATH + QString(APP_NAME) +
         QString("-") + PIN_IN_PNG_FILENAME;
     if (!mPinInQImage.load(PIN_IN_FILE)) {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
-            "required resource image can't be found - FATAL." <<
-            XCOLOR_NORMAL << endl;
-        cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: Missing: " <<
+        cout << endl << XCOLOR_RED << "A required resource image "
+            "can't be found - FATAL." << XCOLOR_NORMAL << endl;
+        cout << endl << XCOLOR_YELLOW << "Missing: " <<
             PIN_IN_FILE.toStdString() << "." << XCOLOR_NORMAL << endl;
         return false;
     }
+
     mPinInQImage = mPinInQImage.convertToFormat(QImage::Format_RGB32);
     mPinInXImage = XCreateImage(mDisplay,
         DefaultVisual(mDisplay, DefaultScreen(mDisplay)),
-        32,
-        ZPixmap, 0,
-        (char*) mPinInQImage.bits(), mPinInQImage.width(), mPinInQImage.height(),
-        32, 0);
+        32, ZPixmap, 0, (char*) mPinInQImage.bits(),
+        mPinInQImage.width(), mPinInQImage.height(), 32, 0);
 
     // Load the Pin-Out image.
     const QString PIN_OUT_FILE = ICON_PATH + QString(APP_NAME) +
         QString("-") + PIN_OUT_PNG_FILENAME;
     if (!mPinOutQImage.load(PIN_OUT_FILE)) {
-        cout << endl << XCOLOR_RED << "StickyWidgetIII: A "
-            "required resource image can't be found - FATAL." <<
-            XCOLOR_NORMAL << endl;
-        cout << endl << XCOLOR_YELLOW << "StickyWidgetIII: Missing: " <<
+        cout << endl << XCOLOR_RED << "A required resource image "
+            "can't be found - FATAL." << XCOLOR_NORMAL << endl;
+        cout << endl << XCOLOR_YELLOW << "Missing: " <<
             PIN_OUT_FILE.toStdString() << "." << XCOLOR_NORMAL << endl;
         return false;
     }
+
     mPinOutQImage = mPinOutQImage.convertToFormat(QImage::Format_RGB32);
     mPinOutXImage = XCreateImage(mDisplay,
         DefaultVisual(mDisplay, DefaultScreen(mDisplay)),
-        32,
-        ZPixmap, 0,
-        (char*) mPinOutQImage.bits(), mPinOutQImage.width(), mPinOutQImage.height(),
-        32, 0);
+        32, ZPixmap, 0, (char*) mPinOutQImage.bits(),
+        mPinOutQImage.width(), mPinOutQImage.height(), 32, 0);
 
     return true;
 }

@@ -35,7 +35,7 @@ XHelper::handleX11ErrorEvent(Display* display,
     XGetErrorText(display, event->error_code, msg,
         sizeof(msg));
 
-    printf("%sStickyWidget: handleX11ErrorEvent() %s.%s\n",
+    printf("%sHandleX11ErrorEvent() %s.%s\n",
         XCOLOR_RED, msg, XCOLOR_NORMAL);
     return 1;
 }
@@ -214,7 +214,7 @@ XHelper::isTransparentVisually() {
         return false;
     }
 
-    XVisualInfo visualInfoStruct { };
+    XVisualInfo visualInfoStruct{};
     const int VISUAL_COLOR_DEPTH = 32;
     if (XMatchVisualInfo(mDisplay, DefaultScreen(mDisplay),
         VISUAL_COLOR_DEPTH, TrueColor, &visualInfoStruct)) {
@@ -537,12 +537,12 @@ XHelper::getWindowFrameOffset(const Window window) {
     unsigned long nItems, unusedBytes;
     unsigned char* properties = nullptr;
 
-    const int RESULT = XGetWindowProperty(mDisplay, window,
+    const int CALL_RESULT = XGetWindowProperty(mDisplay, window,
         XInternAtom(mDisplay, "_NET_FRAME_EXTENTS", False),
         0, 4, False, XA_CARDINAL, &type, &format, &nItems,
         &unusedBytes, &properties);
 
-    if (RESULT == Success &&
+    if (CALL_RESULT == Success &&
         properties != nullptr && nItems == 4) {
         const long* DATA = reinterpret_cast<long*> (properties);
         const QSize RESULT(DATA[0], DATA[2]);
