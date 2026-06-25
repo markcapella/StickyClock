@@ -27,6 +27,7 @@ struct OpacityHints : public QObject {
         if (e->type() == QEvent::ToolTip ||
             e->type() == QEvent::MouseMove) {
             if (!s->isSliderDown()) {
+
                 const int VALUE_PCT = 100 * s->value() / 255;
                 const QString TOOLTIP_TEXT =
                     QString::number(VALUE_PCT) + "%";

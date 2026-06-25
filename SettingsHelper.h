@@ -11,7 +11,8 @@ enum SettingsPropertyType {
     INT_VALUETYPE,
     BOOL_VALUETYPE,
     COLOR_VALUETYPE,
-    SLIDER_VALUETYPE
+    SLIDER_VALUETYPE,
+    DIVIDER_VALUETYPE
 };
 
 class SettingsHelper {
@@ -35,34 +36,40 @@ class SettingsHelper {
         static inline const QString ON_TOP_INSTEAD =
             "04 Stick to Top";
 
+        static inline const QString DIVIDER_1 = "05";
+
         static inline const QString PANEL_COLOR =
-            "05 Background Color";
+            "06 Background Color";
         static inline const QString PANEL_OPACITY =
-            "06 Background Opacity";
+            "07 Background Opacity";
 
         static inline const QString PANEL_OUTLINE_COLOR =
-            "07 Outline Color";
+            "08 Outline Color";
         static inline const QString PANEL_OUTLINE_OPACITY =
-            "08 Outline Opacity";
+            "09 Outline Opacity";
+
+        static inline const QString DIVIDER_2 = "10";
 
         static inline const QString TEXT_SIZE =
-            "09 Text Size";
+            "11 Text Size";
         static inline const QString TEXT_COLOR =
-            "10 Text Color";
+            "12 Text Color";
         static inline const QString TEXT_OPACITY =
-            "11 Text Opacity";
+            "13 Text Opacity";
+
+        static inline const QString DIVIDER_3 = "14";
 
         static inline const QString SHOW_WEED_CLOCK =
-            "12 Observe Weedclock Time";
+            "15 Observe Weedclock Time";
         static inline const QString WEED_CLOCK_COLOR =
-            "13 Weedtime Color";
+            "16 Weedtime Color";
         static inline const QString WEED_CLOCK_OPACITY =
-            "14 Weedtime Opacity";
+            "17 Weedtime Opacity";
 
         // Volatile.
         static inline const QString CONFIG_MODE = "In Config mode";
 
-
+        // Settings property struct.
         struct SettingsProperty {
             QString group = "";
             QString name = "";
@@ -103,6 +110,12 @@ class SettingsHelper {
               .rangeMaximum = numeric_limits<int>::max()
             },
 
+            { .group = GROUP_CONFIGURABLE, .name = DIVIDER_1,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "10",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
             { .group = GROUP_CONFIGURABLE, .name = PANEL_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "white",
               .rangeMinimum = numeric_limits<int>::min(),
@@ -125,6 +138,12 @@ class SettingsHelper {
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
+            { .group = GROUP_CONFIGURABLE, .name = DIVIDER_2,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
             { .group = GROUP_CONFIGURABLE, .name = TEXT_SIZE,
               .valueType = SLIDER_VALUETYPE, .initialValue = "42",
               .rangeMinimum = 10, .rangeMaximum = 80
@@ -139,6 +158,12 @@ class SettingsHelper {
             { .group = GROUP_CONFIGURABLE, .name = TEXT_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .group = GROUP_CONFIGURABLE, .name = DIVIDER_3,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
             },
 
             { .group = GROUP_CONFIGURABLE, .name = SHOW_WEED_CLOCK,

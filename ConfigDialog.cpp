@@ -47,17 +47,19 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
 void
 ConfigDialog::loadConfigDialogControls() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
-        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
-            i, QFormLayout::LabelRole)->widget();
-        if (!LABEL_WIDGET) {
+        // Ignore Divider lines.
+        if (SettingsHelper::PROPERTIES[i].valueType ==
+            DIVIDER_VALUETYPE) {
             continue;
         }
 
         // Get key, valueType, & defaultValue.
+        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
+            i, QFormLayout::LabelRole)->widget();
+
         const QString THIS_KEY =
             QString("%1 ").arg(i, 2, 10, QChar('0')) +
             LABEL_WIDGET->property("text").toString();
-
         const SettingsPropertyType THIS_VALUETYPE =
             mSettingsHelper->getSettingsValueType(THIS_KEY);
         const QString THIS_DEFAULT_VALUE =
@@ -149,13 +151,16 @@ ConfigDialog::loadConfigDialogControls() {
 void
 ConfigDialog::updateConfigDialogControls() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
-        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
-            i, QFormLayout::LabelRole)->widget();
-        if (!LABEL_WIDGET) {
+        // Ignore Divider lines.
+        if (SettingsHelper::PROPERTIES[i].valueType ==
+            DIVIDER_VALUETYPE) {
             continue;
         }
 
         // Get key.
+        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
+            i, QFormLayout::LabelRole)->widget();
+
         const QString THIS_KEY =
             QString("%1 ").arg(i, 2, 10, QChar('0')) +
             LABEL_WIDGET->property("text").toString();
@@ -242,10 +247,21 @@ ConfigDialog::createConfigDialogControls() {
 
     // Construct edit widget rows from keys & add to mFormLayout.
     for (const QString& THIS_KEY : ALL_KEYS) {
-        // Get key valueType & key defaultValue.
+        // Get key valueType & key display value;
         const SettingsPropertyType THIS_VALUETYPE =
             mSettingsHelper->getSettingsValueType(THIS_KEY);
         const QString THIS_DISPLAY_KEY = THIS_KEY.mid(3);
+
+        // Get QLineEdit for Divider lines.
+        if (THIS_VALUETYPE == DIVIDER_VALUETYPE) {
+            QLabel* dividerWidget = new QLabel(this);
+            dividerWidget->setObjectName(THIS_DISPLAY_KEY);
+            const int SLIDER_HEIGHT_VALUE = mSettingsHelper->
+                getIntSetting(THIS_KEY);
+            dividerWidget->setFixedHeight(SLIDER_HEIGHT_VALUE);
+            mFormLayout->addRow("", dividerWidget);
+            continue;
+        }
 
         // Get QLineEdit for Strings.
         if (THIS_VALUETYPE == STRING_VALUETYPE) {
@@ -394,17 +410,19 @@ ConfigDialog::createConfigDialogControls() {
 void
 ConfigDialog::acceptConfigDialogControls() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
-        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(i,
-            QFormLayout::LabelRole)->widget();
-        if (!LABEL_WIDGET) {
+        // Ignore Divider lines.
+        if (SettingsHelper::PROPERTIES[i].valueType ==
+            DIVIDER_VALUETYPE) {
             continue;
         }
 
         // Get key, valueType, & defaultValue.
+        const QWidget* LABEL_WIDGET = mFormLayout->itemAt(
+            i, QFormLayout::LabelRole)->widget();
+
         const QString THIS_KEY =
             QString("%1 ").arg(i, 2, 10, QChar('0')) +
             LABEL_WIDGET->property("text").toString();
-
         const SettingsPropertyType THIS_VALUETYPE =
             mSettingsHelper->getSettingsValueType(THIS_KEY);
         const QString THIS_DEFAULT_VALUE =

@@ -27,6 +27,7 @@ struct AutoHideDelayHints : public QObject {
         if (event->type() == QEvent::ToolTip ||
             event->type() == QEvent::MouseMove) {
             if (!s->isSliderDown()) {
+
                 const int VALUE = s->value();
                 const QString TOOLTIP_TEXT =
                     QString::number(VALUE) + " seconds";

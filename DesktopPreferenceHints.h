@@ -28,6 +28,7 @@ struct DesktopPreferenceHints : public QObject {
         if (e->type() == QEvent::ToolTip ||
             e->type() == QEvent::MouseMove) {
             if (!s->isSliderDown()) {
+
                 const int VALUE = s->value();
                 const QString TOOLTIP_TEXT =
                     (VALUE == -1) ? "All" : "Desktop " +

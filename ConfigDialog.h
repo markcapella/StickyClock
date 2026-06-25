@@ -20,8 +20,8 @@ class ConfigDialog : public QDialog {
         static inline const int CONFIG_DIALOG_WIDTH = 450;
         static inline const int CONFIG_DIALOG_HEIGHT = 600;
 
-        static inline const int FORM_TOP_BOTTOM_SPACING = 30;
-        static inline const int FORM_LAYOUT_ROW_SPACING = 10;
+        static inline const int FORM_TOP_BOTTOM_SPACING = 15;
+        static inline const int FORM_LAYOUT_ROW_SPACING = 8;
 
         static inline const QString ABOUT_STRING = "About";
 
