@@ -16,177 +16,144 @@ enum SettingsPropertyType {
 };
 
 class SettingsHelper {
+    #define IC_QString static inline const QString
 
     public:
-        // General.
-        static inline const QString GROUP_CONFIGURABLE = APP_NAME;
-        static inline const QString GROUP_VOLATILE = "Volatile";
-
         // Configurable.
-        static inline const QString AUTOHIDE_CONTROLS =
-            "00 Auto hide Controls";
-        static inline const QString AUTOHIDE_DELAY =
-            "01 Auto hide Delay";
+        IC_QString AUTOHIDE_CONTROLS = "Auto hide Controls";
+        IC_QString AUTOHIDE_DELAY = "Auto hide Delay";
+        IC_QString PREFERRED_DESKTOP = "Preferred Desktop";
+        IC_QString ALLOW_DESKTOP_DRAG = "Allow Desktop Drag";
+        IC_QString ON_TOP_INSTEAD = "Stick to Top";
+        IC_QString DIVIDER_1 = "divider01";
 
-        static inline const QString PREFERRED_DESKTOP =
-            "02 Preferred Desktop";
-        static inline const QString ALLOW_DESKTOP_DRAG =
-            "03 Allow Desktop Drag";
+        IC_QString PANEL_COLOR = "Background Color";
+        IC_QString PANEL_OPACITY = "Background Opacity";
+        IC_QString PANEL_OUTLINE_COLOR = "Outline Color";
+        IC_QString PANEL_OUTLINE_OPACITY = "Outline Opacity";
+        IC_QString DIVIDER_2 = "divider02";
 
-        static inline const QString ON_TOP_INSTEAD =
-            "04 Stick to Top";
+        IC_QString TEXT_SIZE = "Text Size";
+        IC_QString TEXT_COLOR = "Text Color";
+        IC_QString TEXT_OPACITY = "Text Opacity";
+        IC_QString DIVIDER_3 = "divider03";
 
-        static inline const QString DIVIDER_1 = "05";
+        IC_QString SHOW_WEED_CLOCK = "Observe Weedclock Time";
+        IC_QString WEED_CLOCK_COLOR = "Weedtime Color";
+        IC_QString WEED_CLOCK_OPACITY = "Weedtime Opacity";
 
-        static inline const QString PANEL_COLOR =
-            "06 Background Color";
-        static inline const QString PANEL_OPACITY =
-            "07 Background Opacity";
-
-        static inline const QString PANEL_OUTLINE_COLOR =
-            "08 Outline Color";
-        static inline const QString PANEL_OUTLINE_OPACITY =
-            "09 Outline Opacity";
-
-        static inline const QString DIVIDER_2 = "10";
-
-        static inline const QString TEXT_SIZE =
-            "11 Text Size";
-        static inline const QString TEXT_COLOR =
-            "12 Text Color";
-        static inline const QString TEXT_OPACITY =
-            "13 Text Opacity";
-
-        static inline const QString DIVIDER_3 = "14";
-
-        static inline const QString SHOW_WEED_CLOCK =
-            "15 Observe Weedclock Time";
-        static inline const QString WEED_CLOCK_COLOR =
-            "16 Weedtime Color";
-        static inline const QString WEED_CLOCK_OPACITY =
-            "17 Weedtime Opacity";
-
-        // Volatile.
-        static inline const QString CONFIG_MODE = "In Config mode";
 
         // Settings property struct.
         struct SettingsProperty {
-            QString group = "";
             QString name = "";
             SettingsPropertyType valueType = NONE_VALUETYPE;
             QString initialValue = "";
-            int rangeMinimum = 0;
-            int rangeMaximum = 0;
+            int rangeMinimum = numeric_limits<int>::min();
+            int rangeMaximum = numeric_limits<int>::max();
         };
 
         static inline const vector<SettingsProperty> PROPERTIES = {
             // App configurables.
-            { .group = GROUP_CONFIGURABLE, .name = AUTOHIDE_CONTROLS,
+            { .name = AUTOHIDE_CONTROLS,
               .valueType = BOOL_VALUETYPE, .initialValue = "false",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = AUTOHIDE_DELAY,
+            { .name = AUTOHIDE_DELAY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "4",
               .rangeMinimum = 1, .rangeMaximum = 9
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PREFERRED_DESKTOP,
+            { .name = PREFERRED_DESKTOP,
               .valueType = SLIDER_VALUETYPE, .initialValue = "-1",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = ALLOW_DESKTOP_DRAG,
+            { .name = ALLOW_DESKTOP_DRAG,
               .valueType = BOOL_VALUETYPE, .initialValue = "true",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = ON_TOP_INSTEAD,
+            { .name = ON_TOP_INSTEAD,
               .valueType = BOOL_VALUETYPE, .initialValue = "false",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = DIVIDER_1,
+            { .name = DIVIDER_1,
               .valueType = DIVIDER_VALUETYPE, .initialValue = "10",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PANEL_COLOR,
+            { .name = PANEL_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "white",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PANEL_OPACITY,
+            { .name = PANEL_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PANEL_OUTLINE_COLOR,
+            { .name = PANEL_OUTLINE_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "blue",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = PANEL_OUTLINE_OPACITY,
+            { .name = PANEL_OUTLINE_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = DIVIDER_2,
+            { .name = DIVIDER_2,
               .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = TEXT_SIZE,
+            { .name = TEXT_SIZE,
               .valueType = SLIDER_VALUETYPE, .initialValue = "42",
               .rangeMinimum = 10, .rangeMaximum = 80
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = TEXT_COLOR,
+            { .name = TEXT_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "black",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = TEXT_OPACITY,
+            { .name = TEXT_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = DIVIDER_3,
+            { .name = DIVIDER_3,
               .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = SHOW_WEED_CLOCK,
+            { .name = SHOW_WEED_CLOCK,
               .valueType = BOOL_VALUETYPE, .initialValue = "true",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = WEED_CLOCK_COLOR,
+            { .name = WEED_CLOCK_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "#00faff",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .group = GROUP_CONFIGURABLE, .name = WEED_CLOCK_OPACITY,
+            { .name = WEED_CLOCK_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
-            },
-
-            // Volatile internals, hidden from ConfigDialog.
-            { .group = GROUP_VOLATILE, .name = CONFIG_MODE,
-              .valueType = BOOL_VALUETYPE, .initialValue = "true",
-              .rangeMinimum = 0, .rangeMaximum = 1
             }
         };
 
@@ -238,20 +205,17 @@ class SettingsHelper {
         void setCanvasHeight(const double height);
 
         /**
-         * Helper to return a QSettings filename from appName.
+         * Getters & setters of window config mode.
          */
-        QString getQSettingsFile();
+        bool getConfigMode();
 
-        /**
-         * Helper to return a new QSettings object for pref
-         * access based on our appName.
-         */
-        QSettings* getQSettings();
+        void setConfigMode(const bool state);
 
         /**
          * Getters & setters for user configurable bool settings.
          */
         bool getBoolSetting(const QString setting);
+
         void setBoolSetting(const QString setting, const bool value);
 
         /**
@@ -276,11 +240,6 @@ class SettingsHelper {
         void ensureSettingsAreConfigurable();
 
         /**
-         * Return the group of a Setting by key.
-         */
-        QString getSettingsGroup(const QString key);
-
-        /**
          * Return the value type of a Setting by key.
          */
         SettingsPropertyType getSettingsValueType(const QString key);
@@ -300,9 +259,20 @@ class SettingsHelper {
          */
         int getSettingsIntRangeMaximum(const QString key);
 
+        /**
+         * Helper to return a new QSettings object for pref
+         * access based on our appName.
+         */
+        QSettings* getQSettings();
+
     private:
         // Members.
         QString mSettingsApp = "";
 
         QSettings* mQSettings = nullptr;
+
+        /**
+         * Helper to return a QSettings filename from appName.
+         */
+        QString getQSettingsFile();
 };

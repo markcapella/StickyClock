@@ -378,14 +378,13 @@ StickyWindow::setWindowStickPosition() {
 void
 StickyWindow::setConfigModeOff() {
     // If visibility already off, we're done.
-    if (!mSettingsHelper->getBoolSetting(
-        SettingsHelper::CONFIG_MODE)) {
+    const bool CONFIG_MODE = mSettingsHelper->getConfigMode();
+    if (!CONFIG_MODE) {
         return;
     }
 
     // Set visibility off, & done.
-    mSettingsHelper->setBoolSetting(
-        SettingsHelper::CONFIG_MODE, false);
+    mSettingsHelper->setConfigMode(false);
     setControlButtonsVisibility();
 }
 
@@ -482,9 +481,7 @@ StickyWindow::drawAllWindowButtons(const Picture renderPicture) {
 void
 StickyWindow::setControlButtonsVisibility() {
     lock_guard<recursive_mutex> lock(mButtonsMutLock);
-
-    const bool CONFIG_MODE = mSettingsHelper->getBoolSetting(
-        SettingsHelper::CONFIG_MODE);
+    const bool CONFIG_MODE = mSettingsHelper->getConfigMode();
 
     // Pin button = 0, controls start @ 1;
     const int BUTTONS_COUNT = mButtons.size();
@@ -530,8 +527,7 @@ StickyWindow::setHoveredControlButtonVisibility(
     lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
     // Pin button = 0, controls start @ 1;
-    const bool CONFIG_MODE = mSettingsHelper->getBoolSetting(
-        SettingsHelper::CONFIG_MODE);
+    const bool CONFIG_MODE = mSettingsHelper->getConfigMode();
 
     bool redrawRequired = false;
 
@@ -552,6 +548,7 @@ StickyWindow::setHoveredControlButtonVisibility(
         }
     }
 
+    // One final draw for all affected.
     if (redrawRequired) {
         draw();
     }
@@ -637,11 +634,10 @@ StickyWindow::clickPressedHoveredButton(const QPoint position) {
 void
 StickyWindow::clickPressedPinButton() {
     // Toggle current to new mode.
-    const bool NEW_CONFIG_MODE = mSettingsHelper->getBoolSetting(
-        SettingsHelper::CONFIG_MODE) ? false : true;
+    const bool CONFIG_MODE = mSettingsHelper->getConfigMode();
+    const bool NEW_CONFIG_MODE = !CONFIG_MODE;
+    mSettingsHelper->setConfigMode(NEW_CONFIG_MODE);
 
-    mSettingsHelper->setBoolSetting(
-        SettingsHelper::CONFIG_MODE, NEW_CONFIG_MODE);
     setControlButtonsVisibility();
 }
 
