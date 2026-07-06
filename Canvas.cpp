@@ -31,13 +31,13 @@ Canvas::drawCanvas() {
         mWindow, RENDER_FORMAT, 0, nullptr);
 
     // Get blended Canvas panel color.
-    const XRenderColor PANEL_COLOR = mSettingsHelper->
-        getColorSetting(SettingsHelper::PANEL_COLOR);
-    const int PANEL_OPACITY = mSettingsHelper->
-        getIntSetting(SettingsHelper::PANEL_OPACITY);
+    const XRenderColor BACKGROUND_COLOR = mSettingsHelper->
+        getColorSetting(SettingsHelper::BACKGROUND_COLOR);
+    const int BACKGROUND_OPACITY = mSettingsHelper->
+        getIntSetting(SettingsHelper::BACKGROUND_OPACITY);
     const XRenderColor BLENDED_PANEL_COLOR = newRenderColor(
-        PANEL_COLOR.red, PANEL_COLOR.green,
-        PANEL_COLOR.blue, PANEL_OPACITY);
+        BACKGROUND_COLOR.red, BACKGROUND_COLOR.green,
+        BACKGROUND_COLOR.blue, BACKGROUND_OPACITY);
 
     // Get blended Canvas panel color for weedclock.
     const XRenderColor WEED_COLOR = mSettingsHelper->

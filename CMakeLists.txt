@@ -14,7 +14,7 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.06.29")
+set(APP_VERSION "26.07.04")
 set(APP_VERSION_MINOR "00")
 
 set(APP_AUTHOR "Mark James Capella")
@@ -114,25 +114,11 @@ set(WIDGET_PROJECT ${APP_NAME})
 
 # All input sources.
 set(WIDGET_SOURCES
-    PinButton.cpp
-    QuitButton.cpp
-    MoveButton.cpp
-    SizeButton.cpp
-
-    ConfigDialog.cpp
-    ColorButton.cpp
-    AboutDialog.cpp
-    ConfigButton.cpp
-
     Canvas.cpp
-    StickyWindow.cpp
-
-    SettingsHelper.cpp
-    RecentsHelper.cpp
-    XHelper.cpp
-    DisplayHelper.cpp
-
-    StickyWidgetIII.cpp
+    PinButton.cpp QuitButton.cpp MoveButton.cpp SizeButton.cpp
+    ConfigDialog.cpp ColorButton.cpp AboutDialog.cpp ConfigButton.cpp
+    SettingsHelper.cpp RecentsHelper.cpp DisplayHelper.cpp XHelper.cpp
+    StickyWindow.cpp StickyWidgetIII.cpp
 )
 
 # Final executable.

@@ -20,22 +20,22 @@ class SettingsHelper {
 
     public:
         // Configurable.
-        IC_QString AUTOHIDE_CONTROLS = "Auto hide Controls";
-        IC_QString AUTOHIDE_DELAY = "Auto hide Delay";
         IC_QString PREFERRED_DESKTOP = "Preferred Desktop";
         IC_QString ALLOW_DESKTOP_DRAG = "Allow Desktop Drag";
         IC_QString ON_TOP_INSTEAD = "Stick to Top";
         IC_QString DIVIDER_1 = "divider01";
 
-        IC_QString PANEL_COLOR = "Background Color";
-        IC_QString PANEL_OPACITY = "Background Opacity";
-        IC_QString PANEL_OUTLINE_COLOR = "Outline Color";
-        IC_QString PANEL_OUTLINE_OPACITY = "Outline Opacity";
+        IC_QString AUTOHIDE_CONTROLS = "Auto hide Controls";
+        IC_QString AUTOHIDE_DELAY = "Auto hide Delay";
+        IC_QString BACKGROUND_COLOR = "Background Color";
+        IC_QString BACKGROUND_OPACITY = "Background Opacity";
         IC_QString DIVIDER_2 = "divider02";
 
         IC_QString TEXT_SIZE = "Text Size";
         IC_QString TEXT_COLOR = "Text Color";
         IC_QString TEXT_OPACITY = "Text Opacity";
+        IC_QString PANEL_OUTLINE_COLOR = "Outline Color";
+        IC_QString PANEL_OUTLINE_OPACITY = "Outline Opacity";
         IC_QString DIVIDER_3 = "divider03";
 
         IC_QString SHOW_WEED_CLOCK = "Observe Weedclock Time";
@@ -52,19 +52,9 @@ class SettingsHelper {
             int rangeMaximum = numeric_limits<int>::max();
         };
 
+        // App configurables. Entries determine order of
+        // appearance in Dialog.
         static inline const vector<SettingsProperty> PROPERTIES = {
-            // App configurables.
-            { .name = AUTOHIDE_CONTROLS,
-              .valueType = BOOL_VALUETYPE, .initialValue = "false",
-              .rangeMinimum = numeric_limits<int>::min(),
-              .rangeMaximum = numeric_limits<int>::max()
-            },
-
-            { .name = AUTOHIDE_DELAY,
-              .valueType = SLIDER_VALUETYPE, .initialValue = "4",
-              .rangeMinimum = 1, .rangeMaximum = 9
-            },
-
             { .name = PREFERRED_DESKTOP,
               .valueType = SLIDER_VALUETYPE, .initialValue = "-1",
               .rangeMinimum = numeric_limits<int>::min(),
@@ -84,35 +74,35 @@ class SettingsHelper {
             },
 
             { .name = DIVIDER_1,
-              .valueType = DIVIDER_VALUETYPE, .initialValue = "10",
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .name = PANEL_COLOR,
+            { .name = AUTOHIDE_CONTROLS,
+              .valueType = BOOL_VALUETYPE, .initialValue = "false",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .name = AUTOHIDE_DELAY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "4",
+              .rangeMinimum = 1, .rangeMaximum = 9
+            },
+
+            { .name = BACKGROUND_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "white",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .name = PANEL_OPACITY,
-              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
-              .rangeMinimum = 0, .rangeMaximum = 255
-            },
-
-            { .name = PANEL_OUTLINE_COLOR,
-              .valueType = COLOR_VALUETYPE, .initialValue = "blue",
-              .rangeMinimum = numeric_limits<int>::min(),
-              .rangeMaximum = numeric_limits<int>::max()
-            },
-
-            { .name = PANEL_OUTLINE_OPACITY,
+            { .name = BACKGROUND_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
             { .name = DIVIDER_2,
-              .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "10",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
@@ -129,6 +119,17 @@ class SettingsHelper {
             },
 
             { .name = TEXT_OPACITY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
+              .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .name = PANEL_OUTLINE_COLOR,
+              .valueType = COLOR_VALUETYPE, .initialValue = "blue",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .name = PANEL_OUTLINE_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
             },

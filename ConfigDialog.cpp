@@ -312,7 +312,7 @@ ConfigDialog::createConfigDialogControls() {
                 continue;
             }
 
-            if (THIS_KEY == SettingsHelper::PANEL_OPACITY ||
+            if (THIS_KEY == SettingsHelper::BACKGROUND_OPACITY ||
                 THIS_KEY == SettingsHelper::PANEL_OUTLINE_OPACITY ||
                 THIS_KEY == SettingsHelper::TEXT_OPACITY ||
                 THIS_KEY == SettingsHelper::WEED_CLOCK_OPACITY) {
