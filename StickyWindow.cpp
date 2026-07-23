@@ -18,12 +18,12 @@ StickyWindow::StickyWindow() {
     // Create & set base x11 window.
     setX11Window(createX11Window());
 
-    // Instantiate widget canvas.
-    mCanvas = new Canvas(mX11Window, mVisualInfoStruct.visual,
-        mColorMap);
-
     // Create control buttons.
     createAllWindowButtons();
+
+    // Instantiate widget canvas.
+    mCanvas = new Canvas(getX11Window(),
+        mVisualInfoStruct.visual, mColorMap);
     setControlButtonsVisibility();
 
     // Create autohide timer for control buttons,
@@ -288,14 +288,7 @@ StickyWindow::createX11Window() {
     // Set "StickyWindow" type, show window, set config state.
     setStickyWindowType();
     show();
-
-    // On first time run, ensure window appears ontop
-    // like a splash screen. Else, ensure stick state.
-    if (INITIAL_RUN) {
-        XRaiseWindow(mDisplay, mX11Window);
-    } else {
-        setWindowStickPosition();
-    }
+    setWindowStickPosition();
 
     // Apply strict configuration to the window. Awesome WM
     // specifically needs this.

@@ -23,19 +23,21 @@ class SettingsHelper {
         IC_QString PREFERRED_DESKTOP = "Preferred Desktop";
         IC_QString ALLOW_DESKTOP_DRAG = "Allow Desktop Drag";
         IC_QString ON_TOP_INSTEAD = "Stick to Top";
-        IC_QString DIVIDER_1 = "divider01";
+        IC_QString DIVIDER_0 = "divider00";
 
         IC_QString AUTOHIDE_CONTROLS = "Auto hide Controls";
         IC_QString AUTOHIDE_DELAY = "Auto hide Delay";
+        IC_QString DIVIDER_1 = "divider01";
+
         IC_QString BACKGROUND_COLOR = "Background Color";
         IC_QString BACKGROUND_OPACITY = "Background Opacity";
-        IC_QString DIVIDER_2 = "divider02";
-
-        IC_QString TEXT_SIZE = "Text Size";
-        IC_QString TEXT_COLOR = "Text Color";
-        IC_QString TEXT_OPACITY = "Text Opacity";
         IC_QString PANEL_OUTLINE_COLOR = "Outline Color";
         IC_QString PANEL_OUTLINE_OPACITY = "Outline Opacity";
+        IC_QString DIVIDER_2 = "divider02";
+
+        IC_QString TEXT_COLOR = "Text Color";
+        IC_QString TEXT_OPACITY = "Text Opacity";
+        IC_QString TEXT_SIZE = "Text Size";
         IC_QString DIVIDER_3 = "divider03";
 
         IC_QString SHOW_WEED_CLOCK = "Observe Weedclock Time";
@@ -73,7 +75,7 @@ class SettingsHelper {
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .name = DIVIDER_1,
+            { .name = DIVIDER_0,
               .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
@@ -90,6 +92,12 @@ class SettingsHelper {
               .rangeMinimum = 1, .rangeMaximum = 9
             },
 
+            { .name = DIVIDER_1,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
             { .name = BACKGROUND_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "white",
               .rangeMinimum = numeric_limits<int>::min(),
@@ -97,28 +105,6 @@ class SettingsHelper {
             },
 
             { .name = BACKGROUND_OPACITY,
-              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
-              .rangeMinimum = 0, .rangeMaximum = 255
-            },
-
-            { .name = DIVIDER_2,
-              .valueType = DIVIDER_VALUETYPE, .initialValue = "10",
-              .rangeMinimum = numeric_limits<int>::min(),
-              .rangeMaximum = numeric_limits<int>::max()
-            },
-
-            { .name = TEXT_SIZE,
-              .valueType = SLIDER_VALUETYPE, .initialValue = "42",
-              .rangeMinimum = 10, .rangeMaximum = 80
-            },
-
-            { .name = TEXT_COLOR,
-              .valueType = COLOR_VALUETYPE, .initialValue = "black",
-              .rangeMinimum = numeric_limits<int>::min(),
-              .rangeMaximum = numeric_limits<int>::max()
-            },
-
-            { .name = TEXT_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
             },
@@ -132,6 +118,28 @@ class SettingsHelper {
             { .name = PANEL_OUTLINE_OPACITY,
               .valueType = SLIDER_VALUETYPE, .initialValue = "255",
               .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .name = DIVIDER_2,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "10",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .name = TEXT_COLOR,
+              .valueType = COLOR_VALUETYPE, .initialValue = "black",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
+            { .name = TEXT_OPACITY,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "255",
+              .rangeMinimum = 0, .rangeMaximum = 255
+            },
+
+            { .name = TEXT_SIZE,
+              .valueType = SLIDER_VALUETYPE, .initialValue = "42",
+              .rangeMinimum = 10, .rangeMaximum = 80
             },
 
             { .name = DIVIDER_3,

@@ -7,6 +7,7 @@
  * Simple class to represent a ConfigDialog.
  */
 ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
+    setWindowFlags(Qt::Dialog | Qt::Tool);
     resize(CONFIG_DIALOG_WIDTH, CONFIG_DIALOG_HEIGHT);
     setFixedSize(size());
 
@@ -21,22 +22,55 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
     TITLE += " Settings";
     setWindowTitle(QString(TITLE));
 
-    // Set the window attributes.
-    setWindowFlags(Qt::Dialog | Qt::Tool);
-    setMinimumWidth(CONFIG_DIALOG_WIDTH);
-    setMaximumHeight(CONFIG_DIALOG_HEIGHT);
+    // Set the window attributes, create controls & center.
+    createConfigDialog();
+    mFormLayout->setFormAlignment(Qt::AlignCenter);
 
-    createConfigDialogControls();
+    // Add the formlayout to a formcontainer.
+    QWidget* formContainer = new QWidget();
+    formContainer->setLayout(mFormLayout);
 
-    // Callbacks.
-    connect(mConfigButtonBox, &QDialogButtonBox::accepted, this,
-        &ConfigDialog::acceptConfigDialogControls);
-    connect(mConfigButtonBox, &QDialogButtonBox::rejected, this,
-        &ConfigDialog::reject);
+    // Add the formcontainer to a scrollarea.
+    QScrollArea* scrollArea = new QScrollArea();
+    scrollArea->setWidget(formContainer);
+    scrollArea->setWidgetResizable(true);
+
+    // The whole thing wraps up into vbox layout.
+    mMainLayout = new QVBoxLayout(this);
+    mMainLayout->addWidget(scrollArea);
+
+    // Create Buttons Layout.
+    QHBoxLayout* mButtonLayout = new QHBoxLayout();
+
+    // Create all buttons for the layout.
+    mAboutButton = new QPushButton("About", this);
+    mOkButton = new QPushButton("Ok", this);
+    mCancelButton = new QPushButton("Cancel", this);
+
+    // Ensure nothing defaults to having focus.
+    mAboutButton->setAutoDefault(false);
+    mOkButton->setAutoDefault(false);
+    mCancelButton->setAutoDefault(false);
+
+    // Add all buttons to the layout.
+    mButtonLayout->addWidget(mAboutButton);
+    mButtonLayout->addStretch();
+    mButtonLayout->addWidget(mOkButton);
+    mButtonLayout->addWidget(mCancelButton);
+
+    // Add buttons widget to layout & set as Layout.
+    mMainLayout->addLayout(mButtonLayout);
+    setLayout(mMainLayout);
+
+    // Connect all button click signals.
     connect(mAboutButton, &QPushButton::clicked, this,
-        &ConfigDialog::about);
+        &ConfigDialog::showAboutDialog);
+    connect(mOkButton, &QPushButton::clicked, this,
+        &ConfigDialog::okConfigDialog);
+    connect(mCancelButton, &QPushButton::clicked, this,
+        &ConfigDialog::reject);
 
-    // X11 message Atoms.
+    // Init X11 message Atoms.
     mConfigDialogUpdated = XInternAtom(mDisplay,
         CONFIG_DIALOG_UPDATED_EVENT.c_str(), False);
 }
@@ -45,7 +79,7 @@ ConfigDialog::ConfigDialog(QWidget* parent) : QDialog(parent) {
  * Load UI form with values from .Ini.
  */
 void
-ConfigDialog::loadConfigDialogControls() {
+ConfigDialog::loadConfigDialog() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const SettingsHelper::SettingsProperty THIS_SETTING =
             SettingsHelper::PROPERTIES[i];
@@ -135,7 +169,7 @@ ConfigDialog::loadConfigDialogControls() {
  * Update any runtime dialog controls, range settings, etc.
  */
 void
-ConfigDialog::updateConfigDialogControls() {
+ConfigDialog::updateConfigDialog() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const SettingsHelper::SettingsProperty THIS_SETTING =
             SettingsHelper::PROPERTIES[i];
@@ -193,7 +227,7 @@ ConfigDialog::updateConfigDialogControls() {
  * Build the UI form layout.
  */
 void
-ConfigDialog::createConfigDialogControls() {
+ConfigDialog::createConfigDialog() {
     // Build form.
     mFormLayout = new QFormLayout();
     mFormLayout->setContentsMargins(0, FORM_TOP_BOTTOM_SPACING,
@@ -330,41 +364,13 @@ ConfigDialog::createConfigDialogControls() {
             }
         }
     }
-
-    // Add the formlayout to a formcontainer.
-    QWidget* formContainer = new QWidget();
-    mFormLayout->setFormAlignment(Qt::AlignCenter);
-    formContainer->setLayout(mFormLayout);
-
-    // Add the formcontainer to a scrollarea.
-    QScrollArea* scrollArea = new QScrollArea();
-    scrollArea->setWidget(formContainer);
-    scrollArea->setWidgetResizable(true);
-
-    // The whole thing wraps up into vbox layout.
-    mMainLayout = new QVBoxLayout(this);
-    mMainLayout->addWidget(scrollArea);
-
-    // Create Ok / Cancel ButtonBoxBox with an About button.
-    mConfigButtonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
-        QDialogButtonBox::Cancel, this);
-
-    // Create AboutDialog for About button dialog.
-    mAboutDialog = new AboutDialog(this);
-    mAboutButton = new QPushButton(ABOUT_STRING);
-    mConfigButtonBox->addButton(mAboutButton,
-        QDialogButtonBox::ActionRole);
-
-    // Set mMainLayout as "the Layout" & done.
-    mMainLayout->addWidget(mConfigButtonBox);
-    setLayout(mMainLayout);
 }
 
 /**
- * Callback to Save UI form values to .Ini.
+ * Called on Ok button of Dialog clicked.
  */
 void
-ConfigDialog::acceptConfigDialogControls() {
+ConfigDialog::okConfigDialog() {
     for (int i = 0; i < mFormLayout->rowCount(); ++i) {
         const SettingsHelper::SettingsProperty THIS_SETTING =
             SettingsHelper::PROPERTIES[i];
@@ -472,6 +478,8 @@ ConfigDialog::sendConfigDialogUpdatedEvent() {
  * Show this apps "About" dialog.
  */
 void
-ConfigDialog::about() {
+ConfigDialog::showAboutDialog() {
+
+    mAboutDialog = new AboutDialog(this);
     mAboutDialog->show();
 }

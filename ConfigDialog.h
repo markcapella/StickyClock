@@ -31,7 +31,7 @@ class ConfigDialog : public QDialog {
         /**
          * Load UI form with values from .Ini.
          */
-        void loadConfigDialogControls();
+        void loadConfigDialog();
 
         /**
          * Gettters / Setters for window.
@@ -46,7 +46,7 @@ class ConfigDialog : public QDialog {
         /**
          * Update any runtime dialog controls, range settings, etc.
          */
-        void updateConfigDialogControls();
+        void updateConfigDialog();
 
     private:
         Window mWindow = None;
@@ -56,18 +56,22 @@ class ConfigDialog : public QDialog {
         QVBoxLayout* mMainLayout = nullptr;
 
         QDialogButtonBox* mConfigButtonBox = nullptr;
+
         QPushButton* mAboutButton = nullptr;
+        QPushButton* mOkButton = nullptr;
+        QPushButton* mCancelButton = nullptr;
+
         QDialog* mAboutDialog = nullptr;
 
         /**
          * Build the UI form layout.
          */
-        void createConfigDialogControls();
+        void createConfigDialog();
 
         /**
-         * Callback to Save UI form values to .Ini.
+         * Called on Ok button of Dialog clicked.
          */
-        void acceptConfigDialogControls();
+        void okConfigDialog();
 
         /**
          * Send an event to the X11 thread telling it to update
@@ -78,5 +82,5 @@ class ConfigDialog : public QDialog {
         /**
          * Show this apps "About" dialog.
          */
-        void about();
+        void showAboutDialog();
 };
