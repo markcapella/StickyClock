@@ -30,7 +30,7 @@ class Button {
         double getHeight() const { return mHeight; }
         void setHeight(const double height) { mHeight = height; }
 
-        QRect getRect() const { return QRect(
+        QRect getQRect() const { return QRect(
             mX, mY, mWidth, mHeight); }
 
         bool isVisible() const { return mButtonVisible; }
