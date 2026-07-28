@@ -23,7 +23,7 @@ SettingsHelper::getWindowMinimumWidth() {
 double
 SettingsHelper::getWindowMinimumHeight() {
     return getQSettings()->value("minimumWindowHeight",
-        Button::BUTTON_HEIGHT * 3).toDouble();
+        Button::BUTTON_HEIGHT * 2).toDouble();
 }
 
 /**

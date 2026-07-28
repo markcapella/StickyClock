@@ -315,12 +315,8 @@ StickyWindow::defineWindowOnFirstRun() {
     const int SCREEN_HEIGHT = HeightOfScreen(
         DefaultScreenOfDisplay(mDisplay));
 
-    mSettingsHelper->setWindowWidth(Button::BUTTON_WIDTH +
-        mSettingsHelper->getCanvasWidth() +
-        Button::BUTTON_WIDTH);
-    mSettingsHelper->setWindowHeight(Button::BUTTON_HEIGHT +
-        mSettingsHelper->getCanvasHeight() +
-        Button::BUTTON_HEIGHT);
+    mSettingsHelper->setWindowWidth(mSettingsHelper->getCanvasWidth());
+    mSettingsHelper->setWindowHeight(mSettingsHelper->getCanvasHeight());
 
     mSettingsHelper->setWindowXPos((SCREEN_WIDTH -
         mSettingsHelper->getWindowWidth()) / 2);
@@ -329,24 +325,23 @@ StickyWindow::defineWindowOnFirstRun() {
 }
 
 /**
- * Set window type, which is normally "SplashScreen".
- *
- * TODO: ?? On KDE we use "Dock", as their "SplashScreen" window
- * doesn't support InputRectangles meaning we can't click buttons.
+ * Set window type as Dock. Awesome WM uses
+ * _NET_WM_WINDOW_TYPE_SPLASH.
  */
 void
 StickyWindow::setStickyWindowType() {
-    const QString THIS_WM_NAME = mXHelper->
-        getWindowManagerName().c_str();
+    // Just for Awesome WM.
+    const QString THIS_WM = mXHelper->getWindowManagerName().c_str();
+    const QString AWESOME_WM = "awesome";
 
-    const QString AWESOME_WM_NAME = "awesome";
-    if (THIS_WM_NAME == AWESOME_WM_NAME) {
+    if (THIS_WM == AWESOME_WM) {
         const Atom STICKY_WINDOW_TYPE = XInternAtom(mDisplay,
             "_NET_WM_WINDOW_TYPE_SPLASH", false);
         mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
         return;
     }
 
+    // The default.
     const Atom STICKY_WINDOW_TYPE = XInternAtom(mDisplay,
         "_NET_WM_WINDOW_TYPE_DOCK", false);
     mXHelper->setWindowType(mX11Window, STICKY_WINDOW_TYPE);
@@ -389,8 +384,7 @@ StickyWindow::createAllWindowButtons() {
     lock_guard<recursive_mutex> lock(mButtonsMutLock);
 
     mPinButton = new PinButton(mSettingsHelper->
-        getWindowWidth() - 2 * Button::BUTTON_WIDTH,
-            Button::BUTTON_HEIGHT);
+        getWindowWidth() - 2 * Button::BUTTON_WIDTH, 0);
 
     mQuitButton = new QuitButton(mSettingsHelper->
         getWindowWidth() - Button::BUTTON_WIDTH, 0);
@@ -419,7 +413,7 @@ void
 StickyWindow::updateAllWindowButtons() {
     mPinButton->setX(mSettingsHelper->
         getWindowWidth() - 2 * Button::BUTTON_WIDTH);
-    mPinButton->setY(Button::BUTTON_HEIGHT);
+    mPinButton->setY(0);
 
     mQuitButton->setX(mSettingsHelper->
         getWindowWidth() - Button::BUTTON_WIDTH);
@@ -458,8 +452,6 @@ StickyWindow::drawAllWindowButtons(const Picture renderPicture) {
                 .height = (unsigned short) mButtons[i]->getHeight()
             };
             rects.push_back(buttonInputRegion);
-        } else {
-            mButtons[i]->erase(renderPicture);
         }
     }
     XShapeCombineRectangles(mDisplay, mX11Window, ShapeInput,
@@ -505,6 +497,10 @@ void
 StickyWindow::setHoveredPinButtonVisibility(
     const bool visibility) {
     if (mPinButton->isVisible() != visibility) {
+        if (visibility && !mSettingsHelper->getBoolSetting(
+            SettingsHelper::ENABLE_PIN_CONTROL)) {
+            return;
+        }
         mPinButton->setVisible(visibility);
         draw();
     }
@@ -657,8 +653,8 @@ StickyWindow::unPressAllWindowButtons() {
  */
 void
 StickyWindow::defineWindowCanvasPosition() {
-    mSettingsHelper->setCanvasXPos(Button::BUTTON_WIDTH);
-    mSettingsHelper->setCanvasYPos(Button::BUTTON_HEIGHT);
+    mSettingsHelper->setCanvasXPos(0);
+    mSettingsHelper->setCanvasYPos(0);
 }
 
 /**
@@ -666,10 +662,8 @@ StickyWindow::defineWindowCanvasPosition() {
  */
 void
 StickyWindow::defineWindowCanvasSize() {
-    mSettingsHelper->setCanvasWidth(mSettingsHelper->
-        getWindowWidth() - 2 * Button::BUTTON_WIDTH);
-    mSettingsHelper->setCanvasHeight(mSettingsHelper->
-        getWindowHeight() - 2 * Button::BUTTON_WIDTH);
+    mSettingsHelper->setCanvasWidth(mSettingsHelper->getWindowWidth());
+    mSettingsHelper->setCanvasHeight(mSettingsHelper->getWindowHeight());
 }
 
 /**
