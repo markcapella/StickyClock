@@ -14,8 +14,8 @@ set(APP_NAME "StickyClock")
 set(APP_DESC "A simple desktop Clock app roughly in the style of")
 set(APP_DESC "${APP_DESC} a KDE Plasmoid.")
 
-set(APP_VERSION "26.07.27")
-set(APP_VERSION_MINOR "09")
+set(APP_VERSION "26.07.29")
+set(APP_VERSION_MINOR "00")
 
 set(APP_AUTHOR "Mark James Capella")
 set(ORG_NAME "skyrmion.inc")
@@ -230,15 +230,6 @@ install(CODE "
     message(STATUS \"Updating icon and desktop caches...\")
     execute_process(COMMAND update-desktop-database)
     execute_process(COMMAND xdg-icon-resource forceupdate --theme hicolor)")
-
-##
-# Setup convenience target |make run|.
-#
-if (NOT TARGET run)
-    add_custom_target(run
-        COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${APP_NAME}"
-    )
-endif()
 
 ##
 # Setup convenience target |make uninstall|.

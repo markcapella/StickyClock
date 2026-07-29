@@ -76,15 +76,16 @@ class StickyWindow {
 
     private:
         // Members.
+        Window mX11Window = None;
+        Canvas* mCanvas = nullptr;
+        char* mWindowTitle = nullptr;
+
         bool mIsVisuallyTransparent = false;
         XVisualInfo mVisualInfoStruct { };
         Colormap mColorMap { };
 
         Atom mDeleteMessage { };
         Atom mConfigDialogUpdated { };
-
-        Window mX11Window = None;
-        char* mWindowTitle = nullptr;
 
         vector<Button*> mButtons;
         mutable recursive_mutex mButtonsMutLock;
@@ -96,33 +97,21 @@ class StickyWindow {
         MoveButton* mMoveButton = nullptr;
         SizeButton* mSizeButton = nullptr;
 
-        Canvas* mCanvas = nullptr;
-
         // handleX11EventQueue.
         Window mTranslateWindow = None;
         int mTranslatePosX = -1;
         int mTranslatePosY = -1;
 
-        // ButtonPress, ButtonRelease.
-        unsigned int mClickStatus = 0;
-
-        Window mRootWindow = None;
-        int mRootClickPositionX = -1;
-        int mRootClickPositionY = -1;
-
-        Window mClickWindow = None;
-        int mWindowClickPositionX = -1;
-        int mWindowClickPositionY = -1;
-
         // ButtonPress.
+        QPoint mClickedWindowPosition;
         QPoint mClickedButtonPosition;
+
+        QPoint mDragMoveButtonOffset{};
+        QPoint mDragResizeButtonOffset{};
 
         bool mIsMouseClicked = false;
         bool mIsSizingWindow = false;
         bool mIsMovingWindow = false;
-
-        QPoint mDragMoveButtonOffset{};
-        QPoint mDragResizeButtonOffset{};
 
         int mPreviousDesktop = -1;
 
@@ -173,6 +162,11 @@ class StickyWindow {
          * Draw all visible buttons.
          */
         void drawAllWindowButtons(const Picture renderPicture);
+
+        /**
+         * Cursor watcher detects user actions.
+         */
+        void setAllControlsVisibility();
 
         /**
          * Setter for PinButton visibility state.
@@ -255,11 +249,6 @@ class StickyWindow {
         void receiveConfigDialogUpdatedEvent();
 
         /**
-         * Cursor watcher detects user actions.
-         */
-        void cursorWatcherThread();
-
-        /**
          * Perform window drag.
          */
         void dragWindowToPoint(const QPoint position);
@@ -268,6 +257,13 @@ class StickyWindow {
          * Perform window resizing.
          */
         void resizeWindowToPoint(const QPoint position);
+
+        /**
+         * Determine if the current StickyWindow overhanges the screen
+         * (current desktop) edges and moves it entirely into window
+         * according to user pref.
+         */
+        void maybeAdjustWindowOverhang();
 
         /**
          * Initialize Transparency & TrueColor 32.

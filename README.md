@@ -25,7 +25,7 @@
     
     StickyClock & StickyWidgets won't present an item in your
     desktop panel, nor in your system tray. Mouse hover the
-    widget to reveal the Pin or Close button.
+    widget to reveal the Pin or Control buttons.
     
     
 ## Installation.
@@ -42,11 +42,14 @@
 
 For Debian systems:
 
-    sudo apt install git cmake build-essential pkg-config qt6-base-dev libx11-dev libxft-dev libxfixes-dev libxext-dev libpng-dev
+    sudo apt install git cmake build-essential pkg-config qt6-base-dev \
+        libx11-dev libxft-dev libxfixes-dev libxext-dev libpng-dev
 
 For Fedora systems:
 
-    sudo dnf install git cmake gcc gcc-c++ make pkg-config qt6-devel libX11-devel libXft-devel libXfixes-devel libXext-devel libpng-devel
+    sudo dnf install git cmake gcc gcc-c++ make pkg-config qt6-devel \
+        libX11-devel libXft-devel libXfixes-devel libXext-devel \
+        libpng-devel
 
 ### Clone StickyClock source folder.
 
@@ -56,25 +59,30 @@ For Fedora systems:
 
     cd StickyClock
 
-
 ## Basic development.
 
+### Install.
     mkdir build
     cd build
     cmake ..
-
     make
-    make run
-
     sudo make install
+
+### Uninstall.
     sudo make uninstall
-    
     make clean
     cd ..
     rm -rf build
-    
+    rm -rf ~/.config/StickyClock
     
 ## Usage after install.
+
+### GUI Desktop.
+* Click the StickyClock desktop icon that's added to your
+  systems menu under "Utilities" or "Accessories".
+
+### Command Line.
+
     StickyClock
     
     
