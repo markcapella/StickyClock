@@ -8,7 +8,6 @@
     
     A basic Digital Clock that is sizable and configurable.
     
-    
     Desktop widgets with various views can be stuck in place to
     the desktop below other windows and display custom views with
     a transparent visual background such as Clocks, Reminders,
@@ -62,17 +61,21 @@ For Fedora systems:
 ## Basic development.
 
 ### Install.
-    mkdir build
-    cd build
-    cmake ..
-    make
-    sudo make install
+    ./startProj
+
+    # Will run startProj if reqd.
+    ./buildProj
+
+    # Will run both startProj & buildProj if reqd.
+    ./installProj
 
 ### Uninstall.
-    sudo make uninstall
-    make clean
-    cd ..
-    rm -rf build
+    ./uninstallProj
+
+    # Same as rm -rf build
+    ./cleanProj
+
+    # App config.
     rm -rf ~/.config/StickyClock
     
 ## Usage after install.

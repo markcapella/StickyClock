@@ -33,14 +33,16 @@ class SettingsHelper {
 
         IC_QString BACKGROUND_COLOR = "Background Color";
         IC_QString BACKGROUND_OPACITY = "Background Opacity";
+        IC_QString DIVIDER_2 = "divider02";
+
         IC_QString PANEL_OUTLINE_COLOR = "Outline Color";
         IC_QString PANEL_OUTLINE_OPACITY = "Outline Opacity";
-        IC_QString DIVIDER_2 = "divider02";
+        IC_QString DIVIDER_3 = "divider03";
 
         IC_QString TEXT_COLOR = "Text Color";
         IC_QString TEXT_OPACITY = "Text Opacity";
         IC_QString TEXT_SIZE = "Text Size";
-        IC_QString DIVIDER_3 = "divider03";
+        IC_QString DIVIDER_4 = "divider04";
 
         IC_QString SHOW_WEED_CLOCK = "Observe Weedclock Time";
         IC_QString WEED_CLOCK_COLOR = "Weedtime Color";
@@ -123,6 +125,12 @@ class SettingsHelper {
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
+            { .name = DIVIDER_2,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "05",
+              .rangeMinimum = numeric_limits<int>::min(),
+              .rangeMaximum = numeric_limits<int>::max()
+            },
+
             { .name = PANEL_OUTLINE_COLOR,
               .valueType = COLOR_VALUETYPE, .initialValue = "blue",
               .rangeMinimum = numeric_limits<int>::min(),
@@ -134,8 +142,8 @@ class SettingsHelper {
               .rangeMinimum = 0, .rangeMaximum = 255
             },
 
-            { .name = DIVIDER_2,
-              .valueType = DIVIDER_VALUETYPE, .initialValue = "05",
+            { .name = DIVIDER_3,
+              .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
             },
@@ -156,7 +164,7 @@ class SettingsHelper {
               .rangeMinimum = 10, .rangeMaximum = 80
             },
 
-            { .name = DIVIDER_3,
+            { .name = DIVIDER_4,
               .valueType = DIVIDER_VALUETYPE, .initialValue = "5",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()
