@@ -37,7 +37,7 @@ ColorButton::openColorPicker() {
     connect(COLOR_PICKER, &QColorDialog::colorSelected, this,
         &ColorButton::setButtonColor);
 
-    COLOR_PICKER->open(); 
+    COLOR_PICKER->open();
 }
 
 /**

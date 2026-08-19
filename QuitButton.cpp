@@ -66,7 +66,7 @@ QuitButton::click(const Window window) {
     const Atom WM_DELETE_WINDOW = XInternAtom(mDisplay,
         "WM_DELETE_WINDOW", False);
 
-    XEvent event{}; 
+    XEvent event{};
     event.xclient.type = ClientMessage;
     event.xclient.window = window;
     event.xclient.message_type = WM_PROTOCOLS;

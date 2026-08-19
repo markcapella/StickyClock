@@ -186,7 +186,7 @@ StickyWindow::run() {
         }
 
         // Custom hover logic for controls.
-        setAllControlsVisibility();
+        setAllControlsVisibility(true);
 
         // Draw App canvas.
         if (mCanvas->updateCanvas()) {
@@ -476,11 +476,11 @@ StickyWindow::drawAllWindowButtons() {
 }
 
 /**
- * All screen cursor watcher to set hovered control buttons
- * visibility during hover.
+ * Cursor watcher detects user actions. Optimizes for
+ * cursor location, but requires reset on x11 activity.
  */
 void
-StickyWindow::setAllControlsVisibility() {
+StickyWindow::setAllControlsVisibility(const bool optimize) {
     // Find the cursor location relative to the root window.
     Window rootWindow = None;
     int rootX = -1;
@@ -498,14 +498,20 @@ StickyWindow::setAllControlsVisibility() {
         return;
     }
 
+    // If the mouse hasn't moved, don't re-check the location.
+    // Some x11 events require us to re-check the cursor ray-cast.
+    mCursorHoverPosition = QPoint(rootX, rootY);
+    if (optimize && mCursorPrevHoverPosition == mCursorHoverPosition) {
+        return;
+    }
+    mCursorPrevHoverPosition = mCursorHoverPosition;
+
     // Early out if not hovered anywhere.
-    const QPoint CURSOR_ROOT_POS = QPoint(rootX, rootY);
     const QRect WINDOW_RECT = QRect(mSettingsHelper->getWindowXPos(),
         mSettingsHelper->getWindowYPos(), mSettingsHelper->getWindowWidth(),
         mSettingsHelper->getWindowHeight());
     const bool IS_WINDOW_HOVERED = mXHelper->isWindowHoveredAtPos(
-        getX11Window(), WINDOW_RECT, CURSOR_ROOT_POS);
-
+        getX11Window(), WINDOW_RECT, mCursorHoverPosition);
     if (!IS_WINDOW_HOVERED) {
         setHoveredPinButtonVisibility(false);
         setHoveredControlButtonVisibility(QPoint(-1, -1));
@@ -520,16 +526,15 @@ StickyWindow::setAllControlsVisibility() {
         mButtons[0]->getWidth(),
         mButtons[0]->getHeight());
     const bool IS_PIN_BOTTON_CLICKABLE =
-        mXHelper->isWindowClickableInPinButton(
-            getX11Window(), PIN_BUTTON_RECT, CURSOR_ROOT_POS);
-
+        mXHelper->isWindowClickableInPinButton(getX11Window(),
+        PIN_BUTTON_RECT, mCursorHoverPosition);
     const bool PIN_VISIBILITY = mSettingsHelper->getBoolSetting(
         SettingsHelper::ENABLE_PIN_CONTROL) ||
         IS_PIN_BOTTON_CLICKABLE;
     setHoveredPinButtonVisibility(PIN_VISIBILITY);
 
     // Set visibility for all other controls.
-    setHoveredControlButtonVisibility(CURSOR_ROOT_POS);
+    setHoveredControlButtonVisibility(mCursorHoverPosition);
 }
 
 /**
@@ -747,6 +752,10 @@ StickyWindow::handleX11EventQueue() {
     XEvent event;
     while (XPending(mDisplay)) {
         XNextEvent(mDisplay, &event);
+
+        // Reset control buttons hover visibility.
+        setAllControlsVisibility(false);
+
         switch (event.type) {
 
             // Detect root window or desktop property changes.
@@ -957,6 +966,7 @@ StickyWindow::receiveConfigDialogUpdatedEvent() {
     setControlButtonsVisibility();
     setWindowStickPosition();
     rangeCheckPreferredDesktopSetting();
+
     updateFontSizeOnChange();
 }
 
