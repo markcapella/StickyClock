@@ -26,7 +26,7 @@ class SettingsHelper {
         IC_QString DESKTOP_OVERHANG = "Allow Desktop Overhang";
         IC_QString DIVIDER_0 = "divider00";
 
-        IC_QString ENABLE_PIN_CONTROL = "Enable Pin Control";
+        IC_QString SHOW_PIN_ON_WINDOW_HOVER = "Show Pin on Window Hover";
         IC_QString AUTOHIDE_CONTROLS = "Auto hide Controls";
         IC_QString AUTOHIDE_DELAY = "Auto hide Delay";
         IC_QString DIVIDER_1 = "divider01";
@@ -91,7 +91,7 @@ class SettingsHelper {
               .rangeMaximum = numeric_limits<int>::max()
             },
 
-            { .name = ENABLE_PIN_CONTROL,
+            { .name = SHOW_PIN_ON_WINDOW_HOVER,
               .valueType = BOOL_VALUETYPE, .initialValue = "true",
               .rangeMinimum = numeric_limits<int>::min(),
               .rangeMaximum = numeric_limits<int>::max()

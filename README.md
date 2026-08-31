@@ -1,3 +1,4 @@
+
 # StickyClock
     
 !['StickyClockIcon'](https://github.com/markcapella/StickyClock/blob/main/StickyClock.png)
@@ -87,7 +88,6 @@ For Fedora systems:
 ### Command Line.
 
     StickyClock
-    
     
 ## markjamescapella@proton.me Rocks !
     Yeah I do.

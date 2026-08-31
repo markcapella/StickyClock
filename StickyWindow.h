@@ -70,50 +70,6 @@ class StickyWindow {
         }
 
     private:
-        // Members.
-        Window mX11Window = None;
-        Canvas* mCanvas = nullptr;
-        char* mWindowTitle = nullptr;
-
-        bool mIsVisuallyTransparent = false;
-        XVisualInfo mVisualInfoStruct { };
-        Colormap mColorMap { };
-
-        Atom mCloseAppMessage { };
-        Atom mConfigDialogUpdated { };
-
-        vector<Button*> mButtons;
-        mutable recursive_mutex mButtonsMutLock;
-        unique_ptr<QTimer> mAutoHideControlsTimer{nullptr};
-
-        PinButton* mPinButton = nullptr;
-        QuitButton* mQuitButton = nullptr;
-        ConfigButton* mConfigButton = nullptr;
-        MoveButton* mMoveButton = nullptr;
-        SizeButton* mSizeButton = nullptr;
-
-        // handleX11EventQueue.
-        Window mTranslateWindow = None;
-        int mTranslatePosX = -1;
-        int mTranslatePosY = -1;
-
-        // ButtonPress.
-        QPoint mClickedWindowPosition;
-        QPoint mClickedButtonPosition;
-
-        QPoint mDragMoveButtonOffset{};
-        QPoint mDragResizeButtonOffset{};
-
-        bool mIsMouseClicked = false;
-        bool mIsSizingWindow = false;
-        bool mIsMovingWindow = false;
-
-        int mPreviousDesktop = -1;
-
-        // Optimization to avoid needless cursor raycasts.
-        QPoint mCursorPrevHoverPosition{ -1, -1 };
-        QPoint mCursorHoverPosition{};
-
         /**
          * This method sets StickyWindows internal x11 window.
          */
@@ -166,23 +122,18 @@ class StickyWindow {
          * Cursor watcher detects user actions. Optimizes for
          * cursor location, but requires reset on x11 activity.
          */
-        void setAllControlsVisibility(const bool optimize);
-
-        /**
-         * Set visibility state of the four corner control buttons on
-         * or off based on ConfigMode and update auto hide timer.
-         */
-        void setControlButtonsVisibility();
-
-        /**
-         * Setter for Hovered PinButton visibility state.
-         */
-        void setHoveredPinButtonVisibility(const bool visibility);
+        void makeAnyHoveredControlButtonVisible(const bool optimize);
 
         /**
          * Setter for all other Hovered ControlButton visibility state.
          */
         void setHoveredControlButtonVisibility(const QPoint position);
+
+        /**
+         * Set visibility state of the four corner control buttons on
+         * or off based on ConfigMode and update auto hide timer.
+         */
+        void updateAutoHideControlsTimer();
 
         /**
          * Press hovered button, & return it's position.
@@ -288,4 +239,48 @@ class StickyWindow {
          * On scroll down, reload font with new decreased size.
          */
         void decreaseFontSize();
+
+        // Members.
+        Window mX11Window = None;
+        Canvas* mCanvas = nullptr;
+        char* mWindowTitle = nullptr;
+
+        bool mIsVisuallyTransparent = false;
+        XVisualInfo mVisualInfoStruct { };
+        Colormap mColorMap { };
+
+        Atom mCloseAppMessage { };
+        Atom mConfigDialogUpdated { };
+
+        vector<Button*> mButtons;
+        mutable recursive_mutex mButtonsMutLock;
+        unique_ptr<QTimer> mAutoHideControlsTimer{nullptr};
+
+        PinButton* mPinButton = nullptr;
+        QuitButton* mQuitButton = nullptr;
+        ConfigButton* mConfigButton = nullptr;
+        MoveButton* mMoveButton = nullptr;
+        SizeButton* mSizeButton = nullptr;
+
+        // handleX11EventQueue.
+        Window mTranslateWindow = None;
+        int mTranslatePosX = -1;
+        int mTranslatePosY = -1;
+
+        // ButtonPress.
+        QPoint mClickedWindowPosition;
+        QPoint mClickedButtonPosition;
+
+        QPoint mDragMoveButtonOffset{};
+        QPoint mDragResizeButtonOffset{};
+
+        bool mIsMouseClicked = false;
+        bool mIsSizingWindow = false;
+        bool mIsMovingWindow = false;
+
+        int mPreviousDesktop = -1;
+
+        // Optimization to avoid needless cursor raycasts.
+        QPoint mCursorPrevHoverPosition{ -1, -1 };
+        QPoint mCursorHoverPosition{};
 };
