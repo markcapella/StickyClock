@@ -19,12 +19,10 @@ RecentsHelper::getAppRecentsName() {
 
     int mRecentsFD = lockRecentsProcessInfo();
     if (mRecentsFD == -1) {
-        cout << endl << XCOLOR_RED << "StickyClock is "
-            "unable to start due to control file contention. Please "
-            "try again later." << endl;
-        QMessageBox::information(NULL, APP_NAME, "\nStickyClock is "
-            "unable to start due to control file contention. Please "
-            "try again later.");
+        cout << endl << XCOLOR_RED << "Unable to start due to "
+            "control file contention. Please try again later." << endl;
+        QMessageBox::information(NULL, APP_NAME, "Unable to start due "
+            "to control file contention. Please try again later.");
         return "";
     }
 
@@ -32,14 +30,14 @@ RecentsHelper::getAppRecentsName() {
     unlockRecentsProcessInfo(mRecentsFD);
 
     if (mRecentsName.isEmpty()) {
-        QMessageBox::information(NULL, APP_NAME, "\nStickyClock is "
-            "running the maximum amount of instances already, ( " +
-            mRecentsHelper->RECENTS_NAMES[mRecentsHelper->
-            RECENTS_NAMES.size() - 1] + " ).");
-        cout << endl << XCOLOR_RED << "StickyClock is running the "
-            "maximum amount of instances already, ( " <<
-             mRecentsHelper->RECENTS_NAMES[mRecentsHelper->
-             RECENTS_NAMES.size() - 1].toStdString() << " )." << endl;
+        QMessageBox::information(NULL, APP_NAME, "Running the maximum "
+            "amount\nof instances already, ( " + mRecentsHelper->
+            RECENTS_NAMES[mRecentsHelper->RECENTS_NAMES.size() - 1] +
+            " ).");
+        cout << endl << XCOLOR_RED << "Running the maximum amount of "
+            "instances already, ( " << mRecentsHelper->
+            RECENTS_NAMES[mRecentsHelper->RECENTS_NAMES.size() - 1].
+            toStdString() << " )." << endl;
         return "";
     }
 
