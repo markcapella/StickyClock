@@ -5,6 +5,7 @@
  * StickyWindow class wraps an x11 Window object.
  */
 StickyWindow::StickyWindow() {
+
     // Init visual transparency & TrueColor 32.
     mIsVisuallyTransparent = initVisualTransparency();
     if (!mIsVisuallyTransparent) {
@@ -15,6 +16,11 @@ StickyWindow::StickyWindow() {
         return;
     }
 
+    // Define any X11 message Atoms.
+    mCloseAppMessage = XInternAtom(mDisplay, "WM_DELETE_WINDOW", False);
+    mConfigDialogUpdated = XInternAtom(mDisplay,
+        CONFIG_DIALOG_UPDATED_EVENT.c_str(), False);
+
     // Create & set base x11 window.
     setX11Window(createX11Window());
 
@@ -22,24 +28,20 @@ StickyWindow::StickyWindow() {
     createAllWindowButtons();
 
     // Instantiate widget canvas.
-    mCanvas = new Canvas(getX11Window(),
-        mVisualInfoStruct.visual, mColorMap);
-    updateAutoHideControlsTimer();
+    mCanvas = new Canvas(getX11Window(), mVisualInfoStruct.visual,
+        mColorMap);
 
-    // Create autohide timer for control buttons,
-    // then set control buttons visibility.
+    // Create autohide timer for control buttons.
     mAutoHideControlsTimer = make_unique<QTimer>();
     mAutoHideControlsTimer->setSingleShot(true);
+
     QObject::connect(mAutoHideControlsTimer.get(), &QTimer::timeout,
         [this] () {
         setConfigModeOff();
     });
 
-    // Define any X11 message Atoms.
-    mCloseAppMessage = XInternAtom(mDisplay,
-        "WM_DELETE_WINDOW", False);
-    mConfigDialogUpdated = XInternAtom(mDisplay,
-        CONFIG_DIALOG_UPDATED_EVENT.c_str(), False);
+    // Then set control buttons visibility.
+    updateAutoHideControlsTimer();
 }
 
 /**
@@ -586,27 +588,25 @@ StickyWindow::setHoveredControlButtonVisibility(
 void
 StickyWindow::updateAutoHideControlsTimer() {
     lock_guard<recursive_mutex> lock(mButtonsMutLock);
-    const bool CONFIG_MODE = mSettingsHelper->getConfigMode();
 
     // Pin button = 0, controls start @ 1;
-    const int BUTTONS_COUNT = mButtons.size();
-    for (int i = 1; i < BUTTONS_COUNT; i++) {
+    const bool CONFIG_MODE = mSettingsHelper->getConfigMode();
+    for (int i = 1; i < mButtons.size(); i++) {
         mButtons[i]->setVisible(CONFIG_MODE);
     }
 
     // If not Config mode, stop autohide timer & done.
     if (!CONFIG_MODE) {
-        if (mAutoHideControlsTimer) {
-            mAutoHideControlsTimer->stop();
-        }
+        mAutoHideControlsTimer->stop();
         return;
     }
 
     // If using autohide Config buttons, start timer.
     if (mSettingsHelper->getBoolSetting(SettingsHelper::
         AUTOHIDE_CONTROLS)) {
-        mAutoHideControlsTimer->start(mSettingsHelper->getIntSetting(
-            SettingsHelper::AUTOHIDE_DELAY) * 1000);
+        const int DELAY_MS = mSettingsHelper->getIntSetting(
+            SettingsHelper::AUTOHIDE_DELAY) * 1000;
+        mAutoHideControlsTimer->start(DELAY_MS);
     }
 }
 
